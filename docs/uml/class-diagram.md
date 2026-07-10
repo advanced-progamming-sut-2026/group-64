@@ -306,14 +306,49 @@ classDiagram
     class Vasebreaker
     class WallnutBowling
     class IZombie
-    class Bejeweled
+    class Beghouled
     class Zombotany
 
     Minigame <|-- Vasebreaker
     Minigame <|-- WallnutBowling
     Minigame <|-- IZombie
-    Minigame <|-- Bejeweled
+    Minigame <|-- Beghouled
     Minigame <|-- Zombotany
+
+    %% ===== News =====
+    class NewsItem {
+        -String id
+        -String message
+        -LocalDateTime createdAt
+    }
+    class NewsFeed {
+        -List~NewsItem~ items
+        +publish(NewsItem) void
+        +unreadFor(User) List~NewsItem~
+        +markAllRead(User) void
+    }
+    NewsFeed *-- NewsItem
+    NewsFeed --> User
+
+    %% ===== Score game (بازی امتیازی) =====
+    class ScoreGame {
+        -GameSession session
+        -List~ScoringPattern~ patterns
+        +totalMowPoints() int
+    }
+    class ScoringPattern {
+        <<interface>>
+        +onZombieKilled(KillEvent) int
+    }
+    class MultiKillWithOneShot
+    class FastKill
+    class SimultaneousKill
+
+    ScoringPattern <|.. MultiKillWithOneShot
+    ScoringPattern <|.. FastKill
+    ScoringPattern <|.. SimultaneousKill
+    ScoreGame *-- ScoringPattern
+    ScoreGame --> GameSession
 
     %% ===== Persistence =====
     class PersistenceManager {
@@ -331,7 +366,7 @@ classDiagram
 
 ## یادداشت‌های طراحی
 
-- **الگوهای طراحی مورد استفاده**: State (Menu/MenuManager برای پیمایش منوها)، Strategy (SpecialLevel، انواع مینی‌گیم، انواع الگوی امتیازدهی بازی امتیازی)، Template Method (چرخه‌ی تیک `Plant.onTick` / `Zombie.onTick`).
+- **الگوهای طراحی مورد استفاده**: State (Menu/MenuManager برای پیمایش منوها)، Strategy (SpecialLevel، انواع مینی‌گیم، و `ScoringPattern` برای ۵ الگوی امتیازگیری بازی امتیازی)، Template Method (چرخه‌ی تیک `Plant.onTick` / `Zombie.onTick`).
 - **گیاهان و زامبی‌ها** به‌جای کلاس جدا برای هر مورد (که با ده‌ها گیاه/زامبی حجم کلاس را غیرقابل مدیریت می‌کند)، از ترکیب دسته‌بندی (کلاس پایه‌ی هر دسته) + تگ‌ها (به‌صورت `Set<PlantTag>` یا رفتارهای composable) استفاده می‌شود؛ مقادیر عددی (HP، آسیب، هزینه) از `plants.csv` / `zombies.csv` در زمان اجرا بارگذاری می‌شوند، نه هاردکد در کد.
 - **PersistenceManager** روی Gson می‌ایستد و کل گراف `User` (شامل `Wallet`/`Inventory`/`PlayerStats`) و وضعیت جاری بازی را serialize می‌کند تا طبق سند، اطلاعات بین اجراهای برنامه باقی بماند.
 - این دیاگرام «کلاس‌های اصلی و روابط سطح بالا» را نشان می‌دهد؛ فیلدها/متدهای کامل، به‌خصوص برای فصل‌ها، مراحل ویژه و مینی‌گیم‌ها، در حین پیاده‌سازی هر بخش دقیق‌تر می‌شوند.
