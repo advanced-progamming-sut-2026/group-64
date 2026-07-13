@@ -1,6 +1,7 @@
 package ir.sharif.pvz.controller;
 
 import ir.sharif.pvz.model.AuthService;
+import ir.sharif.pvz.model.ProfileService;
 import ir.sharif.pvz.model.SessionStore;
 import ir.sharif.pvz.model.User;
 import ir.sharif.pvz.model.UserRepository;
@@ -25,7 +26,8 @@ public final class GameApp {
         UserRepository userRepository = new UserRepository();
         SessionStore sessionStore = new SessionStore();
         AuthService authService = new AuthService(userRepository);
-        this.context = new AppContext(userRepository, sessionStore, authService);
+        ProfileService profileService = new ProfileService(userRepository);
+        this.context = new AppContext(userRepository, sessionStore, authService, profileService);
         registerControllers();
         restoreSession();
     }
@@ -35,9 +37,9 @@ public final class GameApp {
         register(new LoginMenuController(context, view));
         register(new MainMenuController(context, view));
         register(new StubMenuController(context, view, MenuType.GAME, MenuType.MAIN, Set.of(MenuType.COLLECTION)));
-        register(new StubMenuController(context, view, MenuType.SETTINGS, MenuType.MAIN, Set.of()));
-        register(new StubMenuController(context, view, MenuType.NEWS, MenuType.MAIN, Set.of()));
-        register(new StubMenuController(context, view, MenuType.PROFILE, MenuType.MAIN, Set.of()));
+        register(new SettingsMenuController(context, view));
+        register(new NewsMenuController(context, view));
+        register(new ProfileMenuController(context, view));
         register(new StubMenuController(context, view, MenuType.COLLECTION, MenuType.GAME, Set.of()));
     }
 

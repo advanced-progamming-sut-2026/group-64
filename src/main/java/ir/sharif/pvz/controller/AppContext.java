@@ -1,6 +1,7 @@
 package ir.sharif.pvz.controller;
 
 import ir.sharif.pvz.model.AuthService;
+import ir.sharif.pvz.model.ProfileService;
 import ir.sharif.pvz.model.SessionStore;
 import ir.sharif.pvz.model.User;
 import ir.sharif.pvz.model.UserRepository;
@@ -13,15 +14,18 @@ public class AppContext {
     private final UserRepository userRepository;
     private final SessionStore sessionStore;
     private final AuthService authService;
+    private final ProfileService profileService;
 
     private User currentUser;
     private MenuType currentMenu = MenuType.SIGNUP;
     private boolean running = true;
 
-    public AppContext(UserRepository userRepository, SessionStore sessionStore, AuthService authService) {
+    public AppContext(UserRepository userRepository, SessionStore sessionStore,
+                      AuthService authService, ProfileService profileService) {
         this.userRepository = userRepository;
         this.sessionStore = sessionStore;
         this.authService = authService;
+        this.profileService = profileService;
     }
 
     public UserRepository getUserRepository() {
@@ -34,6 +38,10 @@ public class AppContext {
 
     public AuthService getAuthService() {
         return authService;
+    }
+
+    public ProfileService getProfileService() {
+        return profileService;
     }
 
     public User getCurrentUser() {
