@@ -1,6 +1,13 @@
-# Plants vs Zombies 2 - CLI
+# Plants vs Zombies 2 - CLI (group-64)
 
 پیاده‌سازی متنی (CLI) بازی Plants vs. Zombies 2 برای درس برنامه‌سازی پیشرفته - دانشگاه صنعتی شریف (نیمسال دوم 04-05).
+
+## اعضای گروه
+
+| Student | Student ID |
+| ------- | ---------- |
+| Vahid Arefee | 403110662 |
+| Shahrbano Ebrahimi | 403110695 |
 
 ## پیش‌نیازها
 
@@ -36,6 +43,7 @@ src/test/java/ir/sharif/pvz/   تست‌ها
 docs/                          دیاگرام‌های UML و مستندات طراحی
 checkstyle.xml / pmd-ruleset.xml   قوانین لینتر مطابق سند پروژه
 data/                          دادهٔ ذخیره‌شده در زمان اجرا (users.json، سشن) — در گیت نیست
+UML.png                        دیاگرام کلاس اولیه (فاز صفر)
 ```
 
 ## وضعیت پیاده‌سازی فاز ۱
