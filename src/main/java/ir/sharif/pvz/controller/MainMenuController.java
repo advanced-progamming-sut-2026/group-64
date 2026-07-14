@@ -19,7 +19,8 @@ public class MainMenuController extends MenuController {
 
     @Override
     protected Set<MenuType> allowedTargets() {
-        return Set.of(MenuType.GAME, MenuType.SETTINGS, MenuType.NEWS, MenuType.PROFILE);
+        return Set.of(MenuType.GAME, MenuType.SETTINGS, MenuType.NEWS, MenuType.PROFILE,
+                MenuType.GREENHOUSE);
     }
 
     @Override

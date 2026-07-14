@@ -34,6 +34,10 @@ public class User {
     private Set<String> observedZombies = new LinkedHashSet<>();
     private Map<String, Integer> seedPackets = new HashMap<>();
     private Map<String, Integer> plantLevels = new HashMap<>();
+    private List<GreenhousePot> greenhousePots;
+    private Set<String> storedBoosts = new LinkedHashSet<>();
+    private int pendingPlantFood;
+    private String lastDailyPurchaseDate;
 
     private static Set<String> defaultPlants() {
         return new LinkedHashSet<>(
@@ -219,5 +223,58 @@ public class User {
 
     public void spendDiamonds(int amount) {
         this.diamonds -= amount;
+    }
+
+    /**
+     * The twenty greenhouse pots (4 rows x 5 columns); only the first row
+     * starts unlocked. Created lazily for accounts saved before this field.
+     */
+    public List<GreenhousePot> getGreenhousePots() {
+        if (greenhousePots == null || greenhousePots.isEmpty()) {
+            greenhousePots = new ArrayList<>();
+            for (int i = 0; i < 20; i++) {
+                greenhousePots.add(new GreenhousePot(i < 5));
+            }
+        }
+        return greenhousePots;
+    }
+
+    /**
+     * Unlocks the next locked pot slot; returns false when all 20 are open.
+     */
+    public boolean unlockNextPot() {
+        for (GreenhousePot pot : getGreenhousePots()) {
+            if (!pot.isUnlocked()) {
+                pot.unlock();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Set<String> getStoredBoosts() {
+        if (storedBoosts == null) {
+            storedBoosts = new LinkedHashSet<>();
+        }
+        return storedBoosts;
+    }
+
+    /**
+     * Plant food bought in the shop for the start of the next level (max 3).
+     */
+    public int getPendingPlantFood() {
+        return pendingPlantFood;
+    }
+
+    public void setPendingPlantFood(int pendingPlantFood) {
+        this.pendingPlantFood = pendingPlantFood;
+    }
+
+    public String getLastDailyPurchaseDate() {
+        return lastDailyPurchaseDate;
+    }
+
+    public void setLastDailyPurchaseDate(String lastDailyPurchaseDate) {
+        this.lastDailyPurchaseDate = lastDailyPurchaseDate;
     }
 }

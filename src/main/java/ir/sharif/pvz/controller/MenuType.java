@@ -11,7 +11,9 @@ public enum MenuType {
     SETTINGS("settings"),
     NEWS("news"),
     PROFILE("profile"),
-    COLLECTION("collection");
+    COLLECTION("collection"),
+    GREENHOUSE("greenhouse"),
+    SHOP("shop");
 
     private final String id;
 

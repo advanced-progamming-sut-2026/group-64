@@ -691,6 +691,13 @@ public class GameSession {
         return "You have " + plantFood + " plant foods now.";
     }
 
+    /**
+     * Plant food bought in the shop before the level started.
+     */
+    public void grantPlantFood(int count) {
+        plantFood = Math.min(MAX_PLANT_FOOD, plantFood + count);
+    }
+
     public String cheatSpawnZombie(String type, int x, int y) {
         ZombieSpec spec = GameCatalog.get().zombie(type);
         if (spec == null) {

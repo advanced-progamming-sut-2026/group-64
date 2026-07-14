@@ -153,8 +153,20 @@ public class GameMenuController extends MenuController {
         User user = context.getCurrentUser();
         ir.sharif.pvz.model.game.LevelSpec level =
                 ir.sharif.pvz.model.game.Levels.byProgress(user.getLevelsPassed());
+        Set<String> boosts = new HashSet<>(boostedPlants);
+        for (String type : selectedPlants) {
+            if (user.getStoredBoosts().remove(type)) {
+                boosts.add(type);
+                view.info("The " + type + " you grew in the greenhouse starts boosted!");
+            }
+        }
         session = new GameSession(level, user.getDifficulty(),
-                new ArrayList<>(selectedPlants), new HashSet<>(boostedPlants), new Random());
+                new ArrayList<>(selectedPlants), boosts, new Random());
+        if (user.getPendingPlantFood() > 0) {
+            session.grantPlantFood(user.getPendingPlantFood());
+            view.info("You start with " + user.getPendingPlantFood() + " plant food(s) from the shop.");
+            user.setPendingPlantFood(0);
+        }
         view.info(level.title() + (level.isNight() ? " (night)" : ""));
         view.info("The game started! Zombies are coming; use 'advance time -t <count> ticks'.");
         flushGameState();
@@ -227,6 +239,11 @@ public class GameMenuController extends MenuController {
         user.addCoins(session.getEarnedCoins());
         user.addDiamonds(session.getEarnedDiamonds());
         user.addPots(session.getEarnedPots());
+        for (int i = 0; i < session.getEarnedPots(); i++) {
+            if (user.unlockNextPot()) {
+                view.info("A dropped pot unlocked a new greenhouse slot!");
+            }
+        }
         user.getObservedZombies().addAll(session.getSeenZombieTypes());
         if (session.isWon()) {
             user.addCoins(WIN_COIN_REWARD);

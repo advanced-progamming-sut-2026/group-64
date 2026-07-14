@@ -1,10 +1,13 @@
 package ir.sharif.pvz.controller;
 
 import ir.sharif.pvz.model.AuthService;
+import ir.sharif.pvz.model.GreenhouseService;
 import ir.sharif.pvz.model.ProfileService;
 import ir.sharif.pvz.model.SessionStore;
+import ir.sharif.pvz.model.ShopService;
 import ir.sharif.pvz.model.User;
 import ir.sharif.pvz.model.UserRepository;
+import java.util.Random;
 
 /**
  * Mutable application state shared between menu controllers.
@@ -15,6 +18,8 @@ public class AppContext {
     private final SessionStore sessionStore;
     private final AuthService authService;
     private final ProfileService profileService;
+    private final GreenhouseService greenhouseService;
+    private final ShopService shopService;
 
     private User currentUser;
     private MenuType currentMenu = MenuType.SIGNUP;
@@ -26,6 +31,17 @@ public class AppContext {
         this.sessionStore = sessionStore;
         this.authService = authService;
         this.profileService = profileService;
+        this.greenhouseService = new GreenhouseService(userRepository,
+                System::currentTimeMillis, new Random());
+        this.shopService = new ShopService(userRepository, System::currentTimeMillis, new Random());
+    }
+
+    public GreenhouseService getGreenhouseService() {
+        return greenhouseService;
+    }
+
+    public ShopService getShopService() {
+        return shopService;
     }
 
     public UserRepository getUserRepository() {

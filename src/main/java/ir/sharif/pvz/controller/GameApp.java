@@ -40,6 +40,8 @@ public final class GameApp {
         register(new NewsMenuController(context, view));
         register(new ProfileMenuController(context, view));
         register(new CollectionMenuController(context, view));
+        register(new GreenhouseMenuController(context, view));
+        register(new ShopMenuController(context, view));
     }
 
     private void register(MenuController controller) {
