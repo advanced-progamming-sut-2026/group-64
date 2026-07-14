@@ -1,7 +1,11 @@
 package ir.sharif.pvz.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A registered player account.
@@ -24,7 +28,17 @@ public class User {
     private int diamonds;
     private int levelsPassed;
     private int maxMewPoints;
+    private int pots;
     private List<NewsItem> news = new ArrayList<>();
+    private Set<String> unlockedPlants = defaultPlants();
+    private Set<String> observedZombies = new LinkedHashSet<>();
+    private Map<String, Integer> seedPackets = new HashMap<>();
+    private Map<String, Integer> plantLevels = new HashMap<>();
+
+    private static Set<String> defaultPlants() {
+        return new LinkedHashSet<>(
+                List.of("sunflower", "peashooter", "wall-nut", "cherry-bomb", "potato-mine"));
+    }
 
     public User(String username, String passwordHash, String nickname, String email, Gender gender) {
         this.username = username;
@@ -148,5 +162,62 @@ public class User {
 
     public void addNews(String text) {
         getNews().add(new NewsItem(text));
+    }
+
+    public int getPots() {
+        return pots;
+    }
+
+    public void addPots(int amount) {
+        this.pots += amount;
+    }
+
+    /**
+     * Collections are created lazily for accounts saved before these fields existed.
+     */
+    public Set<String> getUnlockedPlants() {
+        if (unlockedPlants == null || unlockedPlants.isEmpty()) {
+            unlockedPlants = defaultPlants();
+        }
+        return unlockedPlants;
+    }
+
+    public Set<String> getObservedZombies() {
+        if (observedZombies == null) {
+            observedZombies = new LinkedHashSet<>();
+        }
+        return observedZombies;
+    }
+
+    public Map<String, Integer> getSeedPackets() {
+        if (seedPackets == null) {
+            seedPackets = new HashMap<>();
+        }
+        return seedPackets;
+    }
+
+    /**
+     * Plant upgrade level; every plant starts at level 1.
+     */
+    public int getPlantLevel(String plant) {
+        if (plantLevels == null) {
+            plantLevels = new HashMap<>();
+        }
+        return plantLevels.getOrDefault(plant, 1);
+    }
+
+    public void setPlantLevel(String plant, int level) {
+        if (plantLevels == null) {
+            plantLevels = new HashMap<>();
+        }
+        plantLevels.put(plant, level);
+    }
+
+    public void spendCoins(int amount) {
+        this.coins -= amount;
+    }
+
+    public void spendDiamonds(int amount) {
+        this.diamonds -= amount;
     }
 }

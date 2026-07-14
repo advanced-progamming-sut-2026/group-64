@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 
 /**
  * Wires the application together and runs the read-eval-print loop.
@@ -36,11 +35,11 @@ public final class GameApp {
         register(new SignupMenuController(context, view));
         register(new LoginMenuController(context, view));
         register(new MainMenuController(context, view));
-        register(new StubMenuController(context, view, MenuType.GAME, MenuType.MAIN, Set.of(MenuType.COLLECTION)));
+        register(new GameMenuController(context, view));
         register(new SettingsMenuController(context, view));
         register(new NewsMenuController(context, view));
         register(new ProfileMenuController(context, view));
-        register(new StubMenuController(context, view, MenuType.COLLECTION, MenuType.GAME, Set.of()));
+        register(new CollectionMenuController(context, view));
     }
 
     private void register(MenuController controller) {
