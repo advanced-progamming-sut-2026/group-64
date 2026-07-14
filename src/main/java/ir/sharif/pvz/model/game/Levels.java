@@ -30,6 +30,16 @@ public final class Levels {
         return ADVENTURE.get(index);
     }
 
+    /**
+     * The score-game level: a flat lawn where only the mow points matter.
+     * Day 0 marks it as the daily score game in the level title.
+     */
+    public static LevelSpec scoreGame() {
+        return new LevelSpec(Chapter.ANCIENT_EGYPT, 0, 5, 6,
+                merge(COMMON, "knight", "newspaper", "all-star", "ra"),
+                Map.of(), 0, false, false, false);
+    }
+
     private static List<LevelSpec> build() {
         List<LevelSpec> levels = new ArrayList<>();
         levels.addAll(egypt());

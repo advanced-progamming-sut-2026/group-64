@@ -29,6 +29,8 @@ public class User {
     private int levelsPassed;
     private int maxMewPoints;
     private int pots;
+    private int minigamesCompleted;
+    private int questsCompleted;
     private List<NewsItem> news = new ArrayList<>();
     private Set<String> unlockedPlants = defaultPlants();
     private Set<String> observedZombies = new LinkedHashSet<>();
@@ -166,6 +168,22 @@ public class User {
 
     public void addNews(String text) {
         getNews().add(new NewsItem(text));
+    }
+
+    public int getMinigamesCompleted() {
+        return minigamesCompleted;
+    }
+
+    public void incrementMinigamesCompleted() {
+        this.minigamesCompleted++;
+    }
+
+    public int getQuestsCompleted() {
+        return questsCompleted;
+    }
+
+    public void incrementQuestsCompleted() {
+        this.questsCompleted++;
     }
 
     public int getPots() {

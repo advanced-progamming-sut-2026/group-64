@@ -40,20 +40,32 @@ public class GameMenuController extends MenuController {
 
     private final Set<String> selectedPlants = new LinkedHashSet<>();
     private final Set<String> boostedPlants = new HashSet<>();
+    private final MenuType menuType;
+    private final boolean scoreMode;
     private GameSession session;
 
     public GameMenuController(AppContext context, ConsoleView view) {
+        this(context, view, MenuType.GAME, false);
+    }
+
+    /**
+     * The score game reuses all game commands but plays the deterministic
+     * daily level and reports mow points instead of advancing the adventure.
+     */
+    public GameMenuController(AppContext context, ConsoleView view, MenuType menuType, boolean scoreMode) {
         super(context, view);
+        this.menuType = menuType;
+        this.scoreMode = scoreMode;
     }
 
     @Override
     public MenuType type() {
-        return MenuType.GAME;
+        return menuType;
     }
 
     @Override
     protected Set<MenuType> allowedTargets() {
-        return Set.of(MenuType.COLLECTION);
+        return scoreMode ? Set.of() : Set.of(MenuType.COLLECTION);
     }
 
     @Override
@@ -151,8 +163,9 @@ public class GameMenuController extends MenuController {
 
     private void startGame() {
         User user = context.getCurrentUser();
-        ir.sharif.pvz.model.game.LevelSpec level =
-                ir.sharif.pvz.model.game.Levels.byProgress(user.getLevelsPassed());
+        ir.sharif.pvz.model.game.LevelSpec level = scoreMode
+                ? ir.sharif.pvz.model.game.Levels.scoreGame()
+                : ir.sharif.pvz.model.game.Levels.byProgress(user.getLevelsPassed());
         Set<String> boosts = new HashSet<>(boostedPlants);
         for (String type : selectedPlants) {
             if (user.getStoredBoosts().remove(type)) {
@@ -160,8 +173,12 @@ public class GameMenuController extends MenuController {
                 view.info("The " + type + " you grew in the greenhouse starts boosted!");
             }
         }
+        Random random = scoreMode ? new Random(java.time.LocalDate.now().toEpochDay()) : new Random();
         session = new GameSession(level, user.getDifficulty(),
-                new ArrayList<>(selectedPlants), boosts, new Random());
+                new ArrayList<>(selectedPlants), boosts, random);
+        if (scoreMode) {
+            session.attachScoreTracker(new ir.sharif.pvz.model.game.ScoreTracker());
+        }
         if (user.getPendingPlantFood() > 0) {
             session.grantPlantFood(user.getPendingPlantFood());
             view.info("You start with " + user.getPendingPlantFood() + " plant food(s) from the shop.");
@@ -245,7 +262,9 @@ public class GameMenuController extends MenuController {
             }
         }
         user.getObservedZombies().addAll(session.getSeenZombieTypes());
-        if (session.isWon()) {
+        if (scoreMode) {
+            finishScoreGame(user);
+        } else if (session.isWon()) {
             user.addCoins(WIN_COIN_REWARD);
             user.setLevelsPassed(user.getLevelsPassed() + 1);
             view.info("You won! You earned " + (session.getEarnedCoins() + WIN_COIN_REWARD) + " coins.");
@@ -255,6 +274,21 @@ public class GameMenuController extends MenuController {
         context.getUserRepository().save();
         session = null;
         boostedPlants.clear();
-        view.info("You are back in the plant selection of the game menu.");
+        view.info("You are back in the plant selection of the " + menuType.id() + " menu.");
+    }
+
+    private void finishScoreGame(User user) {
+        ir.sharif.pvz.model.game.ScoreTracker tracker = session.getScoreTracker();
+        if (session.isWon()) {
+            tracker.addMowerBonus(session.unusedMowers());
+            view.info("You survived the score game!");
+        } else {
+            view.info("The zombies got you; your points still count.");
+        }
+        tracker.breakdown().forEach(view::info);
+        if (tracker.getPoints() > user.getMaxMewPoints()) {
+            view.info("New personal best!");
+        }
+        user.updateMaxMewPoints(tracker.getPoints());
     }
 }

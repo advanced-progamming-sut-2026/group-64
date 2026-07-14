@@ -82,6 +82,6 @@ public class LevelSpec {
     }
 
     public String title() {
-        return chapter.displayName() + " - Day " + day;
+        return day == 0 ? "Score Game (daily)" : chapter.displayName() + " - Day " + day;
     }
 }

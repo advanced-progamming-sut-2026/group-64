@@ -47,6 +47,7 @@ public class GameSession {
     private int sunAmount = INITIAL_SUN;
     private int plantFood;
     private boolean cooldownsDisabled;
+    private ScoreTracker scoreTracker;
     private int earnedCoins;
     private int earnedDiamonds;
     private int earnedPots;
@@ -140,6 +141,27 @@ public class GameSession {
         waves.setEnabled(wavesEnabled);
     }
 
+    /**
+     * Score-game sessions count mow points through this tracker.
+     */
+    public void attachScoreTracker(ScoreTracker tracker) {
+        this.scoreTracker = tracker;
+    }
+
+    public ScoreTracker getScoreTracker() {
+        return scoreTracker;
+    }
+
+    public int unusedMowers() {
+        int count = 0;
+        for (boolean mower : mowers) {
+            if (mower) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     Zombie spawnZombie(ZombieSpec spec, int row, double x) {
         Map<String, Integer> armor = new java.util.LinkedHashMap<>();
         spec.getArmor().forEach((name, hp) -> armor.put(name, (int) Math.round(hp * difficultyUp)));
@@ -148,6 +170,9 @@ public class GameSession {
         Zombie zombie = new Zombie(spec, row, x, hp, armor, glowing);
         zombies.add(zombie);
         seenZombieTypes.add(spec.getName());
+        if (scoreTracker != null) {
+            scoreTracker.onSpawn(zombie, tickCount);
+        }
         return zombie;
     }
 
@@ -203,6 +228,9 @@ public class GameSession {
         zombies.remove(zombie);
         eatProgress.remove(zombie);
         abilities.onDeath(zombie);
+        if (scoreTracker != null) {
+            scoreTracker.onKill(zombie, tickCount);
+        }
         events.add("Zombie of type " + zombie.getSpec().getName() + " is dead at ("
                 + trim(zombie.getX()) + ", " + (zombie.getRow() + 1) + ")");
         if (zombie.isGlowing() && plantFood < MAX_PLANT_FOOD) {

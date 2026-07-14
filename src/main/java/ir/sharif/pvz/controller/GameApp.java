@@ -42,6 +42,8 @@ public final class GameApp {
         register(new CollectionMenuController(context, view));
         register(new GreenhouseMenuController(context, view));
         register(new ShopMenuController(context, view));
+        register(new GameMenuController(context, view, MenuType.SCORE_GAME, true));
+        register(new LeaderboardMenuController(context, view));
     }
 
     private void register(MenuController controller) {
