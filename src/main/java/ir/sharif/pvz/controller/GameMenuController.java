@@ -282,6 +282,7 @@ public class GameMenuController extends MenuController {
         }
         User user = context.getCurrentUser();
         user.incrementGamesPlayed();
+        user.setLastPlayedDate(java.time.LocalDate.now().toString());
         user.addCoins(session.getEarnedCoins());
         user.addDiamonds(session.getEarnedDiamonds());
         user.addPots(session.getEarnedPots());

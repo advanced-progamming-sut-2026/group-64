@@ -20,6 +20,7 @@ public class AppContext {
     private final ProfileService profileService;
     private final GreenhouseService greenhouseService;
     private final ShopService shopService;
+    private final ir.sharif.pvz.model.QuestService questService;
 
     private User currentUser;
     private MenuType currentMenu = MenuType.SIGNUP;
@@ -34,6 +35,11 @@ public class AppContext {
         this.greenhouseService = new GreenhouseService(userRepository,
                 System::currentTimeMillis, new Random());
         this.shopService = new ShopService(userRepository, System::currentTimeMillis, new Random());
+        this.questService = new ir.sharif.pvz.model.QuestService(userRepository, System::currentTimeMillis);
+    }
+
+    public ir.sharif.pvz.model.QuestService getQuestService() {
+        return questService;
     }
 
     public GreenhouseService getGreenhouseService() {

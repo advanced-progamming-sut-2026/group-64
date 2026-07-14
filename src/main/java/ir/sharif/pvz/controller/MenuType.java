@@ -15,7 +15,8 @@ public enum MenuType {
     GREENHOUSE("greenhouse"),
     SHOP("shop"),
     SCORE_GAME("score-game"),
-    LEADERBOARD("leaderboard");
+    LEADERBOARD("leaderboard"),
+    TRAVEL_LOG("travel-log");
 
     private final String id;
 

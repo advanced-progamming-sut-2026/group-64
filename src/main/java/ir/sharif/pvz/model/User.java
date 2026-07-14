@@ -40,6 +40,8 @@ public class User {
     private Set<String> storedBoosts = new LinkedHashSet<>();
     private int pendingPlantFood;
     private String lastDailyPurchaseDate;
+    private Map<String, String> claimedQuests = new HashMap<>();
+    private String lastPlayedDate;
 
     private static Set<String> defaultPlants() {
         return new LinkedHashSet<>(
@@ -294,5 +296,24 @@ public class User {
 
     public void setLastDailyPurchaseDate(String lastDailyPurchaseDate) {
         this.lastDailyPurchaseDate = lastDailyPurchaseDate;
+    }
+
+    /**
+     * Quest id to claim marker: "done" for one-shot quests, the claim date
+     * for daily quests. Created lazily for older accounts.
+     */
+    public Map<String, String> getClaimedQuests() {
+        if (claimedQuests == null) {
+            claimedQuests = new HashMap<>();
+        }
+        return claimedQuests;
+    }
+
+    public String getLastPlayedDate() {
+        return lastPlayedDate;
+    }
+
+    public void setLastPlayedDate(String lastPlayedDate) {
+        this.lastPlayedDate = lastPlayedDate;
     }
 }

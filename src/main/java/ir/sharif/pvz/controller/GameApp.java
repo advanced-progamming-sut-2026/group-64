@@ -44,6 +44,7 @@ public final class GameApp {
         register(new ShopMenuController(context, view));
         register(new GameMenuController(context, view, MenuType.SCORE_GAME, true));
         register(new LeaderboardMenuController(context, view));
+        register(new TravelLogMenuController(context, view));
     }
 
     private void register(MenuController controller) {
