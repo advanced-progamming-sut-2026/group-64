@@ -30,6 +30,8 @@ public class GameSession {
     private final LevelSpec level;
     private final ZombieAbilities abilities;
     private final PlantCombat combat;
+    private final SpecialLevelEngine special;
+    private final Set<Plant> protectedPlants = new java.util.HashSet<>();
 
     private final Plant[][] grid = new Plant[ROWS][COLS];
     private final Board board;
@@ -47,6 +49,7 @@ public class GameSession {
     private int sunAmount = INITIAL_SUN;
     private int plantFood;
     private boolean cooldownsDisabled;
+    private boolean cooldownsSuspended;
     private ScoreTracker scoreTracker;
     private int earnedCoins;
     private int earnedDiamonds;
@@ -72,6 +75,8 @@ public class GameSession {
         this.board = new Board(level, difficultyUp, random, events);
         this.sunSystem = new SunSystem(level, difficultyUp, random, events);
         this.waves = new WaveSystem(this, level, difficultyDown, random);
+        this.special = new SpecialLevelEngine(this, level.getSpecial(), random);
+        this.special.init();
     }
 
     private static LevelSpec defaultLevel() {
@@ -96,6 +101,7 @@ public class GameSession {
             produceSuns();
             sunSystem.tick(1.0 / TICKS_PER_SECOND, seconds());
             waves.tick(seconds());
+            special.tick(seconds());
             plantsAct();
             zombiesAct();
             checkVictory();
@@ -185,6 +191,8 @@ public class GameSession {
             removePlant(plant);
             events.add("Plant " + plant.getSpec().getName() + " at (" + (plant.getCol() + 1)
                     + ", " + (plant.getRow() + 1) + ") is destroyed.");
+            special.onPlantDestroyed(plant);
+            protectedPlants.remove(plant);
         }
     }
 
@@ -228,6 +236,7 @@ public class GameSession {
         zombies.remove(zombie);
         eatProgress.remove(zombie);
         abilities.onDeath(zombie);
+        special.onZombieKilled();
         if (scoreTracker != null) {
             scoreTracker.onKill(zombie, tickCount);
         }
@@ -270,7 +279,8 @@ public class GameSession {
             } else {
                 zombie.walk(walkSpeed(zombie) * dt);
                 slideIfOnIce(zombie);
-                if (zombie.getX() < 1) {
+                special.onZombieMoved(zombie);
+                if (!lost && zombie.getX() < 1) {
                     reachHouse(zombie);
                 }
             }
@@ -323,12 +333,7 @@ public class GameSession {
         double progress = eatProgress.merge(zombie, dt, Double::sum);
         if (progress >= 1) {
             eatProgress.put(zombie, progress - 1);
-            int damage = (int) Math.round(zombie.getSpec().getDamagePerSecond() * difficultyUp);
-            if (plant.damage(damage)) {
-                removePlant(plant);
-                events.add("Plant " + plant.getSpec().getName() + " at (" + (plant.getCol() + 1)
-                        + ", " + (plant.getRow() + 1) + ") is destroyed.");
-            }
+            plantHit(plant, (int) Math.round(zombie.getSpec().getDamagePerSecond() * difficultyUp));
         }
     }
 
@@ -454,7 +459,7 @@ public class GameSession {
      * Plants a selected type on tile (x=column, y=row), enforcing sun, cooldown and occupancy rules.
      */
     public String plant(String type, int x, int y) {
-        if (!selectedPlants.contains(type)) {
+        if (!special.conveyorMode() && !selectedPlants.contains(type)) {
             return "Error: plant '" + type + "' is not among your selected plants.";
         }
         if (!validTile(x, y)) {
@@ -468,14 +473,23 @@ public class GameSession {
         if (terrainError != null) {
             return terrainError;
         }
-        if (!cooldownsDisabled && plantCooldowns.getOrDefault(type, 0.0) > 0) {
-            return "Error: " + type + " is recharging; wait " + trim(plantCooldowns.get(type)) + "s.";
+        if (special.conveyorMode()) {
+            String beltError = special.takeFromBelt(type);
+            if (beltError != null) {
+                return beltError;
+            }
+        } else {
+            boolean recharging = !cooldownsDisabled && !cooldownsSuspended
+                    && plantCooldowns.getOrDefault(type, 0.0) > 0;
+            if (recharging) {
+                return "Error: " + type + " is recharging; wait " + trim(plantCooldowns.get(type)) + "s.";
+            }
+            if (sunAmount < spec.getSunCost()) {
+                return "Error: not enough sun; " + type + " costs " + spec.getSunCost() + ".";
+            }
+            sunAmount -= spec.getSunCost();
+            plantCooldowns.put(type, spec.getRechargeSeconds());
         }
-        if (sunAmount < spec.getSunCost()) {
-            return "Error: not enough sun; " + type + " costs " + spec.getSunCost() + ".";
-        }
-        sunAmount -= spec.getSunCost();
-        plantCooldowns.put(type, spec.getRechargeSeconds());
         if (spec.getName().equals("lily-pad")) {
             board.setTerrain(y - 1, x - 1, TileTerrain.LILY);
             return "Planted lily-pad at (" + x + ", " + y + "); the tile is now plantable.";
@@ -496,6 +510,10 @@ public class GameSession {
         Plant plant = grid[y - 1][x - 1];
         if (plant == null) {
             return "Error: there is no plant at (" + x + ", " + y + ").";
+        }
+        if (protectedPlants.contains(plant)) {
+            return "Error: the " + plant.getSpec().getName() + " at (" + x + ", " + y
+                    + ") must be protected, not plucked!";
         }
         removePlant(plant);
         return "Plucked " + plant.getSpec().getName() + " from (" + x + ", " + y + ").";
@@ -575,10 +593,8 @@ public class GameSession {
         for (int r = Math.max(0, row - 1); r <= Math.min(ROWS - 1, row + 1); r++) {
             for (int c = Math.max(0, col - 1); c <= Math.min(COLS - 1, col + 1); c++) {
                 Plant plant = grid[r][c];
-                if (plant != null && plant.damage(80)) {
-                    removePlant(plant);
-                    events.add("Plant " + plant.getSpec().getName() + " at (" + (c + 1)
-                            + ", " + (r + 1) + ") is destroyed.");
+                if (plant != null) {
+                    plantHit(plant, 80);
                 }
             }
         }
@@ -655,6 +671,54 @@ public class GameSession {
 
     void damageGraveAt(int row, int col, int damage) {
         damageGrave(row, col, damage);
+    }
+
+    // ===== special-level hooks =====
+
+    void placeProtectedPlant(int row, int col, String type) {
+        Plant plant = new Plant(GameCatalog.get().plant(type), row, col, false);
+        grid[row][col] = plant;
+        protectedPlants.add(plant);
+        events.add("Protect the " + type + " at (" + (col + 1) + ", " + (row + 1) + ")!");
+    }
+
+    boolean isProtectedPlant(Plant plant) {
+        return protectedPlants.contains(plant);
+    }
+
+    void winNow(String message) {
+        if (!isOver()) {
+            won = true;
+            events.add(message);
+        }
+    }
+
+    void loseNow(String message) {
+        if (!isOver()) {
+            lost = true;
+            events.add(message);
+            events.add("The zombie ate your brain; LOSER!!!");
+        }
+    }
+
+    void setCooldownsSuspended(boolean suspended) {
+        this.cooldownsSuspended = suspended;
+    }
+
+    void setSunAmount(int sunAmount) {
+        this.sunAmount = sunAmount;
+    }
+
+    public boolean isConveyorLevel() {
+        return special.conveyorMode();
+    }
+
+    public List<String> conveyorBelt() {
+        return special.beltContents();
+    }
+
+    public String startZombieWaves() {
+        return special.startZombieWaves();
     }
 
     public boolean isPlantDisabled(int x, int y) {

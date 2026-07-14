@@ -121,9 +121,26 @@ public class GameMenuController extends MenuController {
         }
     }
 
+    /**
+     * The level the player is about to start; special levels restrict the
+     * plant selection before the game even begins.
+     */
+    private ir.sharif.pvz.model.game.SpecialRules upcomingSpecial() {
+        if (scoreMode) {
+            return null;
+        }
+        return ir.sharif.pvz.model.game.Levels
+                .byProgress(context.getCurrentUser().getLevelsPassed()).getSpecial();
+    }
+
     private void addPlant(String type) {
         User user = context.getCurrentUser();
-        if (GameCatalog.get().plant(type) == null) {
+        ir.sharif.pvz.model.game.SpecialRules special = upcomingSpecial();
+        if (special != null && special.getType() == ir.sharif.pvz.model.game.SpecialRules.Type.CONVEYOR_BELT) {
+            view.error("This level uses a conveyor belt; there is no plant selection.");
+        } else if (special != null && special.getLockedPlants().contains(type)) {
+            view.error("Plant '" + type + "' is locked on this level.");
+        } else if (GameCatalog.get().plant(type) == null) {
             view.error("There is no plant named '" + type + "'.");
         } else if (!user.getUnlockedPlants().contains(type)) {
             view.error("Plant '" + type + "' is locked; unlock it in the collection first.");
@@ -166,6 +183,13 @@ public class GameMenuController extends MenuController {
         ir.sharif.pvz.model.game.LevelSpec level = scoreMode
                 ? ir.sharif.pvz.model.game.Levels.scoreGame()
                 : ir.sharif.pvz.model.game.Levels.byProgress(user.getLevelsPassed());
+        if (level.getSpecial() != null) {
+            for (String forced : level.getSpecial().getForcedPlants()) {
+                if (selectedPlants.add(forced)) {
+                    view.info("This level forces " + forced + " into your selection.");
+                }
+            }
+        }
         Set<String> boosts = new HashSet<>(boostedPlants);
         for (String type : selectedPlants) {
             if (user.getStoredBoosts().remove(type)) {
@@ -225,6 +249,11 @@ public class GameMenuController extends MenuController {
             view.info(session.cheatAddSuns(Integer.parseInt(matcher.group(1))));
         } else if (input.equals("cheat remove-cooldown")) {
             view.info(session.cheatRemoveCooldown());
+        } else if (input.equals("start zombie waves")) {
+            view.info(session.startZombieWaves());
+        } else if (input.equals("show conveyor belt")) {
+            List<String> belt = session.conveyorBelt();
+            view.info(belt.isEmpty() ? "The conveyor belt is empty." : "Belt: " + String.join(", ", belt));
         } else if (input.equals("cheat add-plant-food")) {
             view.info(session.cheatAddPlantFood());
         } else if ((matcher = CHEAT_ZOMBIE.matcher(input)).matches()) {

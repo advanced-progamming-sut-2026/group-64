@@ -20,10 +20,19 @@ public class LevelSpec {
     private final boolean night;
     private final boolean whirlwind;
     private final boolean waveGraves;
+    private final SpecialRules special;
 
     public LevelSpec(Chapter chapter, int day, int totalWaves, double firstWaveBudget,
                      List<String> zombiePool, Map<Integer, TileTerrain> terrain,
                      int startingGraves, boolean night, boolean whirlwind, boolean waveGraves) {
+        this(chapter, day, totalWaves, firstWaveBudget, zombiePool, terrain,
+                startingGraves, night, whirlwind, waveGraves, null);
+    }
+
+    public LevelSpec(Chapter chapter, int day, int totalWaves, double firstWaveBudget,
+                     List<String> zombiePool, Map<Integer, TileTerrain> terrain,
+                     int startingGraves, boolean night, boolean whirlwind, boolean waveGraves,
+                     SpecialRules special) {
         this.chapter = chapter;
         this.day = day;
         this.totalWaves = totalWaves;
@@ -34,6 +43,14 @@ public class LevelSpec {
         this.night = night;
         this.whirlwind = whirlwind;
         this.waveGraves = waveGraves;
+        this.special = special;
+    }
+
+    /**
+     * The special-level rules, or null for a normal level.
+     */
+    public SpecialRules getSpecial() {
+        return special;
     }
 
     /** Encodes a 0-based (row, col) pair into one map key. */

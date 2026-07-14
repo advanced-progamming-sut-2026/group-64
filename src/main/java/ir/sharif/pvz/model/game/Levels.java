@@ -55,9 +55,12 @@ public final class Levels {
         days.add(new LevelSpec(Chapter.ANCIENT_EGYPT, 1, 3, 3, COMMON,
                 Map.of(), 2, false, false, false));
         days.add(new LevelSpec(Chapter.ANCIENT_EGYPT, 2, 3, 4, merge(COMMON, "ra", "newspaper"),
-                Map.of(), 3, false, false, false));
+                Map.of(), 3, false, false, false,
+                SpecialRules.lockedPlants(java.util.Set.of("cherry-bomb", "potato-mine"),
+                        List.of("wall-nut"))));
         days.add(new LevelSpec(Chapter.ANCIENT_EGYPT, 3, 4, 4, pool,
-                Map.of(), 3, false, true, false));
+                Map.of(), 3, false, true, false,
+                SpecialRules.timedWar(10, 120)));
         days.add(new LevelSpec(Chapter.ANCIENT_EGYPT, 4, 5, 5, merge(pool, "gargantuar"),
                 Map.of(), 4, false, true, false));
         return days;
@@ -74,9 +77,13 @@ public final class Levels {
         days.add(new LevelSpec(Chapter.FROSTBITE_CAVES, 1, 3, 4, merge(COMMON, "dodo-rider"),
                 slides, 0, false, false, false));
         days.add(new LevelSpec(Chapter.FROSTBITE_CAVES, 2, 3, 5, merge(COMMON, "dodo-rider", "hunter"),
-                slides, 0, false, false, false));
+                slides, 0, false, false, false,
+                SpecialRules.saveOurSeeds(Map.of(
+                        LevelSpec.tileKey(1, 2), "wall-nut",
+                        LevelSpec.tileKey(3, 2), "wall-nut"))));
         days.add(new LevelSpec(Chapter.FROSTBITE_CAVES, 3, 4, 5, pool,
-                moreSlides, 0, false, false, false));
+                moreSlides, 0, false, false, false,
+                SpecialRules.conveyorBelt(List.of("peashooter", "snow-pea", "wall-nut", "cherry-bomb"))));
         days.add(new LevelSpec(Chapter.FROSTBITE_CAVES, 4, 5, 6, merge(pool, "gargantuar"),
                 moreSlides, 0, false, false, false));
         return days;
@@ -97,9 +104,11 @@ public final class Levels {
         days.add(new LevelSpec(Chapter.BIG_WAVE_BEACH, 1, 3, 5, merge(COMMON, "snorkel"),
                 shallows, 0, false, false, false));
         days.add(new LevelSpec(Chapter.BIG_WAVE_BEACH, 2, 4, 5, merge(COMMON, "snorkel", "parasol"),
-                shallows, 0, false, false, false));
+                shallows, 0, false, false, false,
+                SpecialRules.deadLine(3)));
         days.add(new LevelSpec(Chapter.BIG_WAVE_BEACH, 3, 4, 6, pool,
-                deeps, 0, false, false, false));
+                deeps, 0, false, false, false,
+                SpecialRules.loveYourPlants(5)));
         days.add(new LevelSpec(Chapter.BIG_WAVE_BEACH, 4, 5, 7, merge(pool, "gargantuar"),
                 deeps, 0, false, false, false));
         return days;
@@ -114,9 +123,11 @@ public final class Levels {
         days.add(new LevelSpec(Chapter.DARK_AGES, 1, 3, 5, merge(COMMON, "jester"),
                 Map.of(), 2, true, false, true));
         days.add(new LevelSpec(Chapter.DARK_AGES, 2, 4, 6, merge(COMMON, "jester", "wizard"),
-                necromancy, 2, true, false, true));
+                necromancy, 2, true, false, true,
+                SpecialRules.nightOps()));
         days.add(new LevelSpec(Chapter.DARK_AGES, 3, 4, 6, pool,
-                necromancy, 3, true, false, true));
+                necromancy, 3, true, false, true,
+                SpecialRules.plantWhatYouGet(800, java.util.Set.of("sunflower", "sun-shroom"))));
         days.add(new LevelSpec(Chapter.DARK_AGES, 4, 5, 8, merge(pool, "gargantuar"),
                 necromancy, 3, true, false, true));
         return days;
