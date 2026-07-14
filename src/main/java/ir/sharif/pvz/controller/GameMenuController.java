@@ -150,9 +150,14 @@ public class GameMenuController extends MenuController {
     }
 
     private void startGame() {
-        session = new GameSession(context.getCurrentUser().getDifficulty(),
+        User user = context.getCurrentUser();
+        ir.sharif.pvz.model.game.LevelSpec level =
+                ir.sharif.pvz.model.game.Levels.byProgress(user.getLevelsPassed());
+        session = new GameSession(level, user.getDifficulty(),
                 new ArrayList<>(selectedPlants), new HashSet<>(boostedPlants), new Random());
+        view.info(level.title() + (level.isNight() ? " (night)" : ""));
         view.info("The game started! Zombies are coming; use 'advance time -t <count> ticks'.");
+        flushGameState();
     }
 
     // ===== in-game phase =====

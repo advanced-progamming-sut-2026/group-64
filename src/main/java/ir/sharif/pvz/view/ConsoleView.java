@@ -93,11 +93,24 @@ public class ConsoleView {
 
     private String renderTile(GameSession session, int x, int y) {
         Plant plant = session.plantAtTile(x, y);
-        String name = plant == null ? "...." : shortName(plant.getSpec().getName());
+        String name = plant == null ? terrainMark(session.terrainAt(x, y))
+                : shortName(plant.getSpec().getName());
         long zombieCount = session.getZombies().stream()
                 .filter(z -> z.getRow() == y - 1 && Math.round(z.getX()) == x).count();
         boolean sun = session.groundSuns().stream().anyMatch(s -> s.getRow() == y - 1 && s.getCol() == x - 1);
         return String.format("%s %s%s", name, zombieCount == 0 ? " " : "Z" + zombieCount, sun ? "*" : " ");
+    }
+
+    private String terrainMark(ir.sharif.pvz.model.game.TileTerrain terrain) {
+        return switch (terrain) {
+            case GRAVE -> "GRAV";
+            case WATER -> "~~~~";
+            case LILY -> "lily";
+            case SLIPPERY_UP -> "/ice";
+            case SLIPPERY_DOWN -> "\\ice";
+            case SPAWNER -> "^^^^";
+            default -> "....";
+        };
     }
 
     private String shortName(String name) {
@@ -121,10 +134,16 @@ public class ConsoleView {
             error("(" + x + ", " + y + ") is not a valid tile.");
             return;
         }
+        if (session.terrainAt(x, y) == ir.sharif.pvz.model.game.TileTerrain.GRAVE) {
+            out.println("A grave with " + session.graveHpAt(x, y) + " hp blocks this tile.");
+        } else if (session.terrainAt(x, y) != ir.sharif.pvz.model.game.TileTerrain.NORMAL) {
+            out.println("Terrain: " + session.terrainAt(x, y).name().toLowerCase(Locale.ROOT));
+        }
         Plant plant = session.plantAtTile(x, y);
         if (plant != null) {
             out.println("Plant " + plant.getSpec().getName() + ": hp " + plant.getHp()
-                    + "/" + plant.getSpec().getHp());
+                    + "/" + plant.getSpec().getHp()
+                    + (session.isPlantDisabled(x, y) ? " (disabled)" : ""));
         }
         List<Zombie> here = session.getZombies().stream()
                 .filter(z -> z.getRow() == y - 1 && Math.round(z.getX()) == x).toList();

@@ -10,7 +10,7 @@ import java.util.Map;
 public class Zombie {
 
     private final ZombieSpec spec;
-    private final int row;
+    private int row;
     private final boolean glowing;
     private double x;
     private int hp;
@@ -33,6 +33,13 @@ public class Zombie {
 
     public int getRow() {
         return row;
+    }
+
+    /**
+     * Slippery ice and the pianist can push a zombie into a neighbouring row.
+     */
+    public void setRow(int row) {
+        this.row = row;
     }
 
     public double getX() {
