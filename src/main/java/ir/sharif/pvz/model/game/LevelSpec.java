@@ -21,6 +21,7 @@ public class LevelSpec {
     private final boolean whirlwind;
     private final boolean waveGraves;
     private final SpecialRules special;
+    private double waveBudgetIncrement = 500;
 
     public LevelSpec(Chapter chapter, int day, int totalWaves, double firstWaveBudget,
                      List<String> zombiePool, Map<Integer, TileTerrain> terrain,
@@ -51,6 +52,18 @@ public class LevelSpec {
      */
     public SpecialRules getSpecial() {
         return special;
+    }
+
+    /**
+     * How much every new wave adds to the budget (course rule: at least 500).
+     */
+    public double getWaveBudgetIncrement() {
+        return waveBudgetIncrement;
+    }
+
+    LevelSpec waveIncrement(double increment) {
+        this.waveBudgetIncrement = increment;
+        return this;
     }
 
     /** Encodes a 0-based (row, col) pair into one map key. */

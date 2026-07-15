@@ -5,9 +5,10 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Schedules and spawns the zombie waves of a level: budgets grow 25% per
- * wave, the flag wave doubles, and the next wave breaks when 75% of the
- * previous one's health is gone.
+ * Schedules and spawns the zombie waves of a level. Budgets follow the course
+ * rule: the first wave costs at least 1000 and every new wave adds at least
+ * 500 (the flag wave adds twice the increment); the next wave breaks when 75%
+ * of the previous one's health is gone.
  */
 class WaveSystem {
 
@@ -52,7 +53,8 @@ class WaveSystem {
         currentWave++;
         boolean flagWave = currentWave == level.getTotalWaves();
         if (currentWave > 1) {
-            waveBudget = flagWave ? waveBudget * 2 : waveBudget * 1.25;
+            double increment = level.getWaveBudgetIncrement();
+            waveBudget += flagWave ? 2 * increment : increment;
         }
         session.eventLog().add(flagWave ? "The final wave has come." : "Wave " + currentWave + " started.");
         onWaveStart();

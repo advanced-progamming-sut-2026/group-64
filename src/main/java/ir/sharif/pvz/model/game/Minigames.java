@@ -72,10 +72,11 @@ public final class Minigames {
         List<String> pool = stage >= 3
                 ? List.of("normal", "conehead", "buckethead", "newspaper")
                 : List.of("normal", "conehead");
-        return new LevelSpec(Chapter.ANCIENT_EGYPT, 90 + stage, 2 + stage, 3 + stage, pool,
+        return new LevelSpec(Chapter.ANCIENT_EGYPT, 90 + stage, 2 + stage, 1000 + 500 * (stage - 1), pool,
                 Map.of(), 0, true, false, false,
                 SpecialRules.conveyorBelt(List.of("bowling-wallnut", "bowling-wallnut",
-                        "explode-o-nut", "giant-wallnut")));
+                        "explode-o-nut", "giant-wallnut")))
+                .waveIncrement(500 + 100 * stage);
     }
 
     private static LevelSpec zombotanyLevel(int stage) {
@@ -85,7 +86,8 @@ public final class Minigames {
             default -> List.of("peashooter-zombie", "wallnut-zombie", "jalapeno-zombie",
                     "squash-zombie", "conehead");
         };
-        return new LevelSpec(Chapter.ANCIENT_EGYPT, 90 + stage, 2 + stage, 3 + 2 * stage, pool,
-                Map.of(), 0, false, false, false);
+        return new LevelSpec(Chapter.ANCIENT_EGYPT, 90 + stage, 2 + stage, 1000 + 500 * (stage - 1), pool,
+                Map.of(), 0, false, false, false)
+                .waveIncrement(500 + 100 * stage);
     }
 }

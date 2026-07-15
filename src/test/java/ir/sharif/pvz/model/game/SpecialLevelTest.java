@@ -22,14 +22,46 @@ class SpecialLevelTest {
     }
 
     @Test
-    void allEightSpecialTypesAppearInTheAdventure() {
-        List<SpecialRules.Type> seen = Levels.adventure().stream()
+    void dayThreeOfEveryChapterIsItsSpecialLevel() {
+        List<SpecialRules.Type> placed = Levels.adventure().stream()
+                .filter(level -> level.getDay() == 3)
                 .map(LevelSpec::getSpecial)
-                .filter(java.util.Objects::nonNull)
-                .map(SpecialRules::getType)
+                .map(rules -> {
+                    assertTrue(rules != null, "day 3 must carry the chapter's special level");
+                    return rules.getType();
+                })
                 .distinct()
                 .toList();
-        assertEquals(SpecialRules.Type.values().length, seen.size());
+        assertEquals(4, placed.size());
+        for (LevelSpec level : Levels.adventure()) {
+            if (level.getDay() != 3) {
+                assertEquals(null, level.getSpecial(),
+                        level.title() + " should be a normal level");
+            }
+        }
+    }
+
+    @Test
+    void waveBudgetsFollowTheCourseRuleAndGetHarderEachDay() {
+        for (Chapter chapter : Chapter.values()) {
+            double previousBudget = 0;
+            int previousWaves = 0;
+            for (LevelSpec level : Levels.adventure()) {
+                if (level.getChapter() != chapter) {
+                    continue;
+                }
+                assertTrue(level.getFirstWaveBudget() >= 1000,
+                        level.title() + " first wave must cost at least 1000");
+                assertTrue(level.getWaveBudgetIncrement() >= 500,
+                        level.title() + " must add at least 500 per wave");
+                assertTrue(level.getFirstWaveBudget() > previousBudget,
+                        level.title() + " must be harder than the previous day");
+                assertTrue(level.getTotalWaves() >= previousWaves,
+                        level.title() + " must not have fewer waves than the previous day");
+                previousBudget = level.getFirstWaveBudget();
+                previousWaves = level.getTotalWaves();
+            }
+        }
     }
 
     @Test

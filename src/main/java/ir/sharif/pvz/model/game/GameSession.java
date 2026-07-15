@@ -81,7 +81,7 @@ public class GameSession {
     }
 
     private static LevelSpec defaultLevel() {
-        return new LevelSpec(Chapter.ANCIENT_EGYPT, 1, 4, 4,
+        return new LevelSpec(Chapter.ANCIENT_EGYPT, 1, 4, 1000,
                 List.of("normal", "conehead", "buckethead", "knight", "blockhead", "imp",
                         "gargantuar", "all-star"),
                 Map.of(), 0, false, false, false);
