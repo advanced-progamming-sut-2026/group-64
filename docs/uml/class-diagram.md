@@ -1,372 +1,303 @@
-# دیاگرام کلاس اولیه (فاز صفر)
+# دیاگرام کلاس (نسخه‌ی نهایی فاز ۱)
 
-این دیاگرام معماری اولیه‌ی پیشنهادی برای فاز ۱ (نسخه‌ی CLI) است. طبق سند پروژه، این نقطه‌ی شروع طراحی است
-و در حین پیاده‌سازی می‌تواند تغییر کند؛ جزئیات هر زیرسیستم (گیاهان، زامبی‌ها، مینی‌گیم‌ها و ...) به‌مرور که
-پیاده‌سازی می‌شوند دقیق‌تر خواهند شد.
+این دیاگرام معماری پیاده‌سازی‌شده در پایان فاز ۱ است (نسخه‌ی اولیه‌ی فاز صفر پس از پیاده‌سازی، مطابق کد به‌روز شد).
+معماری MVC است: `controller` (منوها و حلقه‌ی اصلی)، `model` (دامنه + سرویس‌ها)، `model.game` (موتور بازی) و `view` (تنها نقطه‌ی چاپ).
 
 ```mermaid
 classDiagram
-    %% ===== Application / CLI layer =====
-    class Main {
-        +main(args) void
+    %% ===== Application / controllers =====
+    class GameApp {
+        +run() void
     }
-    class CommandDispatcher {
-        -Map~String, CommandHandler~ handlers
-        +dispatch(String rawInput) void
-    }
-    class SessionContext {
+    class AppContext {
         -User currentUser
-        -MenuManager menuManager
-        -GameSession activeGame
+        -MenuType currentMenu
+        +getAuthService() AuthService
+        +getProfileService() ProfileService
+        +getGreenhouseService() GreenhouseService
+        +getShopService() ShopService
+        +getQuestService() QuestService
     }
+    class MenuController {
+        <<abstract>>
+        +handle(String rawInput) void
+        #handleCommand(String) void*
+        #allowedTargets() Set~MenuType~*
+        #onExit() void*
+    }
+    class SignupMenuController
+    class LoginMenuController
+    class MainMenuController
+    class GameMenuController {
+        #GameSession session
+        #handleSelectionCommand(String) void
+        #applyOutcome(User) void
+    }
+    class MinigameMenuController
+    class CollectionMenuController
+    class SettingsMenuController
+    class NewsMenuController
+    class ProfileMenuController
+    class GreenhouseMenuController
+    class ShopMenuController
+    class LeaderboardMenuController
+    class TravelLogMenuController
 
-    Main --> CommandDispatcher
-    CommandDispatcher --> SessionContext
+    MenuController <|-- SignupMenuController
+    MenuController <|-- LoginMenuController
+    MenuController <|-- MainMenuController
+    MenuController <|-- GameMenuController
+    GameMenuController <|-- MinigameMenuController
+    MenuController <|-- CollectionMenuController
+    MenuController <|-- SettingsMenuController
+    MenuController <|-- NewsMenuController
+    MenuController <|-- ProfileMenuController
+    MenuController <|-- GreenhouseMenuController
+    MenuController <|-- ShopMenuController
+    MenuController <|-- LeaderboardMenuController
+    MenuController <|-- TravelLogMenuController
+    GameApp --> AppContext
+    GameApp --> MenuController
+    MenuController --> AppContext
+    MenuController --> ConsoleView
 
-    %% ===== Auth / User =====
+    %% ===== Users / services =====
     class User {
         -String username
         -String passwordHash
-        -String nickname
-        -String email
-        -Gender gender
-        -int difficultyLevel
-        -Wallet wallet
-        -PlayerStats stats
-        -Inventory inventory
+        -int difficulty
+        -int coins
+        -int diamonds
+        -int levelsPassed
+        -int maxMewPoints
+        -int minigamesCompleted
+        -int questsCompleted
         -Set~String~ unlockedPlants
         -Set~String~ observedZombies
+        -Map~String,Integer~ seedPackets
+        -List~GreenhousePot~ greenhousePots
+        -Set~String~ storedBoosts
+        -Map~String,String~ claimedQuests
+        -Map~String,Integer~ minigameProgress
+        -List~NewsItem~ news
     }
-    class Wallet {
-        -int coins
-        -int gems
+    class UserRepository {
+        +add(User) void
+        +findByUsername(String) User
+        +all() List~User~
+        +save() void
     }
-    class PlayerStats {
-        -int gamesPlayed
-        -int stagesCompleted
-        -int highestMowPoint
-        -int minigamesCompleted
-        -int questsCompleted
-    }
-    class Inventory {
-        -int plantFoodCount
-        -Map~String, Integer~ seedPackets
-        -int pots
-    }
-    class AuthService {
-        +register(RegisterRequest) User
-        +login(String username, String password) User
-        +forgetPassword(String username, String email) SecurityQuestion
-        +changePassword(User, String oldPw, String newPw) void
-    }
-    class SecurityQuestion {
-        -int questionNumber
-        -String answerHash
-    }
-
-    User "1" *-- "1" Wallet
-    User "1" *-- "1" PlayerStats
-    User "1" *-- "1" Inventory
-    User "1" --> "1" SecurityQuestion
-    AuthService --> User
-
-    %% ===== Menu system =====
-    class MenuManager {
-        -Deque~Menu~ navigationStack
-        +enter(Menu) void
-        +exit() void
-        +showCurrent() Menu
-    }
-    class Menu {
-        <<abstract>>
-        +handle(String command) void
-    }
-    class SignupMenu
-    class LoginMenu
-    class MainMenu
-    class SettingsMenu
-    class NewsMenu
-    class ProfileMenu
-    class CollectionMenu
-    class PlantSelectionMenu
-    class GreenhouseMenu
-    class ShopMenu
-    class TravelLogMenu
-    class LeaderboardMenu
-
-    Menu <|-- SignupMenu
-    Menu <|-- LoginMenu
-    Menu <|-- MainMenu
-    Menu <|-- SettingsMenu
-    Menu <|-- NewsMenu
-    Menu <|-- ProfileMenu
-    Menu <|-- CollectionMenu
-    Menu <|-- PlantSelectionMenu
-    Menu <|-- GreenhouseMenu
-    Menu <|-- ShopMenu
-    Menu <|-- TravelLogMenu
-    Menu <|-- LeaderboardMenu
-    MenuManager --> Menu
-
-    %% ===== Core game engine =====
-    class GameSession {
-        -Board board
-        -TimeManager timeManager
-        -SunManager sunManager
-        -WaveManager waveManager
-        -List~Plant~ plantedPlants
-        -List~Zombie~ zombies
-        -int plantFoodAvailable
-        +advanceTime(int ticks) void
-        +isWon() boolean
-        +isLost() boolean
-    }
-    class Board {
-        -int rows
-        -int cols
-        -Tile[][] tiles
-    }
-    class Tile {
-        -int x
-        -int y
-        -Plant plant
-        -List~Zombie~ zombiesOnTile
-        -boolean lawnMowerAvailable
-        -TileTerrain terrain
-    }
-    class TimeManager {
-        -long tickCount
-        +tick() void
-    }
-    class SunManager {
-        -int sunAmount
-        -List~FallingSun~ fallingSuns
-        +scheduleNextDrop() void
-        +collectSun(int x, int y) void
-    }
-    class WaveManager {
-        -int currentWave
-        -int totalWaves
-        -double waveDifficulty
-        +startNextWave() void
-        +spawnZombiesForWave() void
-    }
-    class LawnMower {
-        -int row
-        -boolean used
-        +trigger() void
-    }
-
-    GameSession *-- Board
-    GameSession *-- TimeManager
-    GameSession *-- SunManager
-    GameSession *-- WaveManager
-    Board *-- Tile
-    Board *-- LawnMower
-
-    %% ===== Plants =====
-    class Plant {
-        <<abstract>>
-        -String type
-        -int level
-        -int cost
-        -int cooldownSeconds
-        -Set~PlantTag~ tags
-        +onPlanted(Tile) void
-        +onTick() void
-        +useFood() void
-    }
-    class SunProducerPlant
-    class ShooterPlant
-    class LobberPlant
-    class ExplosivePlant
-    class MeleeAttackerPlant
-    class WallNutPlant
-    class ModifierPlant
-    class StrikeThroughPlant
-    class HomingPlant
-    class MintPlant
-
-    Plant <|-- SunProducerPlant
-    Plant <|-- ShooterPlant
-    Plant <|-- LobberPlant
-    Plant <|-- ExplosivePlant
-    Plant <|-- MeleeAttackerPlant
-    Plant <|-- WallNutPlant
-    Plant <|-- ModifierPlant
-    Plant <|-- StrikeThroughPlant
-    Plant <|-- HomingPlant
-    Plant <|-- MintPlant
-
-    %% ===== Zombies =====
-    class Zombie {
-        <<abstract>>
-        -String type
-        -int health
-        -List~ArmorPiece~ armorPieces
-        -Map~String, Effect~ activeEffects
-        +onTick() void
-        +attack(Plant) void
-    }
-    class ArmorPiece {
-        -String name
-        -int health
-    }
-    class Gargantuar
-    class Imp
-    class RegularZombie
-    class ChapterSpecificZombie
-
-    Zombie *-- ArmorPiece
-    Zombie <|-- Gargantuar
-    Zombie <|-- Imp
-    Zombie <|-- RegularZombie
-    Zombie <|-- ChapterSpecificZombie
-
-    GameSession --> Plant
-    GameSession --> Zombie
-
-    %% ===== Chapters / Levels =====
-    class Chapter {
-        -String name
-        -List~Level~ levels
-    }
-    class Level {
-        -int index
-        -LevelType type
-        +buildGameSession() GameSession
-    }
-    class SpecialLevel {
-        -SpecialLevelKind kind
-    }
-    Level <|-- SpecialLevel
-    Chapter *-- Level
-
-    %% ===== Greenhouse =====
-    class Greenhouse {
-        -GreenhousePot[][] pots
-        +plantPot(int x, int y) void
-        +collect(int x, int y) void
-        +grow(int x, int y) void
-    }
+    class AuthService
+    class ProfileService
+    class SessionStore
     class GreenhousePot {
         -boolean unlocked
-        -String growingPlantType
-        -LocalDateTime readyAt
-    }
-    Greenhouse *-- GreenhousePot
-
-    %% ===== Shop =====
-    class Shop {
-        -List~ShopItem~ permanentItems
-        -DailyOffer dailyOffer
-        +buy(String itemId, int count, String plantType) void
-    }
-    class ShopItem {
-        -String id
-        -int coinPrice
-        -int gemPrice
-    }
-    class DailyOffer {
         -String plantType
-        -LocalDate offerDate
-        -boolean purchasedToday
+        -long readyAtMillis
     }
-    Shop *-- ShopItem
-    Shop *-- DailyOffer
-
-    %% ===== Quests / Leaderboard =====
-    class QuestManager {
-        -List~Quest~ quests
-        +checkProgress(User) void
+    class GreenhouseService {
+        +plantPot(User, int x, int y) String
+        +collect(User, int x, int y) String
+        +grow(User, int x, int y) String
+    }
+    class ShopService {
+        +list() List~String~
+        +daily(User) List~String~
+        +buy(User, String itemId, int count, String plantType) String
     }
     class Quest {
-        -QuestPriority priority
-        -QuestReward reward
+        -Priority priority
+        -boolean daily
+        +isMet(User, String today) boolean
+        +grant(User) String
     }
-    class Leaderboard {
-        +topEntries(String sortBy, boolean ascending) List~LeaderboardEntry~
+    class QuestCatalog
+    class QuestService {
+        +lines(User, String page) List~String~
+        +claim(User, String questId) String
     }
-    class LeaderboardEntry {
-        -String username
-        -String lastLevelReached
-        -int minigamesCompleted
-        -int questsCompleted
-        -int highestMowPoint
+    class LeaderboardService {
+        +table(Column sortBy, boolean ascending) List~String~
     }
-    QuestManager *-- Quest
-    Leaderboard *-- LeaderboardEntry
+    class NewsItem
 
-    %% ===== Minigames =====
-    class Minigame {
-        <<abstract>>
-        -int stageIndex
-        +play() void
-    }
-    class Vasebreaker
-    class WallnutBowling
-    class IZombie
-    class Beghouled
-    class Zombotany
+    User "1" *-- "20" GreenhousePot
+    User "1" *-- "*" NewsItem
+    AuthService --> UserRepository
+    ProfileService --> UserRepository
+    GreenhouseService --> UserRepository
+    ShopService --> UserRepository
+    QuestService --> UserRepository
+    QuestService --> QuestCatalog
+    QuestCatalog *-- Quest
+    LeaderboardService --> UserRepository
 
-    Minigame <|-- Vasebreaker
-    Minigame <|-- WallnutBowling
-    Minigame <|-- IZombie
-    Minigame <|-- Beghouled
-    Minigame <|-- Zombotany
-
-    %% ===== News =====
-    class NewsItem {
-        -String id
-        -String message
-        -LocalDateTime createdAt
+    %% ===== Game engine =====
+    class GameSession {
+        +advance(int ticks) void
+        +plant(String type, int x, int y) String
+        +pluck(int x, int y) String
+        +feedPlant(int x, int y) String
+        +collectSun(int x, int y) String
+        +breakVase(int x, int y) String
+        +placeZombie(String, int, int) String
+        +startZombieWaves() String
+        +isWon() boolean
+        +isLost() boolean
+        +drainEvents() List~String~
     }
-    class NewsFeed {
-        -List~NewsItem~ items
-        +publish(NewsItem) void
-        +unreadFor(User) List~NewsItem~
-        +markAllRead(User) void
+    class Board {
+        -TileTerrain[][] terrain
+        -int[][] graveHp
+        +rejection(PlantSpec, int, int) String
+        +raiseGrave(int, int, String, boolean) void
+        +slideIfOnIce(Zombie) void
     }
-    NewsFeed *-- NewsItem
-    NewsFeed --> User
-
-    %% ===== Score game (بازی امتیازی) =====
-    class ScoreGame {
-        -GameSession session
-        -List~ScoringPattern~ patterns
-        +totalMowPoints() int
+    class SunSystem {
+        +tick(double dt, double seconds) void
+        +producePlantSuns(GameSession) void
     }
-    class ScoringPattern {
+    class WaveSystem {
+        +tick(double seconds) void
+        +allWavesSpawned() boolean
+    }
+    class PlantCombat {
+        +tick() void
+        +applyPlantFood(Plant) void
+    }
+    class ZombieAbilities {
+        +tick(double dt) void
+        +onDeath(Zombie) void
+    }
+    class SpecialLevelEngine {
+        +tick(double seconds) void
+        +startZombieWaves() String
+    }
+    class ScoreTracker {
+        +onSpawn(Zombie, long tick) void
+        +onKill(Zombie, long tick) void
+        +breakdown() List~String~
+    }
+    class MinigameLogic {
         <<interface>>
-        +onZombieKilled(KillEvent) int
+        +init(GameSession) void
+        +tick(GameSession, double) void
+        +plantingRejection(int, int) String
+        +onHouseReached(GameSession, Zombie) boolean
     }
-    class MultiKillWithOneShot
-    class FastKill
-    class SimultaneousKill
+    class VasebreakerGame
+    class BowlingGame
+    class IZombieGame
 
-    ScoringPattern <|.. MultiKillWithOneShot
-    ScoringPattern <|.. FastKill
-    ScoringPattern <|.. SimultaneousKill
-    ScoreGame *-- ScoringPattern
-    ScoreGame --> GameSession
+    GameSession *-- Board
+    GameSession *-- SunSystem
+    GameSession *-- WaveSystem
+    GameSession *-- PlantCombat
+    GameSession *-- ZombieAbilities
+    GameSession *-- SpecialLevelEngine
+    GameSession o-- ScoreTracker
+    GameSession o-- MinigameLogic
+    MinigameLogic <|.. VasebreakerGame
+    MinigameLogic <|.. BowlingGame
+    MinigameLogic <|.. IZombieGame
+    GameMenuController --> GameSession
 
-    %% ===== Persistence =====
-    class PersistenceManager {
-        +saveAllUsers(List~User~) void
-        +loadAllUsers() List~User~
-        +saveGameState(GameSession) void
+    %% ===== Entities and data =====
+    class GameCatalog {
+        +plant(String) PlantSpec
+        +zombie(String) ZombieSpec
     }
-    PersistenceManager --> User
-    PersistenceManager --> GameSession
+    class PlantSpec {
+        -String name
+        -PlantCategory category
+        -int sunCost
+        -List~String~ tags
+    }
+    class ZombieSpec {
+        -String name
+        -int hp
+        -Map~String,Integer~ armor
+        -int waveCost
+    }
+    class Plant {
+        -int hp
+        -double attackCooldownSeconds
+    }
+    class Zombie {
+        -int row
+        -double x
+        -int hp
+        -Map~String,Integer~ armor
+        +damage(int) boolean
+    }
+    class Sun {
+        -Kind kind
+        +isOnGround() boolean
+    }
+    class PlantCategory {
+        <<enumeration>>
+    }
+    class TileTerrain {
+        <<enumeration>>
+    }
 
-    SessionContext --> User
-    SessionContext --> GameSession
-    SessionContext --> MenuManager
+    GameCatalog *-- PlantSpec
+    GameCatalog *-- ZombieSpec
+    Plant --> PlantSpec
+    Zombie --> ZombieSpec
+    PlantSpec --> PlantCategory
+    Board --> TileTerrain
+    GameSession --> Plant
+    GameSession --> Zombie
+    SunSystem *-- Sun
+
+    %% ===== Levels =====
+    class Chapter {
+        <<enumeration>>
+    }
+    class LevelSpec {
+        -Chapter chapter
+        -int day
+        -int totalWaves
+        -List~String~ zombiePool
+        -Map~Integer,TileTerrain~ terrain
+        -SpecialRules special
+    }
+    class SpecialRules {
+        -Type type
+        +conveyorBelt(...)$ SpecialRules
+        +timedWar(...)$ SpecialRules
+        +plantWhatYouGet(...)$ SpecialRules
+    }
+    class Levels {
+        +adventure()$ List~LevelSpec~
+        +byProgress(int)$ LevelSpec
+        +scoreGame()$ LevelSpec
+    }
+    class Minigames {
+        +start(String, int, int, List, Random)$ GameSession
+    }
+
+    Levels *-- LevelSpec
+    LevelSpec --> Chapter
+    LevelSpec o-- SpecialRules
+    SpecialLevelEngine --> SpecialRules
+    Minigames --> GameSession
+    GameSession --> LevelSpec
+
+    %% ===== View =====
+    class ConsoleView {
+        +info(String) void
+        +error(String) void
+        +showMap(GameSession) void
+        +showZombiesInfo(List~Zombie~) void
+        +showUserInfo(User) void
+    }
 ```
 
 ## یادداشت‌های طراحی
 
-- **الگوهای طراحی مورد استفاده**: State (Menu/MenuManager برای پیمایش منوها)، Strategy (SpecialLevel، انواع مینی‌گیم، و `ScoringPattern` برای ۵ الگوی امتیازگیری بازی امتیازی)، Template Method (چرخه‌ی تیک `Plant.onTick` / `Zombie.onTick`).
-- **گیاهان و زامبی‌ها** به‌جای کلاس جدا برای هر مورد (که با ده‌ها گیاه/زامبی حجم کلاس را غیرقابل مدیریت می‌کند)، از ترکیب دسته‌بندی (کلاس پایه‌ی هر دسته) + تگ‌ها (به‌صورت `Set<PlantTag>` یا رفتارهای composable) استفاده می‌شود؛ مقادیر عددی (HP، آسیب، هزینه) از `plants.csv` / `zombies.csv` در زمان اجرا بارگذاری می‌شوند، نه هاردکد در کد.
-- **PersistenceManager** روی Gson می‌ایستد و کل گراف `User` (شامل `Wallet`/`Inventory`/`PlayerStats`) و وضعیت جاری بازی را serialize می‌کند تا طبق سند، اطلاعات بین اجراهای برنامه باقی بماند.
-- این دیاگرام «کلاس‌های اصلی و روابط سطح بالا» را نشان می‌دهد؛ فیلدها/متدهای کامل، به‌خصوص برای فصل‌ها، مراحل ویژه و مینی‌گیم‌ها، در حین پیاده‌سازی هر بخش دقیق‌تر می‌شوند.
+- **الگوهای طراحی**: State (منوها با `MenuType` و `MenuController`)، Strategy (`ScoringPattern`های `ScoreTracker`، `MinigameLogic`، `SpecialRules` برای ۸ نوع مرحله‌ی ویژه)، Template Method (`MenuController.handle` و `GameMenuController.applyOutcome` که `MinigameMenuController` بازتعریفش می‌کند)، Factory (`Levels` و `Minigames`)، Singleton (`GameCatalog`).
+- **داده‌محوری**: مشخصات گیاهان و زامبی‌ها در `resources/data/plants.csv` و `zombies.csv` است؛ افزودن گونه‌ی جدید بدون تغییر کد انجام می‌شود و رفتارهای خاص با تگ/نام در `PlantCombat` و `ZombieAbilities` سوار می‌شوند.
+- **موتور تیک‌محور**: هر ثانیه ۱۰ تیک؛ `GameSession` هماهنگ‌کننده است و منطق در همکارهایش (`Board`، `SunSystem`، `WaveSystem`، `PlantCombat`، `ZombieAbilities`، `SpecialLevelEngine`، `MinigameLogic`) تقسیم شده تا محدودیت‌های لینتر (متد ≤ ۵۰ خط، کلاس ≤ ۵۰۰ NCSS) رعایت شود.
+- **ذخیره‌سازی**: کل گراف `User` (کیف پول، گلخانه، کوئست‌ها، پیشرفت مینی‌گیم، اخبار) با Gson در `data/users.json` سریال می‌شود و بین اجراها می‌ماند.
