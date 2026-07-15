@@ -42,6 +42,7 @@ public class User {
     private String lastDailyPurchaseDate;
     private Map<String, String> claimedQuests = new HashMap<>();
     private String lastPlayedDate;
+    private Map<String, Integer> minigameProgress = new HashMap<>();
 
     private static Set<String> defaultPlants() {
         return new LinkedHashSet<>(
@@ -307,6 +308,16 @@ public class User {
             claimedQuests = new HashMap<>();
         }
         return claimedQuests;
+    }
+
+    /**
+     * Highest completed stage per minigame name; created lazily.
+     */
+    public Map<String, Integer> getMinigameProgress() {
+        if (minigameProgress == null) {
+            minigameProgress = new HashMap<>();
+        }
+        return minigameProgress;
     }
 
     public String getLastPlayedDate() {

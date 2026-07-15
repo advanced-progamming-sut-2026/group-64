@@ -16,7 +16,8 @@ public enum MenuType {
     SHOP("shop"),
     SCORE_GAME("score-game"),
     LEADERBOARD("leaderboard"),
-    TRAVEL_LOG("travel-log");
+    TRAVEL_LOG("travel-log"),
+    MINIGAME("minigame");
 
     private final String id;
 

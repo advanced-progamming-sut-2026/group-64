@@ -15,15 +15,18 @@ import java.util.Set;
  */
 class ZombieAbilities {
 
-    private static final Map<String, Double> PERIODS = Map.of(
-            "ra", 2.0,
-            "explorer", 1.0,
-            "tombraiser", 4.0,
-            "hunter", 5.0,
-            "octopus", 6.0,
-            "fisherman", 5.0,
-            "wizard", 6.0,
-            "king", 8.0);
+    private static final Map<String, Double> PERIODS = Map.ofEntries(
+            Map.entry("ra", 2.0),
+            Map.entry("explorer", 1.0),
+            Map.entry("tombraiser", 4.0),
+            Map.entry("hunter", 5.0),
+            Map.entry("octopus", 6.0),
+            Map.entry("fisherman", 5.0),
+            Map.entry("wizard", 6.0),
+            Map.entry("king", 8.0),
+            Map.entry("peashooter-zombie", 1.5),
+            Map.entry("jalapeno-zombie", 10.0),
+            Map.entry("squash-zombie", 0.2));
 
     private final GameSession session;
     private final Random random;
@@ -76,7 +79,43 @@ class ZombieAbilities {
             case "fisherman" -> reelPlant(zombie);
             case "wizard" -> sheepPlant(zombie);
             case "king" -> knightZombie(zombie);
+            case "peashooter-zombie" -> shootPlant(zombie);
+            case "jalapeno-zombie" -> burnRow(zombie);
+            case "squash-zombie" -> squashAhead(zombie);
             default -> { }
+        }
+    }
+
+    /** The zombotany peashooter head pelts the nearest plant of its row. */
+    private void shootPlant(Zombie zombie) {
+        Plant target = nearestPlantInRow(zombie);
+        if (target != null) {
+            session.plantHit(target, 20);
+        }
+    }
+
+    /** Ten seconds after entering, the jalapeno zombie torches its whole row and dies. */
+    private void burnRow(Zombie zombie) {
+        session.eventLog().add("The jalapeno zombie ignited lane " + (zombie.getRow() + 1) + "!");
+        for (Plant plant : session.plantedPlants()) {
+            if (plant.getRow() == zombie.getRow()) {
+                session.plantHit(plant, plant.getHp());
+            }
+        }
+        session.slayZombie(zombie);
+    }
+
+    /** The squash zombie flattens the plant it reaches, dying with it. */
+    private void squashAhead(Zombie zombie) {
+        int col = (int) Math.round(zombie.getX()) - 1;
+        if (col < 0 || col >= GameSession.COLS) {
+            return;
+        }
+        Plant plant = session.gridArray()[zombie.getRow()][col];
+        if (plant != null) {
+            session.eventLog().add("The squash zombie flattened " + plant.getSpec().getName() + "!");
+            session.plantHit(plant, plant.getHp());
+            session.slayZombie(zombie);
         }
     }
 

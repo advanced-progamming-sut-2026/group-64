@@ -37,12 +37,16 @@ public class GameMenuController extends MenuController {
     private static final Pattern CHEAT_SUNS = Pattern.compile("^cheat\\s+add\\s+-n\\s+(\\d+)\\s+suns$");
     private static final Pattern CHEAT_ZOMBIE =
             Pattern.compile("^cheat\\s+spawn-zombie\\s+-t\\s+(\\S+)\\s+-l\\s+" + LOCATION + "$");
+    private static final Pattern BREAK_VASE = Pattern.compile("^break\\s+vase\\s+-l\\s+" + LOCATION + "$");
+    private static final Pattern TAKE_PACKET = Pattern.compile("^take\\s+packet\\s+-l\\s+" + LOCATION + "$");
+    private static final Pattern PLACE_ZOMBIE =
+            Pattern.compile("^place\\s+zombie\\s+-t\\s+(\\S+)\\s+-l\\s+" + LOCATION + "$");
 
-    private final Set<String> selectedPlants = new LinkedHashSet<>();
+    protected final Set<String> selectedPlants = new LinkedHashSet<>();
     private final Set<String> boostedPlants = new HashSet<>();
     private final MenuType menuType;
     private final boolean scoreMode;
-    private GameSession session;
+    protected GameSession session;
 
     public GameMenuController(AppContext context, ConsoleView view) {
         this(context, view, MenuType.GAME, false);
@@ -91,7 +95,7 @@ public class GameMenuController extends MenuController {
 
     // ===== plant selection phase =====
 
-    private void handleSelectionCommand(String input) {
+    protected void handleSelectionCommand(String input) {
         Matcher matcher;
         if (input.equals("show all plants")) {
             showPlantList(GameCatalog.get().allPlants().stream().map(PlantSpec::getName).toList());
@@ -261,6 +265,22 @@ public class GameMenuController extends MenuController {
         } else if (input.equals("release the nuke")) {
             view.info(session.releaseTheNuke());
         } else {
+            return handleMinigameCommand(input);
+        }
+        return true;
+    }
+
+    private boolean handleMinigameCommand(String input) {
+        Matcher matcher;
+        if ((matcher = BREAK_VASE.matcher(input)).matches()) {
+            view.info(session.breakVase(group(matcher, 1), group(matcher, 2)));
+        } else if ((matcher = TAKE_PACKET.matcher(input)).matches()) {
+            view.info(session.takePacket(group(matcher, 1), group(matcher, 2)));
+        } else if ((matcher = PLACE_ZOMBIE.matcher(input)).matches()) {
+            view.info(session.placeZombie(matcher.group(1), group(matcher, 2), group(matcher, 3)));
+        } else if (input.equals("show vases")) {
+            session.vasesInfo().forEach(view::info);
+        } else {
             return false;
         }
         return true;
@@ -273,7 +293,7 @@ public class GameMenuController extends MenuController {
     /**
      * Prints engine events and, when the game just ended, applies the rewards to the user.
      */
-    private void flushGameState() {
+    protected void flushGameState() {
         for (String event : session.drainEvents()) {
             view.info(event);
         }
@@ -292,6 +312,17 @@ public class GameMenuController extends MenuController {
             }
         }
         user.getObservedZombies().addAll(session.getSeenZombieTypes());
+        applyOutcome(user);
+        context.getUserRepository().save();
+        session = null;
+        boostedPlants.clear();
+        view.info("You are back in the " + menuType.id() + " menu.");
+    }
+
+    /**
+     * What the finished game means for the player; minigames override this.
+     */
+    protected void applyOutcome(User user) {
         if (scoreMode) {
             finishScoreGame(user);
         } else if (session.isWon()) {
@@ -301,10 +332,6 @@ public class GameMenuController extends MenuController {
         } else {
             view.info("You lost! Better luck next time.");
         }
-        context.getUserRepository().save();
-        session = null;
-        boostedPlants.clear();
-        view.info("You are back in the plant selection of the " + menuType.id() + " menu.");
     }
 
     private void finishScoreGame(User user) {

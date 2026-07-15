@@ -13,6 +13,54 @@ class PlantCombat {
         this.session = session;
     }
 
+    /**
+     * The plant-food (and boost) effect of each category.
+     */
+    void applyPlantFood(Plant plant) {
+        switch (plant.getSpec().getCategory()) {
+            case SUN_PRODUCER -> session.setSunAmount(session.getSunAmount() + 150);
+            case WALL -> plant.heal();
+            case EXPLOSIVE, TRAP -> session.explodePlant(plant, 1);
+            case MELEE -> {
+                Zombie front = session.frontmost(plant.getRow(), plant.getCol() + 1.0);
+                if (front != null) {
+                    session.slayZombie(front);
+                }
+            }
+            case MODIFIER, MINT -> explodeAround(plant, 150);
+            default -> session.damageRowFrom(plant.getRow(), plant.getCol() + 1.0, 300);
+        }
+    }
+
+    private void explodeAround(Plant plant, int damage) {
+        for (Zombie zombie : session.getZombies()) {
+            if (Math.abs(zombie.getRow() - plant.getRow()) <= 1
+                    && Math.abs(zombie.getX() - (plant.getCol() + 1)) <= 1.5) {
+                session.hitZombie(zombie, damage);
+            }
+        }
+    }
+
+    /**
+     * The blast of a radioactive sun collected mid-air: it hurts zombies in a
+     * 5x5 square and plants in a 3x3 square around the tile.
+     */
+    void radioactiveBlast(int row, int col) {
+        for (Zombie zombie : session.getZombies()) {
+            if (Math.abs(zombie.getRow() - row) <= 2 && Math.abs(zombie.getX() - (col + 1)) <= 2.5) {
+                session.hitZombie(zombie, 150);
+            }
+        }
+        for (int r = Math.max(0, row - 1); r <= Math.min(GameSession.ROWS - 1, row + 1); r++) {
+            for (int c = Math.max(0, col - 1); c <= Math.min(GameSession.COLS - 1, col + 1); c++) {
+                Plant plant = session.gridArray()[r][c];
+                if (plant != null) {
+                    session.plantHit(plant, 80);
+                }
+            }
+        }
+    }
+
     void tick() {
         for (Plant plant : session.plantedPlants()) {
             if (session.gridArray()[plant.getRow()][plant.getCol()] == plant

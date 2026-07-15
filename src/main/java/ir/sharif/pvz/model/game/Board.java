@@ -82,6 +82,28 @@ class Board {
     }
 
     /**
+     * Slippery ice pushes a walking zombie into the neighbouring lane;
+     * the flying dodo rider glides over it.
+     */
+    void slideIfOnIce(Zombie zombie) {
+        if (zombie.getSpec().getName().equals("dodo-rider")) {
+            return;
+        }
+        int col = (int) Math.round(zombie.getX()) - 1;
+        if (col < 0 || col >= GameSession.COLS) {
+            return;
+        }
+        TileTerrain kind = terrain[zombie.getRow()][col];
+        if (kind == TileTerrain.SLIPPERY_UP && zombie.getRow() > 0) {
+            zombie.setRow(zombie.getRow() - 1);
+            events.add("Zombie " + zombie.getSpec().getName() + " slid to lane " + (zombie.getRow() + 1) + ".");
+        } else if (kind == TileTerrain.SLIPPERY_DOWN && zombie.getRow() < GameSession.ROWS - 1) {
+            zombie.setRow(zombie.getRow() + 1);
+            events.add("Zombie " + zombie.getSpec().getName() + " slid to lane " + (zombie.getRow() + 1) + ".");
+        }
+    }
+
+    /**
      * The first grave standing between a shooter and its target, if any.
      */
     int graveColumnBetween(int row, int fromCol, double targetX) {

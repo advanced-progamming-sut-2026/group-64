@@ -1,7 +1,6 @@
 package ir.sharif.pvz.controller;
 
 import ir.sharif.pvz.view.ConsoleView;
-import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +25,7 @@ public class TravelLogMenuController extends MenuController {
 
     @Override
     protected Set<MenuType> allowedTargets() {
-        return Set.of();
+        return Set.of(MenuType.MINIGAME);
     }
 
     @Override
@@ -51,8 +50,12 @@ public class TravelLogMenuController extends MenuController {
 
     private void showPage(String page) {
         if (page.equals("minigames")) {
-            List.of("Vasebreaker", "Wallnut Bowling", "i, Zombie", "Beghouled", "Zombotany")
-                    .forEach(name -> view.info("- " + name + " (3 stages; coming with the minigames update)"));
+            view.info("Play them with: menu enter minigame");
+            for (String name : ir.sharif.pvz.model.game.Minigames.NAMES) {
+                int progress = context.getCurrentUser().getMinigameProgress().getOrDefault(name, 0);
+                view.info("- " + name + ": " + progress + "/"
+                        + ir.sharif.pvz.model.game.Minigames.STAGES + " stages done");
+            }
             return;
         }
         context.getQuestService().lines(context.getCurrentUser(), page).forEach(view::info);

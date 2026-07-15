@@ -33,6 +33,25 @@ class SunSystem {
         return Math.max(6 + 0.05 * seconds, 12) * difficultyUp;
     }
 
+    /**
+     * Sun producers make a sun on their own tile once their period elapses;
+     * they stay blocked while their previous sun waits to be collected.
+     */
+    void producePlantSuns(GameSession session) {
+        for (Plant plant : session.plantedPlants()) {
+            if (plant.getSpec().getCategory() != PlantCategory.SUN_PRODUCER
+                    || session.isDisabled(plant)) {
+                continue;
+            }
+            if (plant.isReadyToAttack() && groundAt(plant.getRow(), plant.getCol()) == null) {
+                add(new Sun(Sun.Kind.NORMAL, plant.getRow(), plant.getCol(), 0));
+                plant.resetAttackCooldown();
+                events.add("plant " + plant.getSpec().getName() + " produced a sun at ("
+                        + (plant.getCol() + 1) + ", " + (plant.getRow() + 1) + ")");
+            }
+        }
+    }
+
     void tick(double dt, double seconds) {
         for (Sun sun : new ArrayList<>(suns)) {
             if (sun.passSeconds(dt)) {
