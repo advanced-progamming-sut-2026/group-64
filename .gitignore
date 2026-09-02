@@ -12,5 +12,7 @@ build/
 
 .DS_Store
 
-data/
+# only the runtime save directory at the repository root, not the game data
+# that ships inside src/main/resources
+/data/
 *.save.json

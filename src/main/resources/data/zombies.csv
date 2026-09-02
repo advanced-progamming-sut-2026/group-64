@@ -1,0 +1,29 @@
+name,hp,armor,tilesPerSecond,damagePerSecond,waveCost,description
+normal,200,,0.25,100,200,Walks and eats the first plant it reaches
+conehead,200,cone:370,0.25,100,350,Normal zombie protected by a traffic cone
+buckethead,200,bucket:1100,0.25,100,550,Normal zombie protected by a metal bucket
+knight,200,crown:800;shoulderArmor:800,0.25,100,650,Armored knight; magnet-shroom can steal its helmet
+blockhead,200,block:2200,0.2,100,700,Zombie with a stone block on its head
+imp,100,,0.5,150,150,Small and fast; damages plants quicker
+gargantuar,3000,,0.125,600,1200,Slow giant; kills a plant in one hit and throws its imp at half health
+all-star,400,,0.6,200,550,Charges fast; first plant hit is destroyed instantly then he slows down
+ra,200,,0.25,100,350,Pulls suns lying on the ground toward himself; returns them all when killed
+explorer,200,,0.3,100,400,His torch burns any plant less than a tile ahead; icy shots put the torch out
+tombraiser,300,,0.2,100,400,Every few seconds throws bones that raise graves on two random tiles
+newspaper,150,newspaper:200,0.25,100,300,Loses his newspaper when hit enough and then storms forward enraged
+dodo-rider,300,,0.4,100,400,Flies over plants and obstacles; only tall defensive walls stop it
+hunter,250,,0.2,100,500,Throws ice at the closest plant in his row; three hits freeze it solid
+troglobite,800,,0.15,400,650,Pushes ice blocks that crush any plant standing in the way
+fisherman,300,,0,0,500,Anchors at the far right and reels your plants toward himself
+snorkel,200,,0.3,100,300,Dives underwater where only lobbed shots can reach him
+octopus,350,,0.2,100,500,Throws octopuses that pin down plants in his row until removed
+parasol,300,,0.25,100,400,Her parasol deflects every lobbed projectile
+jester,350,,0.3,100,500,Spins and reflects straight projectiles back at your plants
+wizard,300,,0.2,100,500,Turns a plant into a harmless sheep every few seconds
+king,500,,0,0,700,Sits on his throne and knights nearby simple zombies
+imp-dragon,100,,0.5,150,150,A quick imp whose scales shrug off fiery shots
+peashooter-zombie,200,,0.2,100,400,Zombotany zombie with a peashooter head; shoots your plants from afar
+wallnut-zombie,2000,,0.25,100,650,Zombotany zombie with a wall-nut head; very tough but slow
+jalapeno-zombie,300,,0.3,100,400,Zombotany zombie that burns its whole row if not killed within ten seconds
+squash-zombie,250,,0.5,100,400,Zombotany zombie that squashes the first plant it reaches and dies with it
+sun-zombie,1100,,0,0,0,Stationary zombie of i-Zombie stages that produces sun for the zombie side
