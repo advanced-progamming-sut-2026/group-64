@@ -44,6 +44,7 @@ public final class MainMenuScreen extends Screen {
                 tile("Quests", "📜", () -> ui.enter(MenuType.TRAVEL_LOG)),
                 tile("Daily challenge", "🌟", () -> ui.enter(MenuType.SCORE_GAME)),
                 tile("Leaderboard", "🏆", () -> ui.enter(MenuType.LEADERBOARD)),
+                versusTile(),
                 tile("Profile", "👤", () -> ui.enter(MenuType.PROFILE)),
                 tile("Settings", "🔧", () -> ui.enter(MenuType.SETTINGS)),
                 newsTile(user));
@@ -84,6 +85,14 @@ public final class MainMenuScreen extends Screen {
             tile.getChildren().add(badge);
         }
         return tile;
+    }
+
+    /**
+     * The way into a two-player game, which needs a server to be there.
+     */
+    private StackPane versusTile() {
+        // the lobby is reachable offline too, because couch play lives there
+        return tile("Versus", "⚔", () -> ui.show(new VersusLobbyScreen(ui)));
     }
 
     private StackPane tile(String caption, String glyph, Runnable action) {

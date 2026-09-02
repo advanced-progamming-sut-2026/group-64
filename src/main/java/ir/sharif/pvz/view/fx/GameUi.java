@@ -46,6 +46,66 @@ public final class GameUi {
         this.app = app;
         this.view = view;
         root.getStyleClass().add("app-root");
+        listenForInvites();
+    }
+
+    /**
+     * Watches for the two things the server can spring on a player at any
+     * moment: a challenge from somebody, and a match actually starting.
+     */
+    private void listenForInvites() {
+        if (!app.isOnline()) {
+            return;
+        }
+        var link = app.connection();
+        link.on(ir.sharif.pvz.net.Protocol.INVITED, message ->
+                javafx.application.Platform.runLater(() -> askAboutInvite(message)));
+        link.on(ir.sharif.pvz.net.Protocol.MATCH_FOUND, message ->
+                javafx.application.Platform.runLater(() -> startMatch(message)));
+        link.on(ir.sharif.pvz.net.Protocol.INVITE_DECLINED, message ->
+                javafx.application.Platform.runLater(() ->
+                        view.info(message.text("from") + " turned your challenge down.")));
+    }
+
+    /**
+     * The pop-up the document asks for, so the invited player can accept or
+     * refuse before being pulled into a game.
+     */
+    private void askAboutInvite(ir.sharif.pvz.net.Message message) {
+        String from = message.text("from");
+        javafx.scene.control.Button accept = new javafx.scene.control.Button("Accept");
+        accept.getStyleClass().add("primary-button");
+        accept.setOnAction(event -> answerInvite(true));
+        javafx.scene.control.Button decline = new javafx.scene.control.Button("No thanks");
+        decline.getStyleClass().add("ghost-button");
+        decline.setOnAction(event -> answerInvite(false));
+
+        javafx.scene.layout.HBox buttons =
+                new javafx.scene.layout.HBox(12, accept, decline);
+        buttons.setAlignment(javafx.geometry.Pos.CENTER);
+        showModal(ir.sharif.pvz.view.fx.screen.Dialogs.panel(
+                from + " wants to play",
+                "They are challenging you to I, Zombie.", buttons));
+    }
+
+    private void answerInvite(boolean accepted) {
+        closeModal();
+        var link = app.connection();
+        try {
+            link.ask(link.request(ir.sharif.pvz.net.Protocol.INVITE_ANSWER)
+                    .with("accepted", accepted));
+        } catch (ir.sharif.pvz.net.client.ServerException e) {
+            view.error(e.getMessage());
+        }
+    }
+
+    /**
+     * Drops straight into the versus screen once the server pairs two players.
+     */
+    private void startMatch(ir.sharif.pvz.net.Message message) {
+        closeModal();
+        show(new ir.sharif.pvz.view.fx.screen.VersusScreen(this,
+                message.text("role"), message.text("opponent")));
     }
 
     public GameApp app() {
