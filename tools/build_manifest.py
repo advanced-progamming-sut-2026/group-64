@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+"""Turns the raw PvZ2 asset dump into a flat crop manifest.
+
+The dump stores every sprite inside a shared atlas PNG; RESOURCES.json says
+which atlas a sprite lives in and at which rectangle. This script resolves the
+handful of sprites the game actually needs and writes one TSV line per sprite:
+
+    outputName <TAB> atlasPngName <TAB> x <TAB> y <TAB> w <TAB> h
+
+AtlasExtract.java then does the actual cropping.
+"""
+import json
+import sys
+from pathlib import Path
+
+RES = 768
+
+# our plant id -> seed packet sprite name in the dump
+PLANTS = {
+    "sunflower": "sunflower", "peashooter": "peashooter", "snow-pea": "snowpea",
+    "repeater": "repeater", "wall-nut": "wallnut", "tall-nut": "tallnut",
+    "cherry-bomb": "cherry_bomb", "potato-mine": "potatomine", "chomper": "chomper",
+    "cabbage-pult": "cabbagepult", "melon-pult": "melonpult", "puff-shroom": "puffshroom",
+    "sun-shroom": "sunshroom", "iceberg-lettuce": "iceburg", "torchwood": "torchwood",
+    "laser-bean": "laser_bean", "cattail": "homingthistle", "lily-pad": "lilypad",
+    "bowling-wallnut": "wallnut", "explode-o-nut": "explodeonut",
+    "giant-wallnut": "primalwallnut", "peppermint": "peppermint",
+}
+
+# our zombie id -> almanac portrait name in the dump
+ZOMBIES = {
+    "normal": "tutorial", "conehead": "tutorial_armor1", "buckethead": "tutorial_armor2",
+    "knight": "dark_armor2", "blockhead": "dark_armor4", "imp": "tutorial_imp",
+    "gargantuar": "tutorial_gargantuar", "all-star": "modern_allstar", "ra": "ra",
+    "explorer": "explorer", "tombraiser": "tomb_raiser", "newspaper": "modern_newspaper",
+    "dodo-rider": "iceage_dodo", "hunter": "iceage_hunter", "troglobite": "iceage_troglobite",
+    "fisherman": "beach_fisherman", "snorkel": "beach_snorkel", "octopus": "beach_octopus",
+    "parasol": "beach_fem_armor1", "jester": "dark_juggler", "wizard": "dark_wizard",
+    "king": "dark_king", "imp-dragon": "dark_imp_dragon",
+}
+
+# zombotany zombies have no official art; reuse the plant they wear as a head.
+# the i-Zombie sun producer gets the sunflower for the same reason.
+ZOMBOTANY = {
+    "peashooter-zombie": "peashooter", "wallnut-zombie": "wallnut",
+    "jalapeno-zombie": "jalapeno", "squash-zombie": "squash",
+    "sun-zombie": "sunflower",
+}
+
+# chapter -> lawn background folder in the dump
+BACKGROUNDS = {
+    "ancient-egypt": "egypt", "frostbite-caves": "iceage",
+    "big-wave-beach": "beach", "dark-ages": "dark",
+}
+
+# the greenhouse bench has a backdrop of its own
+GREENHOUSE = "backgrounds/zen_garden"
+
+# the boss that closes out each chapter
+BOSSES = {
+    "ancient-egypt": "zombossmech_egypt",
+    "frostbite-caves": "zombossmech_iceage",
+    "big-wave-beach": "zombossmech_beach",
+    "dark-ages": "zombossmech_dark",
+}
+
+# what an armoured zombie looks like once its armour is gone
+ZOMBIE_BARE = {
+    "conehead": "tutorial", "buckethead": "tutorial",
+    "knight": "dark", "blockhead": "dark",
+    "newspaper": "newspaper_veteran", "parasol": "beach_fem",
+}
+
+# the ice block a frozen plant or zombie sits inside, in two layers
+ICE = {
+    "plant-behind": "effects/frostbite_ice_block_plant_behind/frostbite_ice_block_plant_behind_164x171",
+    "plant-front": "effects/frostbite_ice_block_plant/frostbite_ice_block_plant_167x172",
+    "zombie-behind": "effects/frostbite_ice_block_zombie_behind/frostbite_ice_block_zombie_behind_159x247",
+    "zombie-front": "effects/frostbite_ice_block_zombie/frostbite_ice_block_zombie_153x243",
+}
+
+# the three Dark Ages grave kinds, keyed by what the grave is hiding
+GRAVES = {
+    "empty": "gravestones/Dark_Noop/Dark_Noop_132x160",
+    "sun": "gravestones/Dark_Sun/Dark_Sun_132x160",
+    "plantfood": "gravestones/Dark_Plantfood/Dark_Plantfood_132x160",
+}
+
+# the three vase kinds the Vasebreaker minigame uses
+VASES = {
+    "normal": "vasebreaker/Vase_brown/Vase_brown_115x150",
+    "plant": "vasebreaker/Vase_green/Vase_green_115x150",
+    "ghoul": "vasebreaker/Vase_gargantuar/Vase_gargantuar_115x150",
+}
+
+# flat UI sprites, referenced by their exact dump path
+UI = {
+    "coin": "UI/hud_ingame/coin",
+    "gem": "UI/hud_ingame/gem",
+    "shovel": "UI/hud_ingame/shovel_icon",
+    "shovel-button": "UI/hud_ingame/shovel_button",
+    "alert-ring": "UI/hud_ingame/alert_ring",
+    "zombie-head": "UI/hud_ingame/challenge_zombie_head",
+    "plant-food": "UI/hud_ingame/plantfood_button",
+    "sun": "effects/sun/sun_166x166",
+    "sun-small": "effects/sun/sun_78x78",
+}
+
+
+def load_sprites(resources_json):
+    """All 768-res sprites that live inside an atlas, keyed by lowercase path."""
+    data = json.loads(Path(resources_json).read_text())
+    sprites = {}
+    for group in data["groups"]:
+        if group.get("type") != "simple" or group.get("res") != str(RES):
+            continue
+        for res in group.get("resources", []):
+            if res.get("type") != "Image" or "parent" not in res:
+                continue
+            key = res["path"].replace("\\", "/").lower()
+            sprites[key] = res
+    return sprites
+
+
+def atlas_png(sprite):
+    """ATLASIMAGE_ATLAS_UI_SEEDPACKETS_768_00 -> UI_SEEDPACKETS_768_00.PNG"""
+    return sprite["parent"].replace("ATLASIMAGE_ATLAS_", "") + ".PNG"
+
+
+def main():
+    root = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
+    sprites = load_sprites(root / "RESOURCES.json")
+
+    wanted = {}
+    for our, theirs in PLANTS.items():
+        wanted[f"plants/{our}"] = f"images/{RES}/initial/ui/packets/{theirs}"
+    for our, theirs in {**ZOMBIES}.items():
+        wanted[f"zombies/{our}"] = f"images/{RES}/initial/ui/almanac/packets_zombies/{theirs}"
+    for our, theirs in ZOMBOTANY.items():
+        wanted[f"zombies/{our}"] = f"images/{RES}/initial/ui/packets/{theirs}"
+    for our, theirs in BACKGROUNDS.items():
+        wanted[f"backgrounds/{our}"] = f"images/{RES}/full/backgrounds/{theirs}/texture"
+        wanted[f"backgrounds/{our}-right"] = f"images/{RES}/full/backgrounds/{theirs}/texture_right"
+    for our, theirs in BOSSES.items():
+        wanted[f"bosses/{our}"] = f"images/{RES}/initial/ui/almanac/packets_zombies/{theirs}"
+    for our, theirs in ZOMBIE_BARE.items():
+        wanted[f"zombies/{our}-bare"] = f"images/{RES}/initial/ui/almanac/packets_zombies/{theirs}"
+    for our, theirs in ICE.items():
+        wanted[f"ice/{our}"] = f"images/{RES}/initial/{theirs}"
+    for our, theirs in GRAVES.items():
+        wanted[f"props/grave-{our}"] = f"images/{RES}/full/{theirs}"
+    for our, theirs in VASES.items():
+        wanted[f"props/vase-{our}"] = f"images/{RES}/full/{theirs}"
+    wanted["backgrounds/greenhouse"] = f"images/{RES}/full/{GREENHOUSE}"
+    for our, theirs in UI.items():
+        wanted[f"ui/{our}"] = f"images/{RES}/initial/{theirs}"
+
+    lines, missing = [], []
+    for name, path in sorted(wanted.items()):
+        sprite = sprites.get(path.lower())
+        if sprite is None:  # sprites are split across the initial/ and full/ trees
+            sprite = sprites.get(path.lower().replace("/initial/", "/full/"))
+        if sprite is None:
+            sprite = sprites.get(path.lower().replace("/full/", "/initial/"))
+        if sprite is None:
+            missing.append(f"{name}  <-  {path}")
+            continue
+        lines.append("\t".join([name, atlas_png(sprite), str(sprite["ax"]),
+                                str(sprite["ay"]), str(sprite["aw"]), str(sprite["ah"])]))
+
+    Path("manifest.tsv").write_text("\n".join(lines) + "\n")
+    print(f"resolved {len(lines)} sprites -> manifest.tsv")
+    if missing:
+        print(f"\n{len(missing)} UNRESOLVED:")
+        for m in missing:
+            print("   ", m)
+
+
+if __name__ == "__main__":
+    main()
