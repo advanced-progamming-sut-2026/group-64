@@ -12,6 +12,7 @@ public class LevelSpec {
     private final Chapter chapter;
     private final int day;
     private final int totalWaves;
+    private boolean boss;
     private final double firstWaveBudget;
     private final List<String> zombiePool;
     /** (row, col) 0-based -> terrain; unlisted tiles are NORMAL. */
@@ -77,6 +78,22 @@ public class LevelSpec {
 
     public int getDay() {
         return day;
+    }
+
+    /**
+     * True on the level that closes a chapter, where Zomboss shows up instead
+     * of ordinary waves.
+     */
+    public boolean isBoss() {
+        return boss;
+    }
+
+    /**
+     * Marks this level as the chapter's boss fight.
+     */
+    public LevelSpec asBoss() {
+        this.boss = true;
+        return this;
     }
 
     public int getTotalWaves() {

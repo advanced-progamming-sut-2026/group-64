@@ -17,6 +17,11 @@ public final class Levels {
 
     private static final List<String> COMMON = List.of("normal", "conehead", "buckethead", "imp");
     private static final int[] WAVES_PER_DAY = {3, 4, 4, 5};
+    /** What the belt hands the player during a boss fight. */
+    private static final List<String> BOSS_BELT = List.of(
+            "sunflower", "peashooter", "repeater", "wall-nut", "snow-pea",
+            "cherry-bomb", "melon-pult", "torchwood");
+
     private static final List<LevelSpec> ADVENTURE = build();
 
     /** First-wave budget of a chapter (0-based) and day (1-based). */
@@ -59,6 +64,22 @@ public final class Levels {
                 Map.of(), 0, false, false, false);
     }
 
+    /**
+     * The level that closes a chapter: no plant selection, a conveyor belt of
+     * whatever the chapter has unlocked, and Zomboss instead of waves.
+     */
+    private static LevelSpec bossDay(Chapter chapter, List<String> pool,
+                                     Map<Integer, TileTerrain> terrain) {
+        // Zomboss replaces the waves, but the level still carries budget and
+        // wave figures that continue the chapter's curve rather than dropping
+        // back to day-one values
+        int index = chapter.ordinal();
+        return new LevelSpec(chapter, 5, waves(4), budget(index, 5), pool, terrain, 0,
+                chapter == Chapter.DARK_AGES, false, false,
+                SpecialRules.conveyorBelt(BOSS_BELT))
+                .waveIncrement(increment(index, 5)).asBoss();
+    }
+
     private static List<LevelSpec> build() {
         List<LevelSpec> levels = new ArrayList<>();
         levels.addAll(egypt());
@@ -82,6 +103,7 @@ public final class Levels {
         days.add(new LevelSpec(Chapter.ANCIENT_EGYPT, 4, waves(4), budget(0, 4),
                 merge(pool, "gargantuar"),
                 Map.of(), 4, false, true, false).waveIncrement(increment(0, 4)));
+        days.add(bossDay(Chapter.ANCIENT_EGYPT, pool, Map.of()));
         return days;
     }
 
@@ -106,6 +128,7 @@ public final class Levels {
         days.add(new LevelSpec(Chapter.FROSTBITE_CAVES, 4, waves(4), budget(1, 4),
                 merge(pool, "gargantuar"),
                 moreSlides, 0, false, false, false).waveIncrement(increment(1, 4)));
+        days.add(bossDay(Chapter.FROSTBITE_CAVES, pool, Map.of()));
         return days;
     }
 
@@ -133,6 +156,7 @@ public final class Levels {
         days.add(new LevelSpec(Chapter.BIG_WAVE_BEACH, 4, waves(4), budget(2, 4),
                 merge(pool, "gargantuar"),
                 deeps, 0, false, false, false).waveIncrement(increment(2, 4)));
+        days.add(bossDay(Chapter.BIG_WAVE_BEACH, pool, Map.of()));
         return days;
     }
 
@@ -155,6 +179,7 @@ public final class Levels {
         days.add(new LevelSpec(Chapter.DARK_AGES, 4, waves(4), budget(3, 4),
                 merge(pool, "gargantuar"),
                 necromancy, 3, true, false, true).waveIncrement(increment(3, 4)));
+        days.add(bossDay(Chapter.DARK_AGES, pool, necromancy));
         return days;
     }
 
