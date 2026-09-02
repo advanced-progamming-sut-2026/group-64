@@ -12,7 +12,7 @@ import java.util.List;
 public class LeaderboardService {
 
     /** The sortable columns of the table. */
-    public enum Column { LEVEL, MINIGAMES, QUESTS, MOWPOINTS }
+    public enum Column { LEVEL, MINIGAMES, QUESTS, MOWPOINTS, MYPOINT }
 
     private final UserRepository userRepository;
 
@@ -59,6 +59,9 @@ public class LeaderboardService {
             case MINIGAMES -> Comparator.comparingInt(User::getMinigamesCompleted);
             case QUESTS -> Comparator.comparingInt(User::getQuestsCompleted);
             case MOWPOINTS -> Comparator.comparingInt(User::getMaxMewPoints);
+            // players who never played online sort last rather than as a zero
+            case MYPOINT -> Comparator.comparingInt(
+                    user -> user.getNetworkPoints() == null ? -1 : user.getNetworkPoints());
         };
     }
 

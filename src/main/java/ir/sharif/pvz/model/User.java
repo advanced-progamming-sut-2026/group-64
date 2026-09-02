@@ -31,6 +31,12 @@ public class User {
     private int diamonds;
     private int levelsPassed;
     private int maxMewPoints;
+    /**
+     * The best score from the online score game, or null while the player has
+     * never taken part. Null rather than 0 so the leaderboard can leave the
+     * column blank instead of implying a real score of nothing.
+     */
+    private Integer networkPoints;
     private int pots;
     private int minigamesCompleted;
     private int questsCompleted;
@@ -178,6 +184,23 @@ public class User {
 
     public int getMaxMewPoints() {
         return maxMewPoints;
+    }
+
+    /**
+     * The player's online score-game record, or null if they never played one.
+     */
+    public Integer getNetworkPoints() {
+        return networkPoints;
+    }
+
+    /**
+     * Keeps the better of the two scores; the server calls this so a client
+     * cannot talk its record down or invent one.
+     */
+    public void submitNetworkPoints(int points) {
+        if (networkPoints == null || points > networkPoints) {
+            networkPoints = points;
+        }
     }
 
     public void updateMaxMewPoints(int mewPoints) {

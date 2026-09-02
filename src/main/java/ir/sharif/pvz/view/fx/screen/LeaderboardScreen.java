@@ -90,6 +90,9 @@ public final class LeaderboardScreen extends Screen {
         view.getColumns().add(column("Minigames", user -> String.valueOf(user.getMinigamesCompleted())));
         view.getColumns().add(column("Quests", user -> String.valueOf(user.getQuestsCompleted())));
         view.getColumns().add(column("Mow points", user -> String.valueOf(user.getMaxMewPoints())));
+        // blank, not zero, for anyone who has never played the online score game
+        view.getColumns().add(column("My Point", user -> user.getNetworkPoints() == null
+                ? "—" : String.valueOf(user.getNetworkPoints())));
 
         highlightCurrentPlayer(view);
         return view;

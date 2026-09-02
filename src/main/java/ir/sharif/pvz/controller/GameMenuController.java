@@ -49,6 +49,7 @@ public class GameMenuController extends MenuController {
     private final MenuType menuType;
     private final boolean scoreMode;
     protected GameSession session;
+    private java.util.function.IntConsumer scoreReporter;
 
     public GameMenuController(AppContext context, GameView view) {
         this(context, view, MenuType.GAME, false);
@@ -388,6 +389,25 @@ public class GameMenuController extends MenuController {
             view.info("New personal best!");
         }
         user.updateMaxMewPoints(tracker.getPoints());
+        reportScoreToServer(tracker.getPoints());
     }
 
+    /**
+     * Sends the round's score up so it can go on the leaderboard's My Point
+     * column. Offline players simply skip it, which is why that column stays
+     * blank until somebody has actually played online.
+     */
+    private void reportScoreToServer(int points) {
+        if (scoreReporter == null) {
+            return;
+        }
+        scoreReporter.accept(points);
+    }
+
+    /**
+     * Installed by the networked build to post score-game results.
+     */
+    public void setScoreReporter(java.util.function.IntConsumer reporter) {
+        this.scoreReporter = reporter;
+    }
 }
