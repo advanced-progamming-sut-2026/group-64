@@ -61,6 +61,42 @@ class WaveSystem {
         spawnWave(flagWave);
     }
 
+    /**
+     * How far the level has come, from 0 the moment it starts to 1 the moment
+     * it is won, so the view can show the player what is left.
+     *
+     * <p>Each wave owns an equal slice of the bar. Inside a slice the fill
+     * follows how much of that wave has been killed, stretched so the slice
+     * fills up exactly as the next wave breaks in — which happens once 75% of
+     * the wave is down. The final wave has to be cleared completely instead.
+     */
+    double progress() {
+        if (currentWave == 0) {
+            return 0;
+        }
+        int total = Math.max(1, level.getTotalWaves());
+        return Math.min(1, (currentWave - 1 + currentWaveFraction()) / total);
+    }
+
+    private double currentWaveFraction() {
+        if (spawnedHealth <= 0) {
+            return 0;
+        }
+        boolean last = allWavesSpawned();
+        int remaining = last ? allZombieHealth() : remainingHealth();
+        double killed = 1 - remaining / (double) spawnedHealth;
+        double clearedAt = last ? 1.0 : 0.75;
+        return Math.max(0, Math.min(1, killed / clearedAt));
+    }
+
+    /**
+     * Every zombie still standing, including stragglers from earlier waves,
+     * because the level is only won once the lawn is completely empty.
+     */
+    private int allZombieHealth() {
+        return session.zombieList().stream().mapToInt(Zombie::totalRemainingHealth).sum();
+    }
+
     private int remainingHealth() {
         return currentWaveZombies.stream().filter(session.zombieList()::contains)
                 .mapToInt(Zombie::totalRemainingHealth).sum();

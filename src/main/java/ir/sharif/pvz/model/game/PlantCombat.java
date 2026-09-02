@@ -101,6 +101,8 @@ class PlantCombat {
         boolean lobbed = plant.getSpec().getCategory() == PlantCategory.LOBBER;
         Zombie target = targetFor(plant, lobbed);
         if (target == null) {
+            // with the lane clear, a shooter facing the boss hits the boss
+            shootZomboss(plant, lobbed);
             return;
         }
         if (!lobbed) {
@@ -123,7 +125,23 @@ class PlantCombat {
             target.chill(5);
             session.abilitiesRef().onIceHit(target);
         }
+        session.recordShot(plant, target.getX(),
+                lobbed ? Shot.Flight.LOBBED : Shot.Flight.STRAIGHT);
         session.hitZombie(target, damage);
+        plant.resetAttackCooldown();
+    }
+
+    /**
+     * Fires at Zomboss when this plant is in one of the rows it covers.
+     */
+    private void shootZomboss(Plant plant, boolean lobbed) {
+        Zomboss boss = session.getZomboss();
+        if (boss == null || boss.isDefeated() || !boss.covers(plant.getRow())) {
+            return;
+        }
+        session.recordShot(plant, boss.getColumn(),
+                lobbed ? Shot.Flight.LOBBED : Shot.Flight.STRAIGHT);
+        session.zombossEngine().hit(plant.getSpec().getDamage());
         plant.resetAttackCooldown();
     }
 
@@ -172,8 +190,14 @@ class PlantCombat {
 
     private void damageRowByPlant(Plant plant) {
         boolean anyZombie = session.zombieList().stream().anyMatch(z -> z.getRow() == plant.getRow());
-        if (anyZombie) {
+        Zomboss boss = session.getZomboss();
+        boolean facingBoss = boss != null && !boss.isDefeated() && boss.covers(plant.getRow());
+        if (anyZombie || facingBoss) {
+            session.recordShot(plant, GameSession.COLS + 1.0, Shot.Flight.STRAIGHT);
             session.damageRowFrom(plant.getRow(), plant.getCol() + 1.0, plant.getSpec().getDamage());
+            if (facingBoss) {
+                session.zombossEngine().hit(plant.getSpec().getDamage());
+            }
             plant.resetAttackCooldown();
         }
     }
@@ -190,6 +214,7 @@ class PlantCombat {
             }
         }
         if (target != null) {
+            session.recordShot(plant, target.getX(), Shot.Flight.LOBBED);
             session.hitZombie(target, plant.getSpec().getDamage());
             plant.resetAttackCooldown();
         }

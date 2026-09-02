@@ -8,7 +8,7 @@ import java.util.Random;
  * Runtime behaviour of the special-level rules inside one session: the
  * conveyor belt, the war timer, the dead line and the loss counters.
  */
-class SpecialLevelEngine {
+public class SpecialLevelEngine {
 
     private static final double BELT_PERIOD_SECONDS = 12;
 
@@ -27,8 +27,36 @@ class SpecialLevelEngine {
         this.random = random;
     }
 
-    boolean is(SpecialRules.Type type) {
+    public boolean is(SpecialRules.Type type) {
         return rules != null && rules.getType() == type;
+    }
+
+    /**
+     * The rules this level runs under, or null on an ordinary level.
+     */
+    public SpecialRules getRules() {
+        return rules;
+    }
+
+    /**
+     * How many zombies the player has killed, for the timed war objective.
+     */
+    public int getKills() {
+        return kills;
+    }
+
+    /**
+     * How many plants the player has lost, for Love Your Plants.
+     */
+    public int getPlantLosses() {
+        return plantLosses;
+    }
+
+    /**
+     * True once the player released the waves on a Plant What You Get level.
+     */
+    public boolean isWavesReleased() {
+        return wavesReleased;
     }
 
     /**

@@ -19,6 +19,12 @@ public class UserRepository {
 
     private static final Path DEFAULT_FILE = Path.of("data", "users.json");
 
+    /**
+     * Marker for a repository that keeps nothing on disk, which is what the
+     * network-backed subclass passes up.
+     */
+    protected static final Path NO_FILE = null;
+
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final Path file;
     private final List<User> users;
@@ -33,7 +39,7 @@ public class UserRepository {
     }
 
     private List<User> load() {
-        if (!Files.exists(file)) {
+        if (file == null || !Files.exists(file)) {
             return new ArrayList<>();
         }
         try (Reader reader = Files.newBufferedReader(file)) {
@@ -45,6 +51,9 @@ public class UserRepository {
     }
 
     public void save() {
+        if (file == null) {
+            return;
+        }
         try {
             if (file.getParent() != null) {
                 Files.createDirectories(file.getParent());
@@ -73,6 +82,33 @@ public class UserRepository {
 
     public boolean usernameExists(String username) {
         return findByUsername(username) != null;
+    }
+
+    /**
+     * Swaps the stored copy of an account for a newer one, matched by username.
+     * The server uses this when a client sends its progress up.
+     */
+    public void replace(User updated) {
+        for (int i = 0; i < users.size(); i++) {
+            if (users.get(i).getUsername().equals(updated.getUsername())) {
+                users.set(i, updated);
+                return;
+            }
+        }
+        users.add(updated);
+    }
+
+    /**
+     * Replaces the account stored under an old username with a renamed one.
+     */
+    public void rename(String previousUsername, User updated) {
+        for (int i = 0; i < users.size(); i++) {
+            if (users.get(i).getUsername().equals(previousUsername)) {
+                users.set(i, updated);
+                return;
+            }
+        }
+        users.add(updated);
     }
 
     public List<User> all() {

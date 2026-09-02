@@ -58,6 +58,16 @@ class IZombieGame implements MinigameLogic {
     }
 
     @Override
+    public java.util.Map<String, Integer> cardsInsteadOfPlants() {
+        return java.util.Map.copyOf(prices);
+    }
+
+    @Override
+    public int restrictedColumn() {
+        return RED_LINE_COLUMN;
+    }
+
+    @Override
     public String placeZombie(GameSession session, String type, int x, int y) {
         Integer price = prices.get(type);
         if (price == null) {

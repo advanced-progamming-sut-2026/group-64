@@ -23,6 +23,9 @@ public class User {
     private String securityAnswerHash;
 
     private int difficulty = DEFAULT_DIFFICULTY;
+    private int gameSpeed = 1;
+    private boolean showGrid;
+    private boolean debugMode;
     private int gamesPlayed;
     private int coins;
     private int diamonds;
@@ -115,6 +118,30 @@ public class User {
 
     public void setDifficulty(int difficulty) {
         this.difficulty = difficulty;
+    }
+
+    public int getGameSpeed() {
+        return gameSpeed;
+    }
+
+    public void setGameSpeed(int gameSpeed) {
+        this.gameSpeed = gameSpeed;
+    }
+
+    public boolean isShowGrid() {
+        return showGrid;
+    }
+
+    public void setShowGrid(boolean showGrid) {
+        this.showGrid = showGrid;
+    }
+
+    public boolean isDebugMode() {
+        return debugMode;
+    }
+
+    public void setDebugMode(boolean debugMode) {
+        this.debugMode = debugMode;
     }
 
     public int getGamesPlayed() {

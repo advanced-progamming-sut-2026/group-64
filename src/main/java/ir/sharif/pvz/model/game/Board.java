@@ -40,6 +40,14 @@ class Board {
         terrain[row][col] = kind;
     }
 
+    /**
+     * What the grave on this tile is hiding — "sun", "plant food", or "" when
+     * it is a plain one — so the view can draw the right headstone.
+     */
+    String graveContentAt(int row, int col) {
+        return graveContents.getOrDefault(LevelSpec.tileKey(row, col), "");
+    }
+
     int graveHpAt(int row, int col) {
         return graveHp[row][col];
     }

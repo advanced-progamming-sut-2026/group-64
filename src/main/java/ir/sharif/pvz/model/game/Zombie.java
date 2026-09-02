@@ -17,6 +17,7 @@ public class Zombie {
     private final Map<String, Integer> armor;
     private double chilledSeconds;
     private double frozenSeconds;
+    private double eatingSeconds;
 
     public Zombie(ZombieSpec spec, int row, double x, int hp, Map<String, Integer> armor, boolean glowing) {
         this.spec = spec;
@@ -93,6 +94,21 @@ public class Zombie {
         frozenSeconds = Math.max(frozenSeconds, seconds);
     }
 
+    /**
+     * True while this zombie is chewing on a plant, which the view shows with a
+     * biting motion rather than the walking one.
+     */
+    public boolean isEating() {
+        return eatingSeconds > 0;
+    }
+
+    /**
+     * Marks the zombie as biting; the flag lapses on its own if it stops.
+     */
+    void startEating() {
+        eatingSeconds = 0.4;
+    }
+
     public boolean isFrozen() {
         return frozenSeconds > 0;
     }
@@ -107,6 +123,7 @@ public class Zombie {
     public void passSeconds(double seconds) {
         chilledSeconds = Math.max(0, chilledSeconds - seconds);
         frozenSeconds = Math.max(0, frozenSeconds - seconds);
+        eatingSeconds = Math.max(0, eatingSeconds - seconds);
     }
 
     public Map<String, Double> activeEffects() {

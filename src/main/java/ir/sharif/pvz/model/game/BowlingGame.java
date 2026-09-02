@@ -75,6 +75,20 @@ class BowlingGame implements MinigameLogic {
         }
     }
 
+    @Override
+    public List<MinigameProp> props() {
+        List<MinigameProp> props = new ArrayList<>();
+        for (Nut nut : nuts) {
+            props.add(MinigameProp.nut(nut.type, nut.x, nut.row + 1));
+        }
+        return props;
+    }
+
+    @Override
+    public int restrictedColumn() {
+        return RED_LINE_COLUMN;
+    }
+
     private void smash(GameSession session, Nut nut, Zombie victim) {
         switch (nut.type) {
             case "explode-o-nut" -> {

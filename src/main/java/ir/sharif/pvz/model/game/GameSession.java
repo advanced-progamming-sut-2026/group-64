@@ -26,32 +26,37 @@ public class GameSession {
     private final double difficultyUp;
     private final double difficultyDown;
     private final List<String> selectedPlants;
-    private final Set<String> boostedPlants;
+    final Set<String> boostedPlants;
     private final LevelSpec level;
     private final ZombieAbilities abilities;
     private final PlantCombat combat;
-    private final SpecialLevelEngine special;
+    final SpecialLevelEngine special;
+    private final ZombossEngine zomboss;
     private final Set<Plant> protectedPlants = new java.util.HashSet<>();
+    private final Cheats cheats = new Cheats(this);
+    private final Planting planting = new Planting(this);
 
     private final Plant[][] grid = new Plant[ROWS][COLS];
-    private final Board board;
+    final Board board;
     private final SunSystem sunSystem;
     private final WaveSystem waves;
     private final Map<Plant, String> disabledPlants = new HashMap<>();
     private final boolean[] mowers = new boolean[ROWS];
-    private final List<Zombie> zombies = new ArrayList<>();
-    private final Map<String, Double> plantCooldowns = new HashMap<>();
+    final List<Zombie> zombies = new ArrayList<>();
+    final Map<String, Double> plantCooldowns = new HashMap<>();
     private final Map<Zombie, Double> eatProgress = new HashMap<>();
     private final List<String> events = new ArrayList<>();
+    private final List<Shot> shots = new ArrayList<>();
+    private final List<Burst> bursts = new ArrayList<>();
     private final Set<String> seenZombieTypes = new java.util.LinkedHashSet<>();
 
     private long tickCount;
-    private int sunAmount = INITIAL_SUN;
+    int sunAmount = INITIAL_SUN;
     private int plantFood;
-    private boolean cooldownsDisabled;
-    private boolean cooldownsSuspended;
+    boolean cooldownsDisabled;
+    boolean cooldownsSuspended;
     private ScoreTracker scoreTracker;
-    private MinigameLogic minigame;
+    MinigameLogic minigame;
     private int earnedCoins;
     private int earnedDiamonds;
     private int earnedPots;
@@ -77,7 +82,13 @@ public class GameSession {
         this.sunSystem = new SunSystem(level, difficultyUp, random, events);
         this.waves = new WaveSystem(this, level, difficultyDown, random);
         this.special = new SpecialLevelEngine(this, level.getSpecial(), random);
+        this.zomboss = level.isBoss()
+                ? new ZombossEngine(this, level.getChapter(), random) : null;
         this.special.init();
+        if (zomboss != null) {
+            waves.setEnabled(false);
+            events.add("Zomboss is here! Knock out all three parts of its health.");
+        }
     }
 
     private static LevelSpec defaultLevel() {
@@ -91,7 +102,10 @@ public class GameSession {
         board.raiseGrave(row, col, contents, grid[row][col] == null);
     }
 
-    private double seconds() {
+    /**
+     * How long this level has been running, in seconds of game time.
+     */
+    public double getElapsedSeconds() {
         return tickCount / (double) TICKS_PER_SECOND;
     }
 
@@ -100,11 +114,14 @@ public class GameSession {
             tickCount++;
             passTimers();
             produceSuns();
-            sunSystem.tick(1.0 / TICKS_PER_SECOND, seconds());
-            waves.tick(seconds());
-            special.tick(seconds());
+            sunSystem.tick(1.0 / TICKS_PER_SECOND, getElapsedSeconds());
+            waves.tick(getElapsedSeconds());
+            special.tick(getElapsedSeconds());
+            if (zomboss != null) {
+                zomboss.tick(getElapsedSeconds());
+            }
             if (minigame != null) {
-                minigame.tick(this, seconds());
+                minigame.tick(this, getElapsedSeconds());
             }
             plantsAct();
             zombiesAct();
@@ -125,6 +142,14 @@ public class GameSession {
         for (Zombie zombie : zombies) {
             zombie.passSeconds(dt);
         }
+        for (Shot shot : shots) {
+            shot.passSeconds(dt);
+        }
+        shots.removeIf(Shot::isDone);
+        for (Burst burst : bursts) {
+            burst.passSeconds(dt);
+        }
+        bursts.removeIf(Burst::isDone);
     }
 
     private void produceSuns() {
@@ -182,12 +207,14 @@ public class GameSession {
             removePlant(plant);
             events.add("Plant " + plant.getSpec().getName() + " at (" + (plant.getCol() + 1)
                     + ", " + (plant.getRow() + 1) + ") is destroyed.");
+            recordBurst(Burst.Kind.PLANT_LOST, plant.getCol() + 1.0, plant.getRow() + 1.0);
             special.onPlantDestroyed(plant);
             protectedPlants.remove(plant);
         }
     }
 
     private void explode(Plant plant, int radius) {
+        recordBurst(Burst.Kind.EXPLOSION, plant.getCol() + 1.0, plant.getRow() + 1.0);
         for (Zombie zombie : new ArrayList<>(zombies)) {
             boolean inRows = Math.abs(zombie.getRow() - plant.getRow()) <= radius;
             boolean inCols = Math.abs(zombie.getX() - (plant.getCol() + 1)) <= radius + 0.5;
@@ -223,7 +250,8 @@ public class GameSession {
         }
     }
 
-    private void killZombie(Zombie zombie) {
+    void killZombie(Zombie zombie) {
+        recordBurst(Burst.Kind.ZOMBIE_DOWN, zombie.getX(), zombie.getRow() + 1.0);
         zombies.remove(zombie);
         eatProgress.remove(zombie);
         abilities.onDeath(zombie);
@@ -303,6 +331,7 @@ public class GameSession {
         if (zombie.isFrozen()) {
             return;
         }
+        zombie.startEating();
         double progress = eatProgress.merge(zombie, dt, Double::sum);
         if (progress >= 1) {
             eatProgress.put(zombie, progress - 1);
@@ -317,6 +346,7 @@ public class GameSession {
         int row = zombie.getRow();
         if (mowers[row]) {
             mowers[row] = false;
+            recordBurst(Burst.Kind.MOWER, 1, row + 1.0);
             List<Zombie> killed = zombies.stream().filter(z -> z.getRow() == row).toList();
             events.add("The lawn mower in the row " + (row + 1) + " is triggered and killed these zombies:");
             for (Zombie victim : killed) {
@@ -331,6 +361,13 @@ public class GameSession {
     }
 
     private void checkVictory() {
+        if (zomboss != null) {
+            if (!lost && zomboss.boss().isDefeated()) {
+                won = true;
+                events.add("Zomboss is beaten! The chapter is yours.");
+            }
+            return;
+        }
         if (!lost && waves.allWavesSpawned() && zombies.isEmpty()) {
             won = true;
             events.add("Dear humanz, zis is not done yet; we will come back to eat your brainz, humanz.");
@@ -342,6 +379,25 @@ public class GameSession {
             return String.valueOf((int) value);
         }
         return String.format(Locale.ROOT, "%.1f", value);
+    }
+
+    /**
+     * The level being played, so a view can pick the right background and show
+     * the wave count without keeping its own copy of the level data.
+     */
+    public LevelSpec getLevel() {
+        return level;
+    }
+
+    /**
+     * Gives the level up. Used by the pause menu's "save and exit", which has
+     * to leave the session finished so the menu can be exited normally.
+     */
+    public void forfeit() {
+        if (!isOver()) {
+            lost = true;
+            events.add("You left the level; the zombies win this one.");
+        }
     }
 
     public boolean isWon() {
@@ -370,6 +426,13 @@ public class GameSession {
         return plantFood;
     }
 
+    /**
+     * How far this level has come, from 0 at the start to 1 when it is won.
+     */
+    public double getWaveProgress() {
+        return waves.progress();
+    }
+
     public int getCurrentWave() {
         return waves.getCurrentWave();
     }
@@ -384,6 +447,64 @@ public class GameSession {
 
     public int getEarnedPots() {
         return earnedPots;
+    }
+
+    /**
+     * The projectiles currently in the air. They are drawn, never simulated:
+     * the damage they represent was already applied when the plant fired.
+     */
+    /**
+     * The special rules engine for this level, so the view can show whatever
+     * objective the player is being judged on.
+     */
+    public SpecialLevelEngine getSpecial() {
+        return special;
+    }
+
+    /**
+     * The minigame running in this session, or null on an adventure level.
+     */
+    public MinigameLogic getMinigame() {
+        return minigame;
+    }
+
+    /**
+     * The one-off effects currently playing on the lawn.
+     */
+    /**
+     * The boss of this level, or null on an ordinary one.
+     */
+    public Zomboss getZomboss() {
+        return zomboss == null ? null : zomboss.boss();
+    }
+
+    /**
+     * The boss engine of this level, or null on an ordinary one.
+     */
+    ZombossEngine zombossEngine() {
+        return zomboss;
+    }
+
+    public List<Burst> getBursts() {
+        return bursts;
+    }
+
+    /**
+     * Notes that something worth showing just happened at a tile.
+     */
+    void recordBurst(Burst.Kind kind, double col, double row) {
+        bursts.add(new Burst(kind, col, row));
+    }
+
+    public List<Shot> getShots() {
+        return shots;
+    }
+
+    /**
+     * Remembers that a plant just fired, so the view can show the shot flying.
+     */
+    void recordShot(Plant from, double toX, Shot.Flight flight) {
+        shots.add(Shot.from(from, toX, flight));
     }
 
     public List<Zombie> getZombies() {
@@ -435,72 +556,7 @@ public class GameSession {
      * Plants a selected type on tile (x=column, y=row), enforcing sun, cooldown and occupancy rules.
      */
     public String plant(String type, int x, int y) {
-        boolean freeHand = minigame != null && minigame.freePlantMode();
-        if (!special.conveyorMode() && !freeHand && !selectedPlants.contains(type)) {
-            return "Error: plant '" + type + "' is not among your selected plants.";
-        }
-        if (!validTile(x, y)) {
-            return "Error: (" + x + ", " + y + ") is not a valid tile.";
-        }
-        PlantSpec spec = GameCatalog.get().plant(type);
-        if (spec == null) {
-            return "Error: there is no plant named '" + type + "'.";
-        }
-        if (grid[y - 1][x - 1] != null) {
-            return "Error: tile (" + x + ", " + y + ") is already occupied.";
-        }
-        String terrainError = board.rejection(spec, y - 1, x - 1);
-        if (terrainError != null) {
-            return terrainError;
-        }
-        if (minigame != null) {
-            String rejection = minigame.plantingRejection(x, y);
-            if (rejection != null) {
-                return rejection;
-            }
-        }
-        String paymentError = payForPlant(type, spec, freeHand);
-        if (paymentError != null) {
-            return paymentError;
-        }
-        if (spec.getName().equals("lily-pad")) {
-            board.setTerrain(y - 1, x - 1, TileTerrain.LILY);
-            return "Planted lily-pad at (" + x + ", " + y + "); the tile is now plantable.";
-        }
-        Plant plant = new Plant(spec, y - 1, x - 1, boostedPlants.remove(type));
-        grid[y - 1][x - 1] = plant;
-        if (plant.isBoosted()) {
-            plant.consumeBoost();
-            applyPlantFoodEffect(plant);
-        }
-        if (minigame != null) {
-            minigame.onPlanted(this, plant);
-        }
-        return "Planted " + type + " at (" + x + ", " + y + ").";
-    }
-
-    /**
-     * Charges for a plant: the conveyor belt and the vasebreaker hand are
-     * free; anything else costs sun and starts the recharge timer.
-     */
-    private String payForPlant(String type, PlantSpec spec, boolean freeHand) {
-        if (special.conveyorMode()) {
-            return special.takeFromBelt(type);
-        }
-        if (freeHand) {
-            return minigame.takeFromHand(type);
-        }
-        boolean recharging = !cooldownsDisabled && !cooldownsSuspended
-                && plantCooldowns.getOrDefault(type, 0.0) > 0;
-        if (recharging) {
-            return "Error: " + type + " is recharging; wait " + trim(plantCooldowns.get(type)) + "s.";
-        }
-        if (sunAmount < spec.getSunCost()) {
-            return "Error: not enough sun; " + type + " costs " + spec.getSunCost() + ".";
-        }
-        sunAmount -= spec.getSunCost();
-        plantCooldowns.put(type, spec.getRechargeSeconds());
-        return null;
+        return planting.plant(type, x, y);
     }
 
     public String pluck(int x, int y) {
@@ -537,7 +593,8 @@ public class GameSession {
                 + (cured == null ? "" : " It broke free of the " + cured + "!");
     }
 
-    private void applyPlantFoodEffect(Plant plant) {
+    void applyPlantFoodEffect(Plant plant) {
+        recordBurst(Burst.Kind.PLANT_FOOD, plant.getCol() + 1.0, plant.getRow() + 1.0);
         combat.applyPlantFood(plant);
     }
 
@@ -645,7 +702,7 @@ public class GameSession {
         events.add("Protect the " + type + " at (" + (col + 1) + ", " + (row + 1) + ")!");
     }
 
-    boolean isProtectedPlant(Plant plant) {
+    public boolean isProtectedPlant(Plant plant) {
         return protectedPlants.contains(plant);
     }
 
@@ -745,6 +802,31 @@ public class GameSession {
         return minigame.placeZombie(this, type, x, y);
     }
 
+    /**
+     * How frozen a plant is, from 0 for untouched to 3 for frozen solid, which
+     * is the three-step iciness phase 1 defines.
+     */
+    /**
+     * What the grave on this tile holds, for the three Dark Ages headstones.
+     */
+    public String graveContentAt(int x, int y) {
+        return board.graveContentAt(y - 1, x - 1);
+    }
+
+    public int iceLevelAt(int x, int y) {
+        Plant plant = plantAtTile(x, y);
+        return plant == null ? 0 : abilities.iceLevel(plant);
+    }
+
+    /**
+     * Why the plant on this tile is out of action — "ice", "octopus", "spell" —
+     * or null when it is fine, so the view can draw the right thing on top.
+     */
+    public String disableCauseAt(int x, int y) {
+        Plant plant = plantAtTile(x, y);
+        return plant == null ? null : disabledPlants.get(plant);
+    }
+
     public boolean isPlantDisabled(int x, int y) {
         Plant plant = grid[y - 1][x - 1];
         return plant != null && disabledPlants.containsKey(plant);
@@ -766,7 +848,7 @@ public class GameSession {
         return crowned;
     }
 
-    private boolean validTile(int x, int y) {
+    boolean validTile(int x, int y) {
         return x >= 1 && x <= COLS && y >= 1 && y <= ROWS;
     }
 
@@ -791,20 +873,11 @@ public class GameSession {
 
     // ===== cheats =====
 
-    public String cheatAddSuns(int count) {
-        sunAmount += count;
-        return "Added " + count + " suns; you now have " + sunAmount + " sun.";
-    }
-
-    public String cheatRemoveCooldown() {
-        cooldownsDisabled = true;
-        plantCooldowns.clear();
-        return "All cooldowns removed.";
-    }
-
-    public String cheatAddPlantFood() {
-        plantFood = Math.min(MAX_PLANT_FOOD, plantFood + 1);
-        return "You have " + plantFood + " plant foods now.";
+    /**
+     * The debug commands, kept in their own class.
+     */
+    public Cheats cheats() {
+        return cheats;
     }
 
     /**
@@ -814,22 +887,4 @@ public class GameSession {
         plantFood = Math.min(MAX_PLANT_FOOD, plantFood + count);
     }
 
-    public String cheatSpawnZombie(String type, int x, int y) {
-        ZombieSpec spec = GameCatalog.get().zombie(type);
-        if (spec == null) {
-            return "Error: there is no zombie type named '" + type + "'.";
-        }
-        if (!validTile(x, y)) {
-            return "Error: (" + x + ", " + y + ") is not a valid tile.";
-        }
-        spawnZombie(spec, y - 1, x);
-        return "Zombie " + type + " spawned at (" + x + ", " + y + ").";
-    }
-
-    public String releaseTheNuke() {
-        for (Zombie zombie : new ArrayList<>(zombies)) {
-            killZombie(zombie);
-        }
-        return "The nuke wiped the whole map.";
-    }
 }

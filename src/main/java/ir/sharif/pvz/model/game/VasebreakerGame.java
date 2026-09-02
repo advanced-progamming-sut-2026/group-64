@@ -136,6 +136,16 @@ class VasebreakerGame implements MinigameLogic {
     }
 
     @Override
+    public List<MinigameProp> props() {
+        List<MinigameProp> props = new ArrayList<>();
+        vases.forEach((key, vase) -> props.add(MinigameProp.vase(
+                key % GameSession.COLS + 1, key / GameSession.COLS + 1, vase.kind())));
+        packets.forEach((key, packet) -> props.add(MinigameProp.packet(
+                packet.plant(), key % GameSession.COLS + 1, key / GameSession.COLS + 1)));
+        return props;
+    }
+
+    @Override
     public List<String> vasesInfo() {
         if (vases.isEmpty()) {
             return List.of("No vase is left.");

@@ -4,7 +4,7 @@ package ir.sharif.pvz.model.game;
  * Pluggable behaviour of one minigame inside a session. Defaults are no-ops
  * so every game only overrides the hooks it needs.
  */
-interface MinigameLogic {
+public interface MinigameLogic {
 
     default void init(GameSession session) {
     }
@@ -53,5 +53,30 @@ interface MinigameLogic {
 
     default String placeZombie(GameSession session, String type, int x, int y) {
         return "Error: you cannot place zombies in this game.";
+    }
+
+    /**
+     * Everything this minigame wants drawn on the lawn on top of the ordinary
+     * plants and zombies, such as vases or rolling walnuts.
+     */
+    default java.util.List<MinigameProp> props() {
+        return java.util.List.of();
+    }
+
+    /**
+     * What the card bar should offer instead of the chosen plants. I, Zombie
+     * hands the player zombies; the others leave this empty and keep the
+     * normal seed packets.
+     */
+    default java.util.Map<String, Integer> cardsInsteadOfPlants() {
+        return java.util.Map.of();
+    }
+
+    /**
+     * The column of the line the player may not build across, or 0 when the
+     * game has no such line.
+     */
+    default int restrictedColumn() {
+        return 0;
     }
 }

@@ -164,6 +164,14 @@ class ZombieAbilities {
         }
     }
 
+    /**
+     * How many hunter ice hits a plant has taken, 0 to 3. Three freezes it
+     * solid, and the view draws a thicker ice block at each step.
+     */
+    int iceLevel(Plant plant) {
+        return iceHits.getOrDefault(plant, 0);
+    }
+
     private void throwIce(Zombie hunter) {
         Plant target = nearestPlantInRow(hunter);
         if (target == null) {

@@ -42,7 +42,11 @@ public class QuestService {
         return lines;
     }
 
-    private String status(User user, Quest quest) {
+    /**
+     * Where this quest stands for this player: "in progress", "ready to claim",
+     * "completed", or "claimed today" for a daily one.
+     */
+    public String status(User user, Quest quest) {
         String claimed = user.getClaimedQuests().get(quest.getId());
         if (quest.isDaily()) {
             if (today().equals(claimed)) {
