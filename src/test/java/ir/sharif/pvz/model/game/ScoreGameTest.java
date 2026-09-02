@@ -56,8 +56,8 @@ class ScoreGameTest {
         session.setWavesEnabled(false);
         ScoreTracker tracker = new ScoreTracker();
         session.attachScoreTracker(tracker);
-        session.cheatSpawnZombie("normal", 9, 1);
-        session.releaseTheNuke();
+        session.cheats().spawnZombie("normal", 9, 1);
+        session.cheats().releaseTheNuke();
         assertTrue(tracker.getPoints() >= ScoreTracker.KILL_POINTS);
         assertEquals(GameSession.ROWS, session.unusedMowers());
     }

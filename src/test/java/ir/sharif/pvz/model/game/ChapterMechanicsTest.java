@@ -26,11 +26,12 @@ class ChapterMechanicsTest {
     }
 
     @Test
-    void adventureHasSixteenLevelsAcrossFourChapters() {
-        assertEquals(16, Levels.adventure().size());
+    void adventureHasTwentyLevelsAcrossFourChapters() {
+        // four days plus a boss fight in each of the four chapters
+        assertEquals(20, Levels.adventure().size());
         assertEquals(Chapter.ANCIENT_EGYPT, Levels.byProgress(0).getChapter());
         assertEquals(Chapter.DARK_AGES, Levels.byProgress(15).getChapter());
-        assertEquals(Levels.byProgress(15), Levels.byProgress(99));
+        assertEquals(Levels.byProgress(19), Levels.byProgress(99));
     }
 
     @Test
@@ -45,9 +46,9 @@ class ChapterMechanicsTest {
     void directShotHitsGraveUntilItFalls() {
         Map<Integer, TileTerrain> terrain = Map.of(LevelSpec.tileKey(0, 4), TileTerrain.GRAVE);
         GameSession session = session(level(terrain, false, 0), List.of("peashooter"));
-        session.cheatAddSuns(1000);
+        session.cheats().addSuns(1000);
         session.plant("peashooter", 1, 1);
-        session.cheatSpawnZombie("normal", 9, 1);
+        session.cheats().spawnZombie("normal", 9, 1);
         session.advance(60 * GameSession.TICKS_PER_SECOND);
         List<String> events = session.drainEvents();
         assertTrue(events.stream().anyMatch(e -> e.contains("The grave at (5, 1) is destroyed.")));
@@ -65,7 +66,7 @@ class ChapterMechanicsTest {
     void waterNeedsLilyPadForLandPlants() {
         Map<Integer, TileTerrain> terrain = Map.of(LevelSpec.tileKey(0, 8), TileTerrain.WATER);
         GameSession session = session(level(terrain, false, 0), List.of("sunflower", "lily-pad"));
-        session.cheatAddSuns(1000);
+        session.cheats().addSuns(1000);
         assertTrue(session.plant("sunflower", 9, 1).contains("lily-pad"));
         assertTrue(session.plant("lily-pad", 9, 1).contains("plantable"));
         assertEquals(TileTerrain.LILY, session.terrainAt(9, 1));
@@ -76,7 +77,7 @@ class ChapterMechanicsTest {
     void slipperyIceMovesZombieToNeighbourRow() {
         Map<Integer, TileTerrain> terrain = Map.of(LevelSpec.tileKey(1, 4), TileTerrain.SLIPPERY_DOWN);
         GameSession session = session(level(terrain, false, 0), List.of());
-        session.cheatSpawnZombie("normal", 5, 2);
+        session.cheats().spawnZombie("normal", 5, 2);
         session.advance(2 * GameSession.TICKS_PER_SECOND);
         assertEquals(2, session.getZombies().get(0).getRow());
     }
@@ -87,18 +88,18 @@ class ChapterMechanicsTest {
         session.plant("sunflower", 1, 1);
         session.advance(25 * GameSession.TICKS_PER_SECOND);
         assertFalse(session.groundSuns().isEmpty());
-        session.cheatSpawnZombie("ra", 9, 1);
+        session.cheats().spawnZombie("ra", 9, 1);
         session.advance(3 * GameSession.TICKS_PER_SECOND);
         assertTrue(session.drainEvents().stream().anyMatch(e -> e.contains("Ra stole a sun")));
-        session.releaseTheNuke();
+        session.cheats().releaseTheNuke();
         assertTrue(session.drainEvents().stream().anyMatch(e -> e.contains("Ra dropped the stolen suns")));
     }
 
     @Test
     void kingKnightsANormalZombie() {
         GameSession session = session(level(Map.of(), false, 0), List.of());
-        session.cheatSpawnZombie("king", 9, 1);
-        session.cheatSpawnZombie("normal", 7, 1);
+        session.cheats().spawnZombie("king", 9, 1);
+        session.cheats().spawnZombie("normal", 7, 1);
         session.advance(9 * GameSession.TICKS_PER_SECOND);
         assertTrue(session.getZombies().stream().anyMatch(z -> z.getSpec().getName().equals("knight")));
         assertTrue(session.getZombies().stream().noneMatch(z -> z.getSpec().getName().equals("normal")));
@@ -108,10 +109,10 @@ class ChapterMechanicsTest {
     void wizardSheepsAPlantAndDeathFreesIt() {
         GameSession session = session(level(Map.of(), false, 0), List.of("sunflower"));
         session.plant("sunflower", 1, 1);
-        session.cheatSpawnZombie("wizard", 9, 5);
+        session.cheats().spawnZombie("wizard", 9, 5);
         session.advance(7 * GameSession.TICKS_PER_SECOND);
         assertTrue(session.isPlantDisabled(1, 1));
-        session.releaseTheNuke();
+        session.cheats().releaseTheNuke();
         assertFalse(session.isPlantDisabled(1, 1));
     }
 
@@ -119,7 +120,7 @@ class ChapterMechanicsTest {
     void dodoRiderFliesOverNonWallPlants() {
         GameSession session = session(level(Map.of(), false, 0), List.of("sunflower")) ;
         session.plant("sunflower", 5, 1);
-        session.cheatSpawnZombie("dodo-rider", 6, 1);
+        session.cheats().spawnZombie("dodo-rider", 6, 1);
         session.advance(8 * GameSession.TICKS_PER_SECOND);
         assertNotNull(session.plantAtTile(5, 1));
         assertTrue(session.getZombies().get(0).getX() < 4);
@@ -129,7 +130,7 @@ class ChapterMechanicsTest {
     void explorerBurnsThePlantAheadUnlessTorchIsOut() {
         GameSession session = session(level(Map.of(), false, 0), List.of("sunflower"));
         session.plant("sunflower", 5, 1);
-        session.cheatSpawnZombie("explorer", 7, 1);
+        session.cheats().spawnZombie("explorer", 7, 1);
         session.advance(4 * GameSession.TICKS_PER_SECOND);
         assertNull(session.plantAtTile(5, 1));
         assertTrue(session.drainEvents().stream().anyMatch(e -> e.contains("torch burned")));
@@ -139,7 +140,7 @@ class ChapterMechanicsTest {
     void hunterFreezesAPlantAfterThreeHits() {
         GameSession session = session(level(Map.of(), false, 0), List.of("wall-nut"));
         session.plant("wall-nut", 1, 1);
-        session.cheatSpawnZombie("hunter", 9, 1);
+        session.cheats().spawnZombie("hunter", 9, 1);
         session.advance(16 * GameSession.TICKS_PER_SECOND);
         assertTrue(session.isPlantDisabled(1, 1));
     }

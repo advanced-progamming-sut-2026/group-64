@@ -25,7 +25,7 @@ class MinigameTest {
             }
         }
         assertEquals(9, broken);
-        session.releaseTheNuke();
+        session.cheats().releaseTheNuke();
         session.advance(1);
         assertTrue(session.isWon());
     }
@@ -54,7 +54,7 @@ class MinigameTest {
         GameSession session = Minigames.start("bowling", 1, 3, List.of(), new Random(7));
         session.setWavesEnabled(false);
         assertTrue(session.plant("bowling-wallnut", 5, 1).startsWith("Error"));
-        session.cheatSpawnZombie("normal", 8, 1);
+        session.cheats().spawnZombie("normal", 8, 1);
         String belt = session.conveyorBelt().get(0);
         assertTrue(session.plant(belt, 1, 1).startsWith("Planted"));
         assertEquals(0, session.plantedPlants().size());
@@ -80,7 +80,7 @@ class MinigameTest {
     @Test
     void iZombieWinsWhenAllBrainsAreEaten() {
         GameSession session = Minigames.start("i-zombie", 1, 3, List.of(), new Random(7));
-        session.cheatAddSuns(100000);
+        session.cheats().addSuns(100000);
         for (int wave = 0; wave < 8; wave++) {
             for (int row = 1; row <= GameSession.ROWS; row++) {
                 assertFalse(session.placeZombie("conehead", 6, row).startsWith("Error"));
@@ -110,9 +110,9 @@ class MinigameTest {
     void jalapenoZombieBurnsItsRowAfterTenSeconds() {
         GameSession session = new GameSession(3, List.of("wall-nut"), new HashSet<>(), new Random(7));
         session.setWavesEnabled(false);
-        session.cheatAddSuns(1000);
+        session.cheats().addSuns(1000);
         session.plant("wall-nut", 2, 1);
-        session.cheatSpawnZombie("jalapeno-zombie", 9, 1);
+        session.cheats().spawnZombie("jalapeno-zombie", 9, 1);
         session.advance(11 * GameSession.TICKS_PER_SECOND);
         assertTrue(session.drainEvents().stream().anyMatch(e -> e.contains("ignited")));
         assertEquals(0, session.plantedPlants().size());

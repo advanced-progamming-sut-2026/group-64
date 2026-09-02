@@ -34,7 +34,9 @@ class SpecialLevelTest {
                 .toList();
         assertEquals(4, placed.size());
         for (LevelSpec level : Levels.adventure()) {
-            if (level.getDay() != 3) {
+            // the boss level carries a conveyor belt of its own, so only the
+            // ordinary days are expected to be free of special rules
+            if (level.getDay() != 3 && !level.isBoss()) {
                 assertEquals(null, level.getSpecial(),
                         level.title() + " should be a normal level");
             }
@@ -84,7 +86,7 @@ class SpecialLevelTest {
         GameSession session = session(rules, List.of());
         assertNotNull(session.plantAtTile(5, 1));
         assertTrue(session.pluck(5, 1).startsWith("Error"));
-        session.cheatSpawnZombie("gargantuar", 6, 1);
+        session.cheats().spawnZombie("gargantuar", 6, 1);
         session.advance(60 * GameSession.TICKS_PER_SECOND);
         assertTrue(session.isLost());
         assertTrue(session.drainEvents().stream().anyMatch(e -> e.contains("protected plant")));
@@ -93,8 +95,8 @@ class SpecialLevelTest {
     @Test
     void timedWarWinsOnTargetAndLosesOnTimeout() {
         GameSession quickWin = session(SpecialRules.timedWar(1, 60), List.of());
-        quickWin.cheatSpawnZombie("normal", 9, 1);
-        quickWin.releaseTheNuke();
+        quickWin.cheats().spawnZombie("normal", 9, 1);
+        quickWin.cheats().releaseTheNuke();
         quickWin.advance(1);
         assertTrue(quickWin.isWon());
 
@@ -106,7 +108,7 @@ class SpecialLevelTest {
     @Test
     void deadLineLosesWhenAZombieCrossesTheColumn() {
         GameSession session = session(SpecialRules.deadLine(4), List.of());
-        session.cheatSpawnZombie("imp", 5, 1);
+        session.cheats().spawnZombie("imp", 5, 1);
         session.advance(6 * GameSession.TICKS_PER_SECOND);
         assertTrue(session.isLost());
         assertTrue(session.drainEvents().stream().anyMatch(e -> e.contains("dead line")));
@@ -116,7 +118,7 @@ class SpecialLevelTest {
     void loveYourPlantsLosesAfterEnoughLosses() {
         GameSession session = session(SpecialRules.loveYourPlants(1), List.of("sunflower"));
         session.plant("sunflower", 8, 1);
-        session.cheatSpawnZombie("gargantuar", 9, 1);
+        session.cheats().spawnZombie("gargantuar", 9, 1);
         session.advance(20 * GameSession.TICKS_PER_SECOND);
         assertTrue(session.isLost());
     }

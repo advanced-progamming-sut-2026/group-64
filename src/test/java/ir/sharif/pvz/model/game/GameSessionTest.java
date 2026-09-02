@@ -48,7 +48,7 @@ class GameSessionTest {
     @Test
     void rechargeCooldownBlocksImmediateReplanting() {
         GameSession session = newSession(List.of("sunflower"));
-        session.cheatAddSuns(1000);
+        session.cheats().addSuns(1000);
         session.plant("sunflower", 1, 1);
         assertTrue(session.plant("sunflower", 2, 1).startsWith("Error"));
         session.advance(5 * GameSession.TICKS_PER_SECOND + 1);
@@ -58,9 +58,9 @@ class GameSessionTest {
     @Test
     void cheatRemoveCooldownLiftsRecharge() {
         GameSession session = newSession(List.of("sunflower"));
-        session.cheatAddSuns(1000);
+        session.cheats().addSuns(1000);
         session.plant("sunflower", 1, 1);
-        session.cheatRemoveCooldown();
+        session.cheats().removeCooldown();
         assertFalse(session.plant("sunflower", 2, 1).startsWith("Error"));
     }
 
@@ -87,7 +87,7 @@ class GameSessionTest {
     @Test
     void zombieWalksLeftContinuously() {
         GameSession session = newQuietSession(List.of());
-        session.cheatSpawnZombie("normal", 9, 3);
+        session.cheats().spawnZombie("normal", 9, 3);
         double before = session.getZombies().get(0).getX();
         session.advance(GameSession.TICKS_PER_SECOND);
         double after = session.getZombies().get(0).getX();
@@ -108,12 +108,12 @@ class GameSessionTest {
     @Test
     void mowerTriggersOnceThenBrainIsEaten() {
         GameSession session = newQuietSession(List.of());
-        session.cheatSpawnZombie("imp", 1, 1);
+        session.cheats().spawnZombie("imp", 1, 1);
         session.advance(40 * GameSession.TICKS_PER_SECOND);
         assertTrue(session.getZombies().isEmpty());
         assertFalse(session.isMowerAvailable(0));
         assertFalse(session.isLost());
-        session.cheatSpawnZombie("imp", 1, 1);
+        session.cheats().spawnZombie("imp", 1, 1);
         session.advance(40 * GameSession.TICKS_PER_SECOND);
         assertTrue(session.isLost());
         assertTrue(session.drainEvents().contains("The zombie ate your brain; LOSER!!!"));
@@ -122,18 +122,18 @@ class GameSessionTest {
     @Test
     void nukeKillsEveryZombieOnTheMap() {
         GameSession session = newQuietSession(List.of());
-        session.cheatSpawnZombie("normal", 9, 1);
-        session.cheatSpawnZombie("gargantuar", 9, 5);
-        session.releaseTheNuke();
+        session.cheats().spawnZombie("normal", 9, 1);
+        session.cheats().spawnZombie("gargantuar", 9, 5);
+        session.cheats().releaseTheNuke();
         assertTrue(session.getZombies().isEmpty());
     }
 
     @Test
     void peashooterKillsAnApproachingZombie() {
         GameSession session = newQuietSession(List.of("peashooter"));
-        session.cheatAddSuns(1000);
+        session.cheats().addSuns(1000);
         session.plant("peashooter", 1, 1);
-        session.cheatSpawnZombie("normal", 9, 1);
+        session.cheats().spawnZombie("normal", 9, 1);
         session.advance(60 * GameSession.TICKS_PER_SECOND);
         assertTrue(session.getZombies().isEmpty());
         assertNotNull(session.plantAtTile(1, 1));
@@ -143,7 +143,7 @@ class GameSessionTest {
     void zombieEatsPlantInItsWay() {
         GameSession session = newQuietSession(List.of("sunflower"));
         session.plant("sunflower", 8, 1);
-        session.cheatSpawnZombie("normal", 9, 1);
+        session.cheats().spawnZombie("normal", 9, 1);
         session.advance(30 * GameSession.TICKS_PER_SECOND);
         assertNull(session.plantAtTile(8, 1));
         assertTrue(session.drainEvents().stream()
@@ -154,7 +154,7 @@ class GameSessionTest {
     void plantFoodOnSunProducerGrantsSun() {
         GameSession session = newQuietSession(List.of("sunflower"));
         session.plant("sunflower", 1, 1);
-        session.cheatAddPlantFood();
+        session.cheats().addPlantFood();
         int before = session.getSunAmount();
         session.feedPlant(1, 1);
         assertEquals(before + 150, session.getSunAmount());
@@ -165,7 +165,7 @@ class GameSessionTest {
     @Test
     void spawnedZombieTypesAreRecordedForTheCollection() {
         GameSession session = newQuietSession(List.of());
-        session.cheatSpawnZombie("knight", 9, 1);
+        session.cheats().spawnZombie("knight", 9, 1);
         assertEquals(Set.of("knight"), session.getSeenZombieTypes());
     }
 }
