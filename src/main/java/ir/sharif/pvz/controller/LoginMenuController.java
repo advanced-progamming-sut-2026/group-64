@@ -4,7 +4,7 @@ import ir.sharif.pvz.model.AuthException;
 import ir.sharif.pvz.model.SecurityQuestion;
 import ir.sharif.pvz.model.User;
 import ir.sharif.pvz.model.UserValidator;
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -27,7 +27,7 @@ public class LoginMenuController extends MenuController {
     private State state = State.IDLE;
     private User recoveringUser;
 
-    public LoginMenuController(AppContext context, ConsoleView view) {
+    public LoginMenuController(AppContext context, GameView view) {
         super(context, view);
     }
 

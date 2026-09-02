@@ -4,7 +4,7 @@ import ir.sharif.pvz.model.User;
 import ir.sharif.pvz.model.game.GameCatalog;
 import ir.sharif.pvz.model.game.GameSession;
 import ir.sharif.pvz.model.game.PlantSpec;
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -35,6 +35,8 @@ public class GameMenuController extends MenuController {
     private static final Pattern COLLECT_SUN = Pattern.compile("^collect\\s+sun\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern TILE_STATUS = Pattern.compile("^show\\s+tile\\s+status\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern CHEAT_SUNS = Pattern.compile("^cheat\\s+add\\s+-n\\s+(\\d+)\\s+suns$");
+    private static final Pattern CHEAT_WALLET =
+            Pattern.compile("^cheat\\s+add\\s+-n\\s+(\\d+)\\s+(coins|diamonds)$");
     private static final Pattern CHEAT_ZOMBIE =
             Pattern.compile("^cheat\\s+spawn-zombie\\s+-t\\s+(\\S+)\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern BREAK_VASE = Pattern.compile("^break\\s+vase\\s+-l\\s+" + LOCATION + "$");
@@ -48,7 +50,7 @@ public class GameMenuController extends MenuController {
     private final boolean scoreMode;
     protected GameSession session;
 
-    public GameMenuController(AppContext context, ConsoleView view) {
+    public GameMenuController(AppContext context, GameView view) {
         this(context, view, MenuType.GAME, false);
     }
 
@@ -56,7 +58,7 @@ public class GameMenuController extends MenuController {
      * The score game reuses all game commands but plays the deterministic
      * daily level and reports mow points instead of advancing the adventure.
      */
-    public GameMenuController(AppContext context, ConsoleView view, MenuType menuType, boolean scoreMode) {
+    public GameMenuController(AppContext context, GameView view, MenuType menuType, boolean scoreMode) {
         super(context, view);
         this.menuType = menuType;
         this.scoreMode = scoreMode;
@@ -65,6 +67,28 @@ public class GameMenuController extends MenuController {
     @Override
     public MenuType type() {
         return menuType;
+    }
+
+    /**
+     * The level currently being played, or null while the player is still
+     * choosing plants. A graphical view draws the lawn straight from it.
+     */
+    public GameSession getSession() {
+        return session;
+    }
+
+    /**
+     * The plants picked so far in the selection phase.
+     */
+    public Set<String> getSelectedPlants() {
+        return java.util.Collections.unmodifiableSet(selectedPlants);
+    }
+
+    /**
+     * The plants the player paid diamonds to boost before starting.
+     */
+    public Set<String> getBoostedPlants() {
+        return java.util.Collections.unmodifiableSet(boostedPlants);
     }
 
     @Override
@@ -249,21 +273,25 @@ public class GameMenuController extends MenuController {
             view.showTileStatus(session, group(matcher, 1), group(matcher, 2));
         } else if (input.equals("zombies info")) {
             view.showZombiesInfo(session.getZombies());
+        } else if ((matcher = CHEAT_WALLET.matcher(input)).matches()) {
+            view.info(cheatWallet(Integer.parseInt(matcher.group(1)), matcher.group(2)));
         } else if ((matcher = CHEAT_SUNS.matcher(input)).matches()) {
-            view.info(session.cheatAddSuns(Integer.parseInt(matcher.group(1))));
+            view.info(session.cheats().addSuns(Integer.parseInt(matcher.group(1))));
         } else if (input.equals("cheat remove-cooldown")) {
-            view.info(session.cheatRemoveCooldown());
+            view.info(session.cheats().removeCooldown());
         } else if (input.equals("start zombie waves")) {
             view.info(session.startZombieWaves());
         } else if (input.equals("show conveyor belt")) {
             List<String> belt = session.conveyorBelt();
             view.info(belt.isEmpty() ? "The conveyor belt is empty." : "Belt: " + String.join(", ", belt));
         } else if (input.equals("cheat add-plant-food")) {
-            view.info(session.cheatAddPlantFood());
+            view.info(session.cheats().addPlantFood());
         } else if ((matcher = CHEAT_ZOMBIE.matcher(input)).matches()) {
-            view.info(session.cheatSpawnZombie(matcher.group(1), group(matcher, 2), group(matcher, 3)));
+            view.info(session.cheats().spawnZombie(matcher.group(1), group(matcher, 2), group(matcher, 3)));
+        } else if (input.equals("forfeit level")) {
+            session.forfeit();
         } else if (input.equals("release the nuke")) {
-            view.info(session.releaseTheNuke());
+            view.info(session.cheats().releaseTheNuke());
         } else {
             return handleMinigameCommand(input);
         }
@@ -284,6 +312,19 @@ public class GameMenuController extends MenuController {
             return false;
         }
         return true;
+    }
+
+    /**
+     * The debug-mode shortcut for topping up the player's wallet.
+     */
+    private String cheatWallet(int amount, String currency) {
+        User user = context.getCurrentUser();
+        if ("coins".equals(currency)) {
+            user.addCoins(amount);
+            return "Added " + amount + " coins; you now have " + user.getCoins() + ".";
+        }
+        user.addDiamonds(amount);
+        return "Added " + amount + " diamonds; you now have " + user.getDiamonds() + ".";
     }
 
     private static int group(Matcher matcher, int index) {
@@ -348,4 +389,5 @@ public class GameMenuController extends MenuController {
         }
         user.updateMaxMewPoints(tracker.getPoints());
     }
+
 }

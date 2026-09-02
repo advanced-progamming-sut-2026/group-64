@@ -2,7 +2,7 @@ package ir.sharif.pvz.controller;
 
 import ir.sharif.pvz.model.User;
 import ir.sharif.pvz.model.game.Minigames;
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -21,7 +21,7 @@ public class MinigameMenuController extends GameMenuController {
     private String currentName;
     private int currentStage;
 
-    public MinigameMenuController(AppContext context, ConsoleView view) {
+    public MinigameMenuController(AppContext context, GameView view) {
         super(context, view, MenuType.MINIGAME, false);
     }
 

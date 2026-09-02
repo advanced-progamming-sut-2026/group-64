@@ -2,7 +2,7 @@ package ir.sharif.pvz.controller;
 
 import ir.sharif.pvz.model.RegisterRequest;
 import ir.sharif.pvz.model.SecurityQuestion;
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -25,8 +25,23 @@ public class SignupMenuController extends MenuController {
     private State state = State.IDLE;
     private RegisterRequest pendingRequest;
 
-    public SignupMenuController(AppContext context, ConsoleView view) {
+    public SignupMenuController(AppContext context, GameView view) {
         super(context, view);
+    }
+
+    /**
+     * True once the credentials were accepted and only the security question is
+     * still missing, so a graphical view knows which step to draw.
+     */
+    public boolean isAwaitingSecurityQuestion() {
+        return state == State.AWAITING_SECURITY_QUESTION;
+    }
+
+    /**
+     * True while the two passwords did not match and a retry is expected.
+     */
+    public boolean isAwaitingPasswordRetry() {
+        return state == State.AWAITING_PASSWORD_RETRY;
     }
 
     @Override

@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * The single place that writes to the console; controllers never print directly.
  */
-public class ConsoleView {
+public class ConsoleView implements GameView {
 
     private final PrintStream out;
 
@@ -26,24 +26,22 @@ public class ConsoleView {
         this.out = out;
     }
 
+    @Override
     public void info(String message) {
         out.println(message);
     }
 
+    @Override
     public void error(String message) {
         out.println("Error: " + message);
     }
 
-    public void errors(List<String> messages) {
-        for (String message : messages) {
-            error(message);
-        }
-    }
-
+    @Override
     public void showCurrentMenu(String menuName) {
         out.println("You are in the " + menuName + " menu.");
     }
 
+    @Override
     public void showSecurityQuestions(List<String> questions) {
         out.println("Pick a security question with:");
         out.println("pick question -q <question_number> -a <answer> -c <answer_confirm>");
@@ -52,10 +50,7 @@ public class ConsoleView {
         }
     }
 
-    public void unknownCommand() {
-        out.println("Error: invalid command.");
-    }
-
+    @Override
     public void showUserInfo(User user) {
         out.println("Username: " + user.getUsername());
         out.println("Nickname: " + user.getNickname());
@@ -66,6 +61,7 @@ public class ConsoleView {
         out.println("Max mew points: " + user.getMaxMewPoints());
     }
 
+    @Override
     public void showNews(List<NewsItem> items, String emptyMessage) {
         if (items.isEmpty()) {
             out.println(emptyMessage);
@@ -79,6 +75,7 @@ public class ConsoleView {
     /**
      * Terminal rendering of the whole board: header stats then one line per row.
      */
+    @Override
     public void showMap(GameSession session) {
         out.println("Wave: " + session.getCurrentWave() + " | Sun: " + session.getSunAmount()
                 + " | Plant food: " + session.getPlantFood());
@@ -117,6 +114,7 @@ public class ConsoleView {
         return name.length() <= 4 ? String.format("%-4s", name) : name.substring(0, 4);
     }
 
+    @Override
     public void showPlantsStatus(GameSession session) {
         for (String type : session.getSelectedPlants()) {
             double remaining = session.cooldownRemaining(type);
@@ -129,6 +127,7 @@ public class ConsoleView {
         }
     }
 
+    @Override
     public void showTileStatus(GameSession session, int x, int y) {
         if (x < 1 || x > GameSession.COLS || y < 1 || y > GameSession.ROWS) {
             error("(" + x + ", " + y + ") is not a valid tile.");
@@ -163,6 +162,7 @@ public class ConsoleView {
     /**
      * The YAML-like per-zombie report shown by "zombies info".
      */
+    @Override
     public void showZombiesInfo(List<Zombie> zombies) {
         if (zombies.isEmpty()) {
             out.println("There is no zombie on the map.");

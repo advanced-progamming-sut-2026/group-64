@@ -2,7 +2,7 @@ package ir.sharif.pvz.controller;
 
 import ir.sharif.pvz.model.AuthException;
 import ir.sharif.pvz.model.User;
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,7 +23,7 @@ public class ProfileMenuController extends MenuController {
     private static final Pattern SHOW_INFO_PATTERN =
             Pattern.compile("^menu\\s+profile\\s+show-info$");
 
-    public ProfileMenuController(AppContext context, ConsoleView view) {
+    public ProfileMenuController(AppContext context, GameView view) {
         super(context, view);
     }
 

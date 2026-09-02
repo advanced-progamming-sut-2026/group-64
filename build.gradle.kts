@@ -2,6 +2,7 @@ plugins {
     application
     checkstyle
     pmd
+    id("org.openjfx.javafxplugin") version "0.1.0"
 }
 
 group = "ir.sharif.pvz"
@@ -22,6 +23,13 @@ application {
     mainClass = "ir.sharif.pvz.Main"
 }
 
+// JavaFX 21 is the last release that still compiles against a Java 17 target,
+// which keeps the phase-1 toolchain settings below untouched.
+javafx {
+    version = "21.0.5"
+    modules = listOf("javafx.controls", "javafx.fxml", "javafx.media", "javafx.swing")
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
@@ -38,6 +46,17 @@ tasks.named<JavaExec>("run") {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+/**
+ * Renders every screen of the graphical view to build/snapshots for review.
+ * A development aid, not part of the build.
+ */
+tasks.register<JavaExec>("snapshots") {
+    group = "verification"
+    description = "Writes a PNG of each screen to build/snapshots."
+    mainClass = "ir.sharif.pvz.devtools.SnapshotLauncher"
+    classpath = sourceSets["test"].runtimeClasspath
 }
 
 checkstyle {

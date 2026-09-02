@@ -4,7 +4,7 @@ import ir.sharif.pvz.model.User;
 import ir.sharif.pvz.model.game.GameCatalog;
 import ir.sharif.pvz.model.game.PlantSpec;
 import ir.sharif.pvz.model.game.ZombieSpec;
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -16,16 +16,19 @@ import java.util.regex.Pattern;
  */
 public class CollectionMenuController extends MenuController {
 
-    private static final int PURCHASE_COIN_COST = 2000;
-    private static final int UPGRADE_COINS_PER_LEVEL = 1000;
-    private static final int UPGRADE_PACKETS_PER_LEVEL = 3;
+    /** What an unowned plant costs; the collection screen prints it on the card. */
+    public static final int PURCHASE_COIN_COST = 2000;
+    /** Coins charged per level when upgrading, multiplied by the target level. */
+    public static final int UPGRADE_COINS_PER_LEVEL = 1000;
+    /** Seed packets consumed per level, multiplied by the target level. */
+    public static final int UPGRADE_PACKETS_PER_LEVEL = 3;
 
     private static final Pattern SHOW_PLANT = Pattern.compile("^menu\\s+collection\\s+show-plant\\s+-p\\s+(\\S+)$");
     private static final Pattern SHOW_ZOMBIE = Pattern.compile("^menu\\s+collection\\s+show-zombie\\s+-z\\s+(\\S+)$");
     private static final Pattern UPGRADE = Pattern.compile("^menu\\s+collection\\s+upgrade-plant\\s+-p\\s+(\\S+)$");
     private static final Pattern PURCHASE = Pattern.compile("^menu\\s+collection\\s+purchase-plant\\s+-p\\s+(\\S+)$");
 
-    public CollectionMenuController(AppContext context, ConsoleView view) {
+    public CollectionMenuController(AppContext context, GameView view) {
         super(context, view);
     }
 
@@ -41,8 +44,9 @@ public class CollectionMenuController extends MenuController {
 
     @Override
     protected void onExit() {
-        context.setCurrentMenu(MenuType.GAME);
-        view.info("You are back in the game menu.");
+        MenuType back = context.originOf(MenuType.COLLECTION, MenuType.GAME);
+        context.setCurrentMenu(back);
+        view.info("You are back in the " + back.id() + " menu.");
     }
 
     @Override

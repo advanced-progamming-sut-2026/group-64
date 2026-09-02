@@ -6,22 +6,29 @@ import ir.sharif.pvz.model.SessionStore;
 import ir.sharif.pvz.model.User;
 import ir.sharif.pvz.model.UserRepository;
 import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Scanner;
 
 /**
- * Wires the application together and runs the read-eval-print loop.
+ * Wires the application together. The console front-end drives it with
+ * {@link #run()}; the JavaFX front-end drives the very same controllers by
+ * feeding them one command at a time through {@link #submit(String)}.
  */
 public final class GameApp {
 
     private final AppContext context;
-    private final ConsoleView view;
+    private final GameView view;
     private final Map<MenuType, MenuController> controllers = new EnumMap<>(MenuType.class);
 
     public GameApp() {
-        this.view = new ConsoleView();
+        this(new ConsoleView());
+    }
+
+    public GameApp(GameView view) {
+        this.view = view;
         UserRepository userRepository = new UserRepository();
         SessionStore sessionStore = new SessionStore();
         AuthService authService = new AuthService(userRepository);
@@ -67,16 +74,43 @@ public final class GameApp {
         }
     }
 
-    public void run() {
-        view.info("Plants vs Zombies 2 - CLI");
+    /**
+     * Runs one command through the controller of the menu the player is in.
+     */
+    public void submit(String command) {
+        controllers.get(context.getCurrentMenu()).handle(command);
+    }
+
+    /**
+     * The controller currently in charge, so a graphical view can read the
+     * live state it needs to draw (for example the running game session).
+     */
+    public MenuController currentController() {
+        return controllers.get(context.getCurrentMenu());
+    }
+
+    public AppContext getContext() {
+        return context;
+    }
+
+    public void greet() {
+        view.info("Plants vs Zombies 2");
         if (context.getCurrentUser() != null) {
             view.info("Welcome back, " + context.getCurrentUser().getNickname() + "! You are in the main menu.");
         }
+    }
+
+    public void save() {
+        context.getUserRepository().save();
+    }
+
+    public void run() {
+        greet();
         try (Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8)) {
             while (context.isRunning() && scanner.hasNextLine()) {
-                controllers.get(context.getCurrentMenu()).handle(scanner.nextLine());
+                submit(scanner.nextLine());
             }
         }
-        context.getUserRepository().save();
+        save();
     }
 }

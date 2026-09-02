@@ -1,7 +1,7 @@
 package ir.sharif.pvz.controller;
 
 import ir.sharif.pvz.model.LeaderboardService;
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -18,7 +18,7 @@ public class LeaderboardMenuController extends MenuController {
 
     private final LeaderboardService leaderboardService;
 
-    public LeaderboardMenuController(AppContext context, ConsoleView view) {
+    public LeaderboardMenuController(AppContext context, GameView view) {
         super(context, view);
         this.leaderboardService = new LeaderboardService(context.getUserRepository());
     }

@@ -1,6 +1,6 @@
 package ir.sharif.pvz.controller;
 
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,7 +14,7 @@ public class ShopMenuController extends MenuController {
     private static final Pattern BUY = Pattern.compile(
             "^shop\\s+buy\\s+-i\\s+(\\S+)\\s+-n\\s+(\\d+)(?:\\s+-t\\s+(\\S+))?$");
 
-    public ShopMenuController(AppContext context, ConsoleView view) {
+    public ShopMenuController(AppContext context, GameView view) {
         super(context, view);
     }
 
@@ -30,8 +30,9 @@ public class ShopMenuController extends MenuController {
 
     @Override
     protected void onExit() {
-        context.setCurrentMenu(MenuType.GREENHOUSE);
-        view.info("You are back in the greenhouse.");
+        MenuType back = context.originOf(MenuType.SHOP, MenuType.GREENHOUSE);
+        context.setCurrentMenu(back);
+        view.info("You are back in the " + back.id() + " menu.");
     }
 
     @Override

@@ -1,6 +1,6 @@
 package ir.sharif.pvz.controller;
 
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.Set;
 
 /**
@@ -8,7 +8,7 @@ import java.util.Set;
  */
 public class MainMenuController extends MenuController {
 
-    public MainMenuController(AppContext context, ConsoleView view) {
+    public MainMenuController(AppContext context, GameView view) {
         super(context, view);
     }
 
@@ -20,7 +20,8 @@ public class MainMenuController extends MenuController {
     @Override
     protected Set<MenuType> allowedTargets() {
         return Set.of(MenuType.GAME, MenuType.SETTINGS, MenuType.NEWS, MenuType.PROFILE,
-                MenuType.GREENHOUSE, MenuType.SCORE_GAME, MenuType.LEADERBOARD, MenuType.TRAVEL_LOG);
+                MenuType.GREENHOUSE, MenuType.SCORE_GAME, MenuType.LEADERBOARD, MenuType.TRAVEL_LOG,
+                MenuType.COLLECTION, MenuType.SHOP);
     }
 
     @Override

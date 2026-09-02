@@ -16,3 +16,4 @@ build/
 # that ships inside src/main/resources
 /data/
 *.save.json
+src.zip

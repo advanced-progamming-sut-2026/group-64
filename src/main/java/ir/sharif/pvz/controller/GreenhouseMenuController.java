@@ -1,6 +1,6 @@
 package ir.sharif.pvz.controller;
 
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,7 +16,7 @@ public class GreenhouseMenuController extends MenuController {
     private static final Pattern COLLECT = Pattern.compile("^collect\\s+" + LOCATION + "$");
     private static final Pattern GROW = Pattern.compile("^grow\\s+" + LOCATION + "$");
 
-    public GreenhouseMenuController(AppContext context, ConsoleView view) {
+    public GreenhouseMenuController(AppContext context, GameView view) {
         super(context, view);
     }
 
@@ -42,6 +42,7 @@ public class GreenhouseMenuController extends MenuController {
         if (input.equals("show greenhouse")) {
             context.getGreenhouseService().describe(context.getCurrentUser()).forEach(view::info);
         } else if (input.equals("enter shop")) {
+            context.rememberOrigin(MenuType.SHOP, MenuType.GREENHOUSE);
             context.setCurrentMenu(MenuType.SHOP);
             view.info("You entered the shop.");
         } else if ((matcher = PLANT_POT.matcher(input)).matches()) {

@@ -1,6 +1,6 @@
 package ir.sharif.pvz.controller;
 
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,7 +14,7 @@ public class TravelLogMenuController extends MenuController {
     private static final Pattern PAGE = Pattern.compile("^travel\\s+log\\s+page\\s+(\\S+)$");
     private static final Pattern CLAIM = Pattern.compile("^travel\\s+log\\s+claim\\s+-q\\s+(\\S+)$");
 
-    public TravelLogMenuController(AppContext context, ConsoleView view) {
+    public TravelLogMenuController(AppContext context, GameView view) {
         super(context, view);
     }
 

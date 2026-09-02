@@ -1,7 +1,7 @@
 package ir.sharif.pvz.controller;
 
 import ir.sharif.pvz.model.NewsItem;
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.List;
 import java.util.Set;
 
@@ -10,7 +10,7 @@ import java.util.Set;
  */
 public class NewsMenuController extends MenuController {
 
-    public NewsMenuController(AppContext context, ConsoleView view) {
+    public NewsMenuController(AppContext context, GameView view) {
         super(context, view);
     }
 

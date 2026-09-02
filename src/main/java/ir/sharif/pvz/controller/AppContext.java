@@ -24,6 +24,8 @@ public class AppContext {
 
     private User currentUser;
     private MenuType currentMenu = MenuType.SIGNUP;
+    private final java.util.Map<MenuType, MenuType> enteredFrom =
+            new java.util.EnumMap<>(MenuType.class);
     private boolean running = true;
 
     public AppContext(UserRepository userRepository, SessionStore sessionStore,
@@ -72,6 +74,22 @@ public class AppContext {
 
     public void setCurrentUser(User currentUser) {
         this.currentUser = currentUser;
+    }
+
+    /**
+     * Records that the player walked into {@code target} from {@code origin},
+     * so leaving it can send them back where they actually came from.
+     */
+    public void rememberOrigin(MenuType target, MenuType origin) {
+        enteredFrom.put(target, origin);
+    }
+
+    /**
+     * Where the player entered {@code menu} from, or {@code fallback} when it
+     * was reached some other way (a fresh session, or the console's own route).
+     */
+    public MenuType originOf(MenuType menu, MenuType fallback) {
+        return enteredFrom.getOrDefault(menu, fallback);
     }
 
     public MenuType getCurrentMenu() {

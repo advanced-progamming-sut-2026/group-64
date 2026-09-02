@@ -1,6 +1,6 @@
 package ir.sharif.pvz.controller;
 
-import ir.sharif.pvz.view.ConsoleView;
+import ir.sharif.pvz.view.GameView;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,9 +14,9 @@ public abstract class MenuController {
     private static final Pattern ENTER_PATTERN = Pattern.compile("^menu\\s+enter\\s+(\\S+)$");
 
     protected final AppContext context;
-    protected final ConsoleView view;
+    protected final GameView view;
 
-    protected MenuController(AppContext context, ConsoleView view) {
+    protected MenuController(AppContext context, GameView view) {
         this.context = context;
         this.view = view;
     }
@@ -69,6 +69,7 @@ public abstract class MenuController {
             view.error("You cannot enter the " + target.id() + " menu from the " + type().id() + " menu.");
             return;
         }
+        context.rememberOrigin(target, type());
         context.setCurrentMenu(target);
         view.info("You entered the " + target.id() + " menu.");
     }
