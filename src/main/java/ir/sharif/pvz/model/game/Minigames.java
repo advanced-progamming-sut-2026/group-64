@@ -26,6 +26,37 @@ public final class Minigames {
      * Builds a running session for the given minigame stage; zombotany is a
      * plain level whose zombies carry plant heads, the others plug in logic.
      */
+    /**
+     * A two-player versus round: an empty lawn, no waves, and both sides
+     * placing their own units.
+     */
+    public static GameSession versus(int difficulty, java.util.List<String> plantChoices,
+                                     java.util.Random random) {
+        return versus(new VersusGame(), difficulty, plantChoices, random);
+    }
+
+    /**
+     * The same round, built around rules the caller keeps a handle on. The
+     * server needs that handle to read the brains and the clock when it packs
+     * a board up for the two clients.
+     */
+    public static GameSession versus(VersusGame rules, java.util.Random random) {
+        return versus(rules, 3, VersusGame.PLANTS, random);
+    }
+
+    private static GameSession versus(VersusGame rules, int difficulty,
+                                      java.util.List<String> plantChoices,
+                                      java.util.Random random) {
+        LevelSpec level = new LevelSpec(Chapter.ANCIENT_EGYPT, 99, 1, 1,
+                java.util.List.of("normal"), java.util.Map.of(), 0, false, false, false);
+        GameSession session = new GameSession(level, difficulty, plantChoices,
+                new java.util.HashSet<>(), random);
+        session.attachMinigame(rules);
+        return session;
+    }
+
+
+
     public static GameSession start(String name, int stage, int difficulty,
                                     List<String> selectedPlants, Random random) {
         LevelSpec level;
