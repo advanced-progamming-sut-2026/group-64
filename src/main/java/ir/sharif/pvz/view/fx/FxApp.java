@@ -11,12 +11,22 @@ import javafx.stage.Stage;
  */
 public final class FxApp extends Application {
 
+    /**
+     * The link to the server, handed over before the toolkit starts because
+     * JavaFX builds the Application itself.
+     */
+    private static ir.sharif.pvz.net.client.ServerConnection connection;
+
+    public static void setConnection(ir.sharif.pvz.net.client.ServerConnection link) {
+        connection = link;
+    }
+
     private GameApp app;
 
     @Override
     public void start(Stage stage) {
         FxView view = new FxView();
-        app = new GameApp(view);
+        app = new GameApp(view, connection);
 
         GameUi ui = new GameUi(app, view);
         Scene scene = new Scene(ui.root(), GameUi.WIDTH, GameUi.HEIGHT);

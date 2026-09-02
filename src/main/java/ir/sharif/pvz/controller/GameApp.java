@@ -5,6 +5,9 @@ import ir.sharif.pvz.model.ProfileService;
 import ir.sharif.pvz.model.SessionStore;
 import ir.sharif.pvz.model.User;
 import ir.sharif.pvz.model.UserRepository;
+import ir.sharif.pvz.model.net.RemoteAuthService;
+import ir.sharif.pvz.model.net.RemoteUserRepository;
+import ir.sharif.pvz.net.client.ServerConnection;
 import ir.sharif.pvz.view.ConsoleView;
 import ir.sharif.pvz.view.GameView;
 import java.nio.charset.StandardCharsets;
@@ -21,21 +24,49 @@ public final class GameApp {
 
     private final AppContext context;
     private final GameView view;
+    private final ServerConnection connection;
     private final Map<MenuType, MenuController> controllers = new EnumMap<>(MenuType.class);
 
     public GameApp() {
         this(new ConsoleView());
     }
 
+    /**
+     * The offline build: accounts live in a file next to the game.
+     */
     public GameApp(GameView view) {
+        this(view, null);
+    }
+
+    /**
+     * @param connection the link to the game server, or null to play offline
+     *                   against the accounts stored on this machine
+     */
+    public GameApp(GameView view, ServerConnection connection) {
         this.view = view;
-        UserRepository userRepository = new UserRepository();
+        this.connection = connection;
+        UserRepository userRepository = connection == null
+                ? new UserRepository()
+                : new RemoteUserRepository(connection);
         SessionStore sessionStore = new SessionStore();
-        AuthService authService = new AuthService(userRepository);
+        AuthService authService = connection == null
+                ? new AuthService(userRepository)
+                : new RemoteAuthService(connection, (RemoteUserRepository) userRepository);
         ProfileService profileService = new ProfileService(userRepository);
         this.context = new AppContext(userRepository, sessionStore, authService, profileService);
         registerControllers();
         restoreSession();
+    }
+
+    /**
+     * The server link, or null when playing offline.
+     */
+    public ServerConnection connection() {
+        return connection;
+    }
+
+    public boolean isOnline() {
+        return connection != null && connection.isOpen();
     }
 
     private void registerControllers() {
@@ -49,10 +80,30 @@ public final class GameApp {
         register(new CollectionMenuController(context, view));
         register(new GreenhouseMenuController(context, view));
         register(new ShopMenuController(context, view));
-        register(new GameMenuController(context, view, MenuType.SCORE_GAME, true));
+        register(scoreGameController());
         register(new LeaderboardMenuController(context, view));
         register(new TravelLogMenuController(context, view));
         register(new MinigameMenuController(context, view));
+    }
+
+    /**
+     * The daily score game. When there is a server, its result is posted so the
+     * leaderboard's My Point column can show it.
+     */
+    private GameMenuController scoreGameController() {
+        GameMenuController controller =
+                new GameMenuController(context, view, MenuType.SCORE_GAME, true);
+        if (connection != null) {
+            controller.setScoreReporter(points -> {
+                try {
+                    connection.ask(connection.request(ir.sharif.pvz.net.Protocol.SUBMIT_SCORE)
+                            .with("points", points));
+                } catch (ir.sharif.pvz.net.client.ServerException e) {
+                    view.error("Could not post your score: " + e.getMessage());
+                }
+            });
+        }
+        return controller;
     }
 
     private void register(MenuController controller) {
@@ -63,6 +114,11 @@ public final class GameApp {
      * If a user logged in with stay-logged-in, skip signup/login and go straight to the main menu.
      */
     private void restoreSession() {
+        if (connection != null) {
+            // the server decides who is signed in, so a remembered name on this
+            // machine is not enough to skip the login screen
+            return;
+        }
         String savedUsername = context.getSessionStore().load();
         if (savedUsername == null) {
             return;
