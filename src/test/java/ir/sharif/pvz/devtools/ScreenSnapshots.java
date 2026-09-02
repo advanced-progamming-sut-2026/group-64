@@ -100,6 +100,12 @@ public final class ScreenSnapshots extends Application {
         steps.add(() -> shoot("19-pause-menu"));
         steps.add(this::showZomboss);
         steps.add(() -> shoot("20-zomboss"));
+        steps.add(this::showVersusLobby);
+        steps.add(() -> shoot("20-versus-lobby"));
+        steps.add(this::showVersusBattle);
+        steps.add(() -> shoot("21-versus-battle"));
+        steps.add(this::showCouchPlay);
+        steps.add(() -> shoot("22-couch-play"));
         steps.add(Platform::exit);
     }
 
@@ -152,6 +158,33 @@ public final class ScreenSnapshots extends Application {
         if (ui.current() instanceof ir.sharif.pvz.view.fx.screen.BattleScreen battle) {
             battle.freezeForSnapshot();
         }
+    }
+
+    /**
+     * The two-players-on-one-device board.
+     */
+    private void showCouchPlay() {
+        ui.show(new ir.sharif.pvz.view.fx.screen.CouchPlayScreen(ui));
+    }
+
+    /**
+     * The lobby where a two-player game is arranged. It is shown offline here,
+     * which is why the online list comes back empty.
+     */
+    private void showVersusLobby() {
+        finishCurrentLevel();
+        returnToMainMenu();
+        ui.show(new ir.sharif.pvz.view.fx.screen.VersusLobbyScreen(ui));
+    }
+
+    /**
+     * The versus board, fed one handmade snapshot so the layout can be checked
+     * without a server and a second player.
+     */
+    private void showVersusBattle() {
+        var screen = new ir.sharif.pvz.view.fx.screen.VersusScreen(ui, "plants", "vahid");
+        ui.show(screen);
+        screen.showBoardForSnapshot(ir.sharif.pvz.devtools.SampleBoard.build());
     }
 
     /**
