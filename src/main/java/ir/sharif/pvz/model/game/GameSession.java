@@ -694,14 +694,6 @@ public class GameSession {
         return frontmostInRow(row, fromX);
     }
 
-    int graveColumnBetween(int row, int fromCol, double targetX) {
-        return board.graveColumnBetween(row, fromCol, targetX);
-    }
-
-    void damageGraveAt(int row, int col, int damage) {
-        damageGrave(row, col, damage);
-    }
-
     // ===== special-level hooks =====
 
     void placeProtectedPlant(int row, int col, String type) {
@@ -784,6 +776,23 @@ public class GameSession {
     void placePlant(int row, int col, String type) {
         grid[row][col] = new Plant(GameCatalog.get().plant(type), row, col, false);
         events.add("A " + type + " defends (" + (col + 1) + ", " + (row + 1) + ").");
+    }
+
+    /**
+     * Trades two neighbouring plants, which only Beghouled allows.
+     */
+    public String swapPlants(int x1, int y1, int x2, int y2) {
+        if (minigame instanceof BeghouledGame beghouled) {
+            return beghouled.swap(this, x1, y1, x2, y2);
+        }
+        return "Error: you cannot swap plants in this game.";
+    }
+
+    /**
+     * The minigame's own objective line, or null when it has none.
+     */
+    public String minigameObjective() {
+        return minigame instanceof BeghouledGame beghouled ? beghouled.progress() : null;
     }
 
     public String breakVase(int x, int y) {
@@ -869,7 +878,7 @@ public class GameSession {
         return board.graveHpAt(y - 1, x - 1);
     }
 
-    private void damageGrave(int row, int col, int damage) {
+    void damageGrave(int row, int col, int damage) {
         String contents = board.damageGrave(row, col, damage);
         if ("sun".equals(contents)) {
             sunAmount += 50;

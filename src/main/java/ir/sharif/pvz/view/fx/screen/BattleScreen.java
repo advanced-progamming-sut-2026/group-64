@@ -82,6 +82,9 @@ public final class BattleScreen extends Screen {
     /** null unless an I, Zombie card is picked up. */
     private String armedZombie;
 
+    /** The tile Beghouled is holding for the second half of a swap, or null. */
+    private int[] swapFrom;
+
     public BattleScreen(GameUi ui, MenuType menu) {
         super(ui);
         this.menu = menu;
@@ -384,6 +387,12 @@ public final class BattleScreen extends Screen {
      * or the reminder that the waves are waiting on the player.
      */
     private String objectiveStatus(GameSession session) {
+        String minigame = session.minigameObjective();
+        if (minigame != null) {
+            return swapFrom == null
+                    ? minigame + "   ·   click two neighbouring plants to swap them"
+                    : minigame + "   ·   now click the plant to swap it with";
+        }
         var special = session.getSpecial();
         var rules = special.getRules();
         if (rules == null) {
@@ -617,6 +626,10 @@ public final class BattleScreen extends Screen {
             return;
         }
         String location = " -l (" + tile[0] + ", " + tile[1] + ")";
+        if (session.minigameObjective() != null) {
+            swapAt(tile);
+            return;
+        }
         if (breakVaseAt(session, tile)) {
             return;
         }
@@ -642,6 +655,27 @@ public final class BattleScreen extends Screen {
         // the tile even if the mouse never moves again
         lawn.setHoveredTile(-1, -1, false);
         applyCursor();
+    }
+
+    /**
+     * The Beghouled interaction: the first click picks a plant up, the second
+     * one names the neighbour to trade it with. Clicking the same tile twice
+     * puts it back down.
+     */
+    private void swapAt(int[] tile) {
+        if (swapFrom == null) {
+            swapFrom = tile;
+            lawn.setHoveredTile(tile[0], tile[1], true);
+            return;
+        }
+        int[] from = swapFrom;
+        swapFrom = null;
+        lawn.setHoveredTile(-1, -1, false);
+        if (from[0] == tile[0] && from[1] == tile[1]) {
+            return;
+        }
+        ui.submitQuietly("swap plant -l (" + from[0] + ", " + from[1] + ")"
+                + " -l (" + tile[0] + ", " + tile[1] + ")");
     }
 
     /**

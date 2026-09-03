@@ -94,6 +94,8 @@ public final class ScreenSnapshots extends Application {
         steps.add(() -> shoot("16-vasebreaker"));
         steps.add(() -> startMinigame("i-zombie"));
         steps.add(() -> shoot("17-i-zombie"));
+        steps.add(() -> startMinigame("beghouled"));
+        steps.add(() -> shoot("17-beghouled"));
         steps.add(this::showExplosion);
         steps.add(() -> shoot("18-explosion"));
         steps.add(this::showPauseMenu);

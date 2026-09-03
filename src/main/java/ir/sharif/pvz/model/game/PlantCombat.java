@@ -112,9 +112,10 @@ class PlantCombat {
             return;
         }
         if (!lobbed) {
-            int grave = session.graveColumnBetween(plant.getRow(), plant.getCol() + 1, target.getX());
+            int grave = session.board.graveColumnBetween(plant.getRow(),
+                    plant.getCol() + 1, target.getX());
             if (grave >= 0) {
-                session.damageGraveAt(plant.getRow(), grave, plant.getDamage());
+                session.damageGrave(plant.getRow(), grave, plant.getDamage());
                 plant.resetAttackCooldown();
                 return;
             }

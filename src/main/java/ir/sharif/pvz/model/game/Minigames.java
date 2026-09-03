@@ -10,7 +10,8 @@ import java.util.Random;
  */
 public final class Minigames {
 
-    public static final List<String> NAMES = List.of("vasebreaker", "bowling", "i-zombie", "zombotany");
+    public static final List<String> NAMES =
+            List.of("vasebreaker", "bowling", "i-zombie", "zombotany", "beghouled");
     public static final int STAGES = 3;
 
     /** The five placeable zombies of every i,Zombie stage (13 distinct overall). */
@@ -78,6 +79,10 @@ public final class Minigames {
                 level = zombotanyLevel(stage);
                 logic = null;
             }
+            case "beghouled" -> {
+                level = beghouledLevel(stage);
+                logic = new BeghouledGame(stage, random);
+            }
             default -> {
                 return null;
             }
@@ -107,6 +112,19 @@ public final class Minigames {
                 Map.of(), 0, true, false, false,
                 SpecialRules.conveyorBelt(List.of("bowling-wallnut", "bowling-wallnut",
                         "explode-o-nut", "giant-wallnut")))
+                .waveIncrement(500 + 100 * stage);
+    }
+
+    /**
+     * Beghouled runs on an ordinary lawn with ordinary waves; the logic fills
+     * every tile with plants and the player rearranges them from there.
+     */
+    private static LevelSpec beghouledLevel(int stage) {
+        List<String> pool = stage >= 2
+                ? List.of("normal", "conehead", "buckethead")
+                : List.of("normal", "conehead");
+        return new LevelSpec(Chapter.ANCIENT_EGYPT, 90 + stage, 3 + stage,
+                1000 + 500 * (stage - 1), pool, Map.of(), 0, false, false, false)
                 .waveIncrement(500 + 100 * stage);
     }
 

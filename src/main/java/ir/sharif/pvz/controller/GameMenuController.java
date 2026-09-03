@@ -33,6 +33,8 @@ public class GameMenuController extends MenuController {
     private static final Pattern ADVANCE_TIME = Pattern.compile("^advance\\s+time\\s+-t\\s+(\\d+)\\s+ticks?$");
     private static final Pattern PLANT = Pattern.compile("^plant\\s+plant\\s+-t\\s+(\\S+)\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern PLUCK = Pattern.compile("^pluck\\s+plant\\s+-l\\s+" + LOCATION + "$");
+    private static final Pattern SWAP = Pattern.compile(
+            "^swap\\s+plant\\s+-l\\s+" + LOCATION + "\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern FEED = Pattern.compile("^feed\\s+plant\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern COLLECT_SUN = Pattern.compile("^collect\\s+sun\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern TILE_STATUS = Pattern.compile("^show\\s+tile\\s+status\\s+-l\\s+" + LOCATION + "$");
@@ -337,6 +339,9 @@ public class GameMenuController extends MenuController {
             session.advance(Integer.parseInt(matcher.group(1)));
         } else if ((matcher = PLANT.matcher(input)).matches()) {
             view.info(session.plant(matcher.group(1), group(matcher, 2), group(matcher, 3)));
+        } else if ((matcher = SWAP.matcher(input)).matches()) {
+            view.info(session.swapPlants(group(matcher, 1), group(matcher, 2),
+                    group(matcher, 3), group(matcher, 4)));
         } else if ((matcher = PLUCK.matcher(input)).matches()) {
             view.info(session.pluck(group(matcher, 1), group(matcher, 2)));
         } else if ((matcher = FEED.matcher(input)).matches()) {

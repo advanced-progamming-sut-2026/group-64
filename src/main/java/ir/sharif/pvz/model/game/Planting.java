@@ -152,6 +152,10 @@ final class Planting {
      * Every reason this tile will not take this plant, or null when it will.
      */
     private String whyNot(String type, int x, int y) {
+        String minigameRejection = session.minigame == null ? null : session.minigame.plantingRejection(x, y);
+        if (minigameRejection != null) {
+            return minigameRejection;
+        }
         if (!session.special.conveyorMode() && !freeHand() && !session.getSelectedPlants().contains(type)) {
             return "Error: plant '" + type + "' is not among your selected plants.";
         }
@@ -166,11 +170,7 @@ final class Planting {
         if (standing != null && !canStackOnto(standing, spec)) {
             return "Error: tile (" + x + ", " + y + ") is already occupied.";
         }
-        String terrainError = session.board.rejection(spec, y - 1, x - 1);
-        if (terrainError != null) {
-            return terrainError;
-        }
-        return session.minigame == null ? null : session.minigame.plantingRejection(x, y);
+        return session.board.rejection(spec, y - 1, x - 1);
     }
 
     /**
