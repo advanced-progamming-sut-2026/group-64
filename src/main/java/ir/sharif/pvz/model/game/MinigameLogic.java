@@ -64,6 +64,22 @@ public interface MinigameLogic {
     }
 
     /**
+     * Trades two neighbouring plants, for the one game that rearranges the
+     * lawn rather than planting on it.
+     */
+    default String swap(GameSession session, int x1, int y1, int x2, int y2) {
+        return "Error: you cannot swap plants in this game.";
+    }
+
+    /**
+     * The line this game wants on the objective bar, or null when the ordinary
+     * level objectives belong there instead.
+     */
+    default String objective(GameSession session) {
+        return null;
+    }
+
+    /**
      * Plants currently moving between tiles, for the view to draw part-way.
      * Only Beghouled rearranges the lawn, so everything else leaves this empty.
      */

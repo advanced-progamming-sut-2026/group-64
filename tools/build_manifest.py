@@ -119,6 +119,13 @@ ICE = {
     "zombie-front": "effects/frostbite_ice_block_zombie/frostbite_ice_block_zombie_153x243",
 }
 
+# the sandstorm that sweeps across an Ancient Egypt lawn, in two layers
+SANDSTORM = {
+    "sandstorm-back": "effects/sandstorm_rear/sandstorm_back1",
+    "sandstorm-front": "effects/sandstorm_top/sandstorm_front1",
+    "sandstorm-cloud": "effects/sandstorm_top/sandstorm_cloud",
+}
+
 # the three Dark Ages grave kinds, keyed by what the grave is hiding
 GRAVES = {
     "empty": "gravestones/Dark_Noop/Dark_Noop_132x160",
@@ -189,6 +196,8 @@ def main():
         wanted[f"zombies/{our}-bare"] = f"images/{RES}/initial/ui/almanac/packets_zombies/{theirs}"
     for our, theirs in ICE.items():
         wanted[f"ice/{our}"] = f"images/{RES}/initial/{theirs}"
+    for our, theirs in SANDSTORM.items():
+        wanted[f"props/{our}"] = f"images/{RES}/initial/{theirs}"
     for our, theirs in GRAVES.items():
         wanted[f"props/grave-{our}"] = f"images/{RES}/full/{theirs}"
     for our, theirs in VASES.items():

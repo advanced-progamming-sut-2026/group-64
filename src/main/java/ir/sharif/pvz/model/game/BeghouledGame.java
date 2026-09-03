@@ -118,7 +118,7 @@ class BeghouledGame implements MinigameLogic {
      * How far along the stage's quota the player is, for the view's objective
      * line.
      */
-    String progress() {
+    private String progress() {
         return matches + " / " + target + " matches";
     }
 
@@ -126,7 +126,7 @@ class BeghouledGame implements MinigameLogic {
      * How many swaps on the board would still line three up, so the player can
      * see whether the lawn is running out of moves.
      */
-    int movesLeft(GameSession session) {
+    private int movesLeft(GameSession session) {
         int moves = 0;
         for (int row = 0; row < GameSession.ROWS; row++) {
             for (int col = 0; col < GameSession.COLS; col++) {
@@ -147,7 +147,13 @@ class BeghouledGame implements MinigameLogic {
      * Trades two neighbouring plants. The swap only stands when it lines three
      * of a kind up; otherwise the two go straight back where they were.
      */
-    String swap(GameSession session, int x1, int y1, int x2, int y2) {
+    @Override
+    public String objective(GameSession session) {
+        return progress() + "   ·   " + movesLeft(session) + " swaps left";
+    }
+
+    @Override
+    public String swap(GameSession session, int x1, int y1, int x2, int y2) {
         String rejection = whyNotSwappable(session, x1, y1, x2, y2);
         if (rejection != null) {
             return rejection;

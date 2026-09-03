@@ -35,6 +35,7 @@ public class GameSession {
     private final ZombossEngine zomboss;
     private final Set<Plant> protectedPlants = new java.util.HashSet<>();
     private final Cheats cheats = new Cheats(this);
+    private final Sandstorm sandstorm;
     private final Planting planting = new Planting(this);
 
     private final Plant[][] grid = new Plant[ROWS][COLS];
@@ -82,6 +83,7 @@ public class GameSession {
         this.combat = new PlantCombat(this);
         java.util.Arrays.fill(mowers, true);
         this.board = new Board(level, difficultyUp, random, events);
+        this.sandstorm = new Sandstorm(level.getChapter());
         this.sunSystem = new SunSystem(level, difficultyUp, random, events);
         this.waves = new WaveSystem(this, level, difficultyDown, random);
         this.special = new SpecialLevelEngine(this, level.getSpecial(), random);
@@ -399,6 +401,13 @@ public class GameSession {
      * The level being played, so a view can pick the right background and show
      * the wave count without keeping its own copy of the level data.
      */
+    /**
+     * The chapter's weather, which the view draws and nothing else reads.
+     */
+    public Sandstorm getSandstorm() {
+        return sandstorm;
+    }
+
     public LevelSpec getLevel() {
         return level;
     }
@@ -782,20 +791,16 @@ public class GameSession {
      * Trades two neighbouring plants, which only Beghouled allows.
      */
     public String swapPlants(int x1, int y1, int x2, int y2) {
-        if (minigame instanceof BeghouledGame beghouled) {
-            return beghouled.swap(this, x1, y1, x2, y2);
-        }
-        return "Error: you cannot swap plants in this game.";
+        return minigame == null
+                ? "Error: you cannot swap plants in this game."
+                : minigame.swap(this, x1, y1, x2, y2);
     }
 
     /**
      * The minigame's own objective line, or null when it has none.
      */
     public String minigameObjective() {
-        if (!(minigame instanceof BeghouledGame beghouled)) {
-            return null;
-        }
-        return beghouled.progress() + "   ·   " + beghouled.movesLeft(this) + " swaps left";
+        return minigame == null ? null : minigame.objective(this);
     }
 
     public String breakVase(int x, int y) {

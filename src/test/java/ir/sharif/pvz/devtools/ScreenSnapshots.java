@@ -91,6 +91,8 @@ public final class ScreenSnapshots extends Application {
         steps.add(() -> shoot("10-plant-picker"));
         steps.add(this::startBattle);
         steps.add(() -> shoot("11-battle"));
+        steps.add(this::runToSandstorm);
+        steps.add(() -> shoot("11-sandstorm"));
         steps.add(this::armPlantOverTile);
         steps.add(() -> shoot("12-placing"));
         steps.add(this::startDeadLineLevel);
@@ -333,6 +335,23 @@ public final class ScreenSnapshots extends Application {
         // the account is reused between runs, so wind its progress back to make
         // every snapshot show the same level it did last time
         app.getContext().getCurrentUser().setLevelsPassed(0);
+        ui.refresh();
+    }
+
+    /**
+     * Winds an Ancient Egypt level on to the middle of a sandstorm.
+     */
+    private void runToSandstorm() {
+        var session = ((ir.sharif.pvz.controller.GameMenuController) app.currentController())
+                .getSession();
+        double period = ir.sharif.pvz.model.game.Sandstorm.PERIOD_SECONDS;
+        double wanted = ir.sharif.pvz.model.game.Sandstorm.CROSSING_SECONDS / 2;
+        // wind on to the middle of the next crossing, wherever the clock is now
+        double now = session.getElapsedSeconds();
+        double target = Math.ceil((now - wanted) / period) * period + wanted;
+        int ticks = (int) Math.round((target - now)
+                * ir.sharif.pvz.model.game.GameSession.TICKS_PER_SECOND);
+        app.submit("advance time -t " + Math.max(1, ticks) + " ticks");
         ui.refresh();
     }
 

@@ -5,6 +5,7 @@ import ir.sharif.pvz.model.game.GameSession;
 import ir.sharif.pvz.model.game.Plant;
 import ir.sharif.pvz.model.game.MinigameProp;
 import ir.sharif.pvz.model.game.MinigameSlide;
+import ir.sharif.pvz.model.game.Sandstorm;
 import ir.sharif.pvz.model.game.Shot;
 import ir.sharif.pvz.model.game.SpecialRules;
 import ir.sharif.pvz.model.game.Sun;
@@ -90,10 +91,42 @@ public class LawnView extends Canvas {
         drawSpecialMarkers(gc, session);
         drawHoveredTile(gc);
         drawMowers(gc, session);
+        drawSandstorm(gc, session, "back");
         drawSuns(gc, session);
         drawRows(gc, session, seconds);
+        drawSandstorm(gc, session, "front");
         drawZomboss(gc, session, seconds);
         drawBursts(gc, session);
+        gc.restore();
+    }
+
+    /**
+     * The Ancient Egypt sandstorm, in the two layers the artwork comes in: one
+     * behind the lawn and one over the top of it, so the plants sit inside the
+     * storm rather than behind a sheet of sand.
+     */
+    private void drawSandstorm(GraphicsContext gc, GameSession session, String layer) {
+        Sandstorm storm = session.getSandstorm();
+        double now = session.getElapsedSeconds();
+        double strength = storm.intensityAt(now);
+        if (strength <= 0) {
+            return;
+        }
+        Image art = Assets.image("props/sandstorm-" + layer);
+        if (art == null) {
+            return;
+        }
+        double centreX = tileX(1) + (storm.columnAt(now) - 1) * tileWidth();
+        double height = getHeight() * 1.1;
+        // a front a few tiles wide, so the sand is seen crossing the lawn
+        // rather than washing the whole picture in one colour
+        double width = tileWidth() * 2.6;
+        gc.save();
+        gc.setGlobalAlpha("front".equals(layer) ? strength * 0.5 : strength * 0.75);
+        for (int i = -1; i <= 1; i++) {
+            gc.drawImage(art, centreX - width / 2 + i * width * 0.62,
+                    getHeight() / 2 - height / 2, width, height);
+        }
         gc.restore();
     }
 
