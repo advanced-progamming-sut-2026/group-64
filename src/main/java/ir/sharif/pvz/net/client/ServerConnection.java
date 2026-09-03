@@ -6,8 +6,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.Socket;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -26,7 +27,13 @@ public final class ServerConnection implements AutoCloseable {
 
     private final Channel channel;
     private final AtomicLong nextId = new AtomicLong(1);
-    private final Map<Long, SynchronousQueue<Message>> waiting = new ConcurrentHashMap<>();
+    /**
+     * One pigeonhole per request in flight, keyed by its id. It has to be a
+     * queue that can hold the reply rather than one that hands it straight
+     * over: the reader thread can get the answer back before the caller has
+     * reached its {@code poll}, and anything without room drops it there.
+     */
+    private final Map<Long, BlockingQueue<Message>> waiting = new ConcurrentHashMap<>();
     private final Map<String, Consumer<Message>> listeners = new ConcurrentHashMap<>();
 
     private volatile boolean open = true;
@@ -73,7 +80,7 @@ public final class ServerConnection implements AutoCloseable {
         if (!open) {
             throw new ServerException("Not connected to the server.");
         }
-        SynchronousQueue<Message> slot = new SynchronousQueue<>();
+        BlockingQueue<Message> slot = new ArrayBlockingQueue<>(1);
         waiting.put(request.getId(), slot);
         try {
             channel.send(request);
@@ -131,7 +138,7 @@ public final class ServerConnection implements AutoCloseable {
     }
 
     private void deliver(Message message) {
-        SynchronousQueue<Message> slot = message.getId() == 0 ? null : waiting.get(message.getId());
+        BlockingQueue<Message> slot = message.getId() == 0 ? null : waiting.get(message.getId());
         if (slot != null) {
             slot.offer(message);
             return;
