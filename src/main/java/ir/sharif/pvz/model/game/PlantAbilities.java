@@ -98,6 +98,9 @@ class PlantAbilities {
      */
     boolean act(Plant plant) {
         PlantSpec spec = plant.getSpec();
+        if (spec.getCategory() == PlantCategory.MINT) {
+            return mint(plant);
+        }
         if (spec.hasTag("instant")) {
             return instant(plant);
         }
@@ -156,7 +159,7 @@ class PlantAbilities {
                 return true;
             }
             default -> {
-                return plant.getSpec().getCategory() == PlantCategory.MINT && mint(plant);
+                return false;
             }
         }
         session.destroyPlantSilently(plant);

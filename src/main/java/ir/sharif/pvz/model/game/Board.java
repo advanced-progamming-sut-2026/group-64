@@ -74,8 +74,11 @@ class Board {
     String rejection(PlantSpec spec, int row, int col) {
         TileTerrain kind = terrain[row][col];
         String tile = "(" + (col + 1) + ", " + (row + 1) + ")";
-        if (kind == TileTerrain.GRAVE) {
+        if (kind == TileTerrain.GRAVE && !spec.hasTag("grave-buster")) {
             return "Error: you cannot plant on the grave at " + tile + ".";
+        }
+        if (kind != TileTerrain.GRAVE && spec.hasTag("grave-buster")) {
+            return "Error: the grave buster at " + tile + " has no grave to chew on.";
         }
         if (kind == TileTerrain.CRATER) {
             return "Error: the crater at " + tile + " cannot be planted in.";

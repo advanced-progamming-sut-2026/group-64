@@ -30,7 +30,8 @@ public class Plant {
         this.level = Math.max(1, level);
         this.hp = maxHp();
         this.boosted = boosted;
-        this.armSeconds = spec.getCategory() == PlantCategory.TRAP ? 15 : 0;
+        this.armSeconds = spec.getCategory() == PlantCategory.TRAP
+                && spec.hasTag("charge") ? 15 : 0;
     }
 
     /**
