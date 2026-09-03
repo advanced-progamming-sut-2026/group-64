@@ -29,6 +29,23 @@ class LeaderboardServiceTest {
         return repository;
     }
 
+    /**
+     * The score game played against the server has a column of its own, and it
+     * belongs in the console table as much as in the graphical one. A player
+     * who never played one online shows a dash, not a zero.
+     */
+    @Test
+    void theTableCarriesTheNetworkedScoreGameColumn() {
+        UserRepository repository = repositoryWithPlayers();
+        repository.findByUsername("strong").submitNetworkPoints(420);
+        List<String> lines = new LeaderboardService(repository)
+                .table(LeaderboardService.Column.MYPOINT, false);
+        assertTrue(lines.get(0).contains("strong"), lines.get(0));
+        assertTrue(lines.get(0).contains("my point: 420"), lines.get(0));
+        assertTrue(lines.get(1).contains("my point: -"),
+                "a player with no online record shows a dash: " + lines.get(1));
+    }
+
     @Test
     void sortsByMowPointsDescendingByDefaultDirection() {
         LeaderboardService service = new LeaderboardService(repositoryWithPlayers());

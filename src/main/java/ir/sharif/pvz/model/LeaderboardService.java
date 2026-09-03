@@ -45,12 +45,21 @@ public class LeaderboardService {
                     + " | last passed: " + lastPassed(user)
                     + " | minigames: " + user.getMinigamesCompleted()
                     + " | quests: " + user.getQuestsCompleted()
-                    + " | mow points: " + user.getMaxMewPoints());
+                    + " | mow points: " + user.getMaxMewPoints()
+                    + " | my point: " + myPoint(user));
         }
         if (lines.isEmpty()) {
             lines.add("No player has registered yet.");
         }
         return lines;
+    }
+
+    /**
+     * The score-game record posted from a networked session. A player who has
+     * never played one online has no record rather than a zero.
+     */
+    private static String myPoint(User user) {
+        return user.getNetworkPoints() == null ? "-" : String.valueOf(user.getNetworkPoints());
     }
 
     private Comparator<User> comparatorFor(Column column) {

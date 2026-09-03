@@ -115,6 +115,33 @@ class BeghouledTest {
         }
     }
 
+    /**
+     * The plants that move have to be reported as travelling, or the board
+     * would jump from one arrangement to the next.
+     */
+    @Test
+    void aSwapReportsThePlantsItSetMoving() {
+        GameSession session = stage(1);
+        assertTrue(session.getMinigame().slides().isEmpty(), "nothing moves before a swap");
+        set(session, 1, 3, "peashooter");
+        set(session, 2, 3, "peashooter");
+        set(session, 3, 3, "wall-nut");
+        set(session, 3, 2, "peashooter");
+        session.swapPlants(3, 2, 3, 3);
+
+        List<MinigameSlide> slides = session.getMinigame().slides();
+        assertFalse(slides.isEmpty(), "the swap and the collapse both move plants");
+        for (MinigameSlide slide : slides) {
+            assertTrue(slide.progress() >= 0 && slide.progress() <= 1, "progress stays in range");
+            assertTrue(slide.toCol() >= 1 && slide.toCol() <= GameSession.COLS);
+            assertTrue(slide.toRow() >= 1 && slide.toRow() <= GameSession.ROWS);
+            assertNotNull(GameCatalog.get().plant(slide.plant()), slide.plant() + " is a real plant");
+        }
+        // a quarter of a second later they have all arrived
+        session.advance(4 * GameSession.TICKS_PER_SECOND);
+        assertTrue(session.getMinigame().slides().isEmpty(), "the movement finishes");
+    }
+
     @Test
     void aMatchOfTheTopTierPaysSunInsteadOfUpgrading() {
         GameSession session = stage(1);
@@ -127,6 +154,19 @@ class BeghouledTest {
         assertTrue(session.getSunAmount() >= before + 100, "the top of the family pays sun");
         assertTrue(session.drainEvents().stream()
                 .anyMatch(e -> e.contains("as far as that family goes")));
+    }
+
+    /**
+     * The objective line tells the player how many swaps are still worth
+     * making, and a freshly dealt lawn always has at least one.
+     */
+    @Test
+    void theBoardReportsHowManySwapsAreStillWorthMaking() {
+        GameSession session = stage(1);
+        assertTrue(session.minigameObjective().contains("swaps left"),
+                session.minigameObjective());
+        assertFalse(session.minigameObjective().contains("0 swaps left"),
+                "a dealt lawn always has a move: " + session.minigameObjective());
     }
 
     @Test
@@ -206,7 +246,7 @@ class BeghouledTest {
         GameSession three = stage(3);
         assertNull(new GameSession(3, List.of(), new java.util.HashSet<>(), new Random(1))
                 .minigameObjective(), "an ordinary level has no Beghouled objective");
-        assertEquals("0 / 8 matches", one.minigameObjective());
-        assertEquals("0 / 14 matches", three.minigameObjective());
+        assertTrue(one.minigameObjective().startsWith("0 / 8 matches"), one.minigameObjective());
+        assertTrue(three.minigameObjective().startsWith("0 / 14 matches"), three.minigameObjective());
     }
 }

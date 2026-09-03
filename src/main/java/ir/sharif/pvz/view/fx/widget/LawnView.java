@@ -4,6 +4,7 @@ import ir.sharif.pvz.model.game.Burst;
 import ir.sharif.pvz.model.game.GameSession;
 import ir.sharif.pvz.model.game.Plant;
 import ir.sharif.pvz.model.game.MinigameProp;
+import ir.sharif.pvz.model.game.MinigameSlide;
 import ir.sharif.pvz.model.game.Shot;
 import ir.sharif.pvz.model.game.SpecialRules;
 import ir.sharif.pvz.model.game.Sun;
@@ -437,11 +438,18 @@ public class LawnView extends Canvas {
      * the project document calls out as the correct draw order.
      */
     private void drawRows(GraphicsContext gc, GameSession session, double seconds) {
+        java.util.List<MinigameSlide> slides = slides(session);
         for (int row = 1; row <= GameSession.ROWS; row++) {
             for (int col = 1; col <= GameSession.COLS; col++) {
                 Plant plant = session.plantAtTile(col, row);
-                if (plant != null) {
+                // a plant still on its way is drawn part-way, not on its tile
+                if (plant != null && !arriving(slides, col, row)) {
                     drawPlant(gc, session, plant, col, row, seconds);
+                }
+            }
+            for (MinigameSlide slide : slides) {
+                if (slide.toRow() == row) {
+                    drawSlide(gc, slide);
                 }
             }
             for (Zombie zombie : session.getZombies()) {
@@ -470,6 +478,38 @@ public class LawnView extends Canvas {
         return session.getMinigame() == null
                 ? java.util.List.of()
                 : session.getMinigame().props();
+    }
+
+    /**
+     * The plants a minigame currently has travelling between tiles.
+     */
+    private static java.util.List<MinigameSlide> slides(GameSession session) {
+        return session.getMinigame() == null
+                ? java.util.List.of()
+                : session.getMinigame().slides();
+    }
+
+    /**
+     * Whether a plant bound for this tile is still on its way there.
+     */
+    private static boolean arriving(java.util.List<MinigameSlide> slides, int col, int row) {
+        for (MinigameSlide slide : slides) {
+            if (slide.toCol() == col && slide.toRow() == row) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * A plant part-way between two tiles, drawn at the point it has reached.
+     */
+    private void drawSlide(GraphicsContext gc, MinigameSlide slide) {
+        double height = tileHeight() * 0.95;
+        drawSprite(gc, Assets.plant(slide.plant()),
+                tileX(1) + (slide.col() - 1) * tileWidth(),
+                tileY(1) + (slide.row() - 1) * tileHeight(),
+                height, Color.web("#4caf50"));
     }
 
     private void drawProp(GraphicsContext gc, MinigameProp prop) {

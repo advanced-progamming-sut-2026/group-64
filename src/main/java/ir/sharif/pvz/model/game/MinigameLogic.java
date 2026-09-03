@@ -64,6 +64,14 @@ public interface MinigameLogic {
     }
 
     /**
+     * Plants currently moving between tiles, for the view to draw part-way.
+     * Only Beghouled rearranges the lawn, so everything else leaves this empty.
+     */
+    default java.util.List<MinigameSlide> slides() {
+        return java.util.List.of();
+    }
+
+    /**
      * What the card bar should offer instead of the chosen plants. I, Zombie
      * hands the player zombies; the others leave this empty and keep the
      * normal seed packets.

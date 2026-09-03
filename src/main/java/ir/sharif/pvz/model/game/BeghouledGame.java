@@ -28,6 +28,9 @@ class BeghouledGame implements MinigameLogic {
     /** Sun paid for each plant a match had beyond the first three. */
     private static final int EXTRA_SUN = 50;
 
+    /** How long a swapped or falling plant takes to reach its new tile. */
+    private static final double SLIDE_SECONDS = 0.25;
+
     /**
      * The upgrade ladders. A match of the first plant of a family brings back
      * the second, a match of the second brings back the third, and a match of
@@ -40,6 +43,25 @@ class BeghouledGame implements MinigameLogic {
             List.of("cabbage-pult", "kernel-pult", "melon-pult"),
             List.of("bonk-choy", "wasabi-whip", "phat-beet"));
 
+    /** A plant part-way between two tiles, aged down every tick. */
+    private static final class Move {
+        private final String plant;
+        private final double fromCol;
+        private final double fromRow;
+        private final int toCol;
+        private final int toRow;
+        private double remaining = SLIDE_SECONDS;
+
+        Move(String plant, double fromCol, double fromRow, int toCol, int toRow) {
+            this.plant = plant;
+            this.fromCol = fromCol;
+            this.fromRow = fromRow;
+            this.toCol = toCol;
+            this.toRow = toRow;
+        }
+    }
+
+    private final List<Move> moving = new ArrayList<>();
     private final int stage;
     private final int target;
     private final Random random;
@@ -65,12 +87,58 @@ class BeghouledGame implements MinigameLogic {
         return "Error: you rearrange the lawn here rather than planting on it.";
     }
 
+    @Override
+    public void tick(GameSession session, double seconds) {
+        double step = 1.0 / GameSession.TICKS_PER_SECOND;
+        for (Move move : moving) {
+            move.remaining -= step;
+        }
+        moving.removeIf(move -> move.remaining <= 0);
+    }
+
+    @Override
+    public List<MinigameSlide> slides() {
+        List<MinigameSlide> live = new ArrayList<>();
+        for (Move move : moving) {
+            live.add(new MinigameSlide(move.plant, move.fromCol, move.fromRow,
+                    move.toCol, move.toRow, 1 - move.remaining / SLIDE_SECONDS));
+        }
+        return live;
+    }
+
+    /**
+     * Notes a plant travelling from one tile to another. Board coordinates are
+     * 0-based here and 1-based in the slide, which is what the view draws in.
+     */
+    private void slide(String plant, double fromRow, double fromCol, int toRow, int toCol) {
+        moving.add(new Move(plant, fromCol + 1, fromRow + 1, toCol + 1, toRow + 1));
+    }
+
     /**
      * How far along the stage's quota the player is, for the view's objective
      * line.
      */
     String progress() {
         return matches + " / " + target + " matches";
+    }
+
+    /**
+     * How many swaps on the board would still line three up, so the player can
+     * see whether the lawn is running out of moves.
+     */
+    int movesLeft(GameSession session) {
+        int moves = 0;
+        for (int row = 0; row < GameSession.ROWS; row++) {
+            for (int col = 0; col < GameSession.COLS; col++) {
+                if (wouldMatch(session, row, col, row, col + 1)) {
+                    moves++;
+                }
+                if (wouldMatch(session, row, col, row + 1, col)) {
+                    moves++;
+                }
+            }
+        }
+        return moves;
     }
 
     // ===== the swap =====
@@ -97,13 +165,15 @@ class BeghouledGame implements MinigameLogic {
             put(session, row2, col2, second);
             return "Error: swapping " + first + " and " + second + " lines nothing up.";
         }
+        slide(first, row1, col1, row2, col2);
+        slide(second, row2, col2, row1, col1);
         int cleared = settle(session, row2, col2);
         reshuffleWhileStuck(session);
         if (matches >= target && !session.isOver()) {
             session.winNow("That is " + matches + " matches; the lawn is yours!");
         }
         return "Swapped " + first + " and " + second + "; " + cleared + " plants cleared ("
-                + progress() + ").";
+                + progress() + ", " + movesLeft(session) + " swaps left on the board).";
     }
 
     private String whyNotSwappable(GameSession session, int x1, int y1, int x2, int y2) {
@@ -186,19 +256,25 @@ class BeghouledGame implements MinigameLogic {
         }
         for (int col : columns) {
             List<String> standing = new ArrayList<>();
+            List<Integer> standingRows = new ArrayList<>();
             for (int row = 0; row < GameSession.ROWS; row++) {
                 String type = typeAt(session, row, col);
                 if (type != null) {
                     standing.add(type);
+                    standingRows.add(row);
                 }
                 session.clearTile(row, col);
             }
             int gaps = GameSession.ROWS - standing.size();
             for (int row = 0; row < gaps; row++) {
-                put(session, row, col, randomBasePlant());
+                String fresh = randomBasePlant();
+                put(session, row, col, fresh);
+                // the new plants come in from above the top of the lawn
+                slide(fresh, row - gaps, col, row, col);
             }
             for (int i = 0; i < standing.size(); i++) {
                 put(session, gaps + i, col, standing.get(i));
+                slide(standing.get(i), standingRows.get(i), col, gaps + i, col);
             }
         }
     }
@@ -250,7 +326,7 @@ class BeghouledGame implements MinigameLogic {
      */
     private void reshuffleWhileStuck(GameSession session) {
         int guard = 0;
-        while (!hasAMoveLeft(session) && guard++ < 20) {
+        while (movesLeft(session) == 0 && guard++ < 20) {
             deal(session);
             session.eventLog().add("No swap left on that lawn; the plants were dealt again.");
         }
@@ -271,24 +347,12 @@ class BeghouledGame implements MinigameLogic {
                 int tile = group.iterator().next();
                 put(session, tile / GameSession.COLS, tile % GameSession.COLS, randomBasePlant());
             }
-        } while (!hasAMoveLeft(session) && guard++ < 20);
+        } while (movesLeft(session) == 0 && guard++ < 20);
     }
 
     /**
      * Whether any single swap of two neighbours would line three up.
      */
-    private boolean hasAMoveLeft(GameSession session) {
-        for (int row = 0; row < GameSession.ROWS; row++) {
-            for (int col = 0; col < GameSession.COLS; col++) {
-                if (wouldMatch(session, row, col, row, col + 1)
-                        || wouldMatch(session, row, col, row + 1, col)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     private boolean wouldMatch(GameSession session, int row1, int col1, int row2, int col2) {
         if (row2 >= GameSession.ROWS || col2 >= GameSession.COLS) {
             return false;

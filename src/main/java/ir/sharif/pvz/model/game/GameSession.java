@@ -792,7 +792,10 @@ public class GameSession {
      * The minigame's own objective line, or null when it has none.
      */
     public String minigameObjective() {
-        return minigame instanceof BeghouledGame beghouled ? beghouled.progress() : null;
+        if (!(minigame instanceof BeghouledGame beghouled)) {
+            return null;
+        }
+        return beghouled.progress() + "   ·   " + beghouled.movesLeft(this) + " swaps left";
     }
 
     public String breakVase(int x, int y) {
