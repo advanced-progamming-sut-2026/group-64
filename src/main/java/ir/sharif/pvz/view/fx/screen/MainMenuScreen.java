@@ -55,7 +55,15 @@ public final class MainMenuScreen extends Screen {
         logout.getStyleClass().add("link-button");
         logout.setOnAction(event -> ui.submit("menu logout"));
 
-        VBox column = new VBox(22, brand, greeting, play, tiles, logout);
+        Button quit = new Button("Quit the game");
+        quit.getStyleClass().add("link-button");
+        quit.setOnAction(event -> Dialogs.confirm(ui, "Leave the game",
+                "Your progress is saved. Close Plants vs. Zombies?", this::quit));
+
+        javafx.scene.layout.HBox leaving = new javafx.scene.layout.HBox(18, logout, quit);
+        leaving.setAlignment(Pos.CENTER);
+
+        VBox column = new VBox(22, brand, greeting, play, tiles, leaving);
         column.setAlignment(Pos.CENTER);
         column.setPadding(new Insets(30));
 
@@ -70,6 +78,16 @@ public final class MainMenuScreen extends Screen {
         bar.setAlignment(Pos.CENTER_RIGHT);
         bar.setPadding(new Insets(16, 24, 0, 24));
         return bar;
+    }
+
+    /**
+     * Writes the account out and closes the window. Going through the menu
+     * command first keeps the console and the graphical build leaving the same
+     * way.
+     */
+    private void quit() {
+        ui.view().capture(() -> ui.app().submit("exit game"));
+        javafx.application.Platform.exit();
     }
 
     /**
@@ -92,7 +110,7 @@ public final class MainMenuScreen extends Screen {
      */
     private StackPane versusTile() {
         // the lobby is reachable offline too, because couch play lives there
-        return tile("Versus", "⚔", () -> ui.show(new VersusLobbyScreen(ui)));
+        return tile("Versus", "🧟", () -> ui.show(new VersusLobbyScreen(ui)));
     }
 
     private StackPane tile(String caption, String glyph, Runnable action) {

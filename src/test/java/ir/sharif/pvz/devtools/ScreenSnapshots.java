@@ -351,10 +351,22 @@ public final class ScreenSnapshots extends Application {
     private void signIn() {
         String user = "devsnap";
         String password = "Aa1!aaaa";
-        app.submit("register -u " + user + " -p " + password + " " + password
-                + " -n Dev -e dev@example.com -g female");
-        app.submit("pick question -q 1 -a green -c green");
+        // the game restores the last session on start, so the account may
+        // already be signed in; anything submitted here would be refused and
+        // the refusal would show as an error toast in the first screenshot
+        if (app.getContext().getCurrentUser() != null) {
+            app.getContext().getCurrentUser().setLevelsPassed(0);
+            ui.refresh();
+            return;
+        }
+        // otherwise sign in, and only make the account when there is none
+        app.submit("menu enter login");
+        app.submit("login -u " + user + " -p " + password);
         if (app.getContext().getCurrentUser() == null) {
+            app.submit("menu exit");
+            app.submit("register -u " + user + " -p " + password + " " + password
+                    + " -n Dev -e dev@example.com -g female");
+            app.submit("pick question -q 1 -a green -c green");
             app.submit("menu enter login");
             app.submit("login -u " + user + " -p " + password);
         }

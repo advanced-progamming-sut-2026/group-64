@@ -24,13 +24,24 @@ public class MainMenuController extends MenuController {
                 MenuType.COLLECTION, MenuType.SHOP);
     }
 
+    /**
+     * There is no menu above this one, so leaving it is leaving the game. The
+     * account is written out first; logging out and staying in the game is
+     * "menu logout".
+     */
     @Override
     protected void onExit() {
-        view.error("You must log out first. Use: menu logout");
+        context.getUserRepository().save();
+        view.info("Goodbye!");
+        context.stop();
     }
 
     @Override
     protected void handleCommand(String input) {
+        if (input.equals("exit game")) {
+            onExit();
+            return;
+        }
         if (input.equals("menu logout")) {
             context.getSessionStore().clear();
             context.setCurrentUser(null);

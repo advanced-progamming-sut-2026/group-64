@@ -1,6 +1,8 @@
 package ir.sharif.pvz.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ir.sharif.pvz.model.AuthService;
 import ir.sharif.pvz.model.Gender;
@@ -103,6 +105,35 @@ class ScreenCommandsTest {
                         menu.id() + " does not understand '" + command + "': " + reply);
             }
         });
+    }
+
+    /**
+     * There has to be a way out of the game that is not closing the window.
+     * The main menu used to answer "menu exit" with "you must log out first",
+     * and logging out only moved to the signup menu, so quitting meant two
+     * unrelated steps and neither was called exit.
+     */
+    @Test
+    void theMainMenuCanBeLeftAndLeavingItLeavesTheGame() {
+        assertTrue(app.getContext().isRunning());
+        String reply = inMenu(MenuType.MAIN, "exit game");
+        assertTrue(reply.contains("Goodbye"), reply);
+        assertFalse(app.getContext().isRunning(), "the game is over");
+    }
+
+    @Test
+    void menuExitFromTheMainMenuLeavesTheGameToo() {
+        assertTrue(app.getContext().isRunning());
+        inMenu(MenuType.MAIN, "menu exit");
+        assertFalse(app.getContext().isRunning(),
+                "there is no menu above the main one, so leaving it leaves the game");
+    }
+
+    @Test
+    void loggingOutIsStillItsOwnThingAndKeepsTheGameRunning() {
+        inMenu(MenuType.MAIN, "menu logout");
+        assertTrue(app.getContext().isRunning(), "logging out does not close the game");
+        assertEquals(MenuType.SIGNUP, app.getContext().getCurrentMenu());
     }
 
     /**
