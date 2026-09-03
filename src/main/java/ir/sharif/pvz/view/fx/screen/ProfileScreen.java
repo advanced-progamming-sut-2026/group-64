@@ -67,13 +67,25 @@ public final class ProfileScreen extends Screen {
         return row + 1;
     }
 
+    /**
+     * The menu commands behind the buttons. They are the full commands the
+     * profile menu answers to, spelled the way its patterns expect — including
+     * the nickname's -u, which is not the -n it looks like it should be. The
+     * screen used to send its own shorter wording and every button was quietly
+     * refused.
+     */
+    public static final String CHANGE_USERNAME = "menu profile change-username -u ";
+    public static final String CHANGE_NICKNAME = "menu profile change-nickname -u ";
+    public static final String CHANGE_EMAIL = "menu profile change-email -e ";
+    public static final String CHANGE_PASSWORD = "menu profile change-password";
+
     private VBox edits() {
         VBox panel = Forms.panel(14, Forms.heading("Change your details"));
         panel.setPrefWidth(COLUMN_WIDTH);
         panel.getChildren().addAll(
-                renameRow("Username", "change username -u "),
-                renameRow("Nickname", "change nickname -n "),
-                renameRow("Email", "change email -e "),
+                renameRow("Username", CHANGE_USERNAME),
+                renameRow("Nickname", CHANGE_NICKNAME),
+                renameRow("Email", CHANGE_EMAIL),
                 passwordRow());
         return panel;
     }
@@ -98,7 +110,7 @@ public final class ProfileScreen extends Screen {
         PasswordField newPassword = new PasswordField();
         Button apply = new Button("Change password");
         apply.getStyleClass().add("primary-button");
-        apply.setOnAction(event -> ui.submit("change password -p "
+        apply.setOnAction(event -> ui.submit(CHANGE_PASSWORD + " -p "
                 + SignupScreen.blankToDash(newPassword.getText())
                 + " -o " + SignupScreen.blankToDash(oldPassword.getText())));
         return Forms.panel(8,
