@@ -97,14 +97,25 @@ public class CollectionMenuController extends MenuController {
             return;
         }
         User user = context.getCurrentUser();
+        PlantSpec.Almanac almanac = spec.getAlmanac();
         view.info(spec.getName() + ":");
         view.info("    category: " + spec.getCategory().name().toLowerCase(Locale.ROOT));
+        view.info("    tags: " + String.join(", ", spec.getTags()));
         view.info("    sun cost: " + spec.getSunCost());
         view.info("    recharge: " + spec.getRechargeSeconds() + "s");
         view.info("    hp: " + spec.getHp());
-        view.info("    damage: " + spec.getDamage());
-        view.info("    tags: " + String.join(", ", spec.getTags()));
-        view.info("    level: " + user.getPlantLevel(name));
+        view.info("    damage: " + almanac.damage());
+        view.info("    action interval: " + almanac.interval()
+                + ("-".equals(almanac.interval()) ? "" : "s"));
+        view.info("    ability: " + almanac.ability());
+        view.info("    plant food: " + almanac.plantFood());
+        int level = user.getPlantLevel(name);
+        for (int step = 0; step < almanac.upgrades().size(); step++) {
+            int tier = step + 2;
+            view.info("    level " + tier + ": " + almanac.upgrades().get(step)
+                    + (level >= tier ? "  (yours)" : ""));
+        }
+        view.info("    level: " + level);
         view.info("    unlocked: " + user.getUnlockedPlants().contains(name));
     }
 

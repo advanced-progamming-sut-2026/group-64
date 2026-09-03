@@ -43,6 +43,15 @@ public final class CollectionScreen extends Screen {
         super(ui);
     }
 
+    /**
+     * The collection opened straight onto one entry, which is how the almanac
+     * page is reached from a link and how the snapshots photograph it.
+     */
+    public CollectionScreen(GameUi ui, String showing) {
+        super(ui);
+        this.selected = showing;
+    }
+
     @Override
     public Parent build() {
         ScrollPane grid = new ScrollPane(zombiesTab ? zombieGrid() : plantGrid());
@@ -190,18 +199,26 @@ public final class CollectionScreen extends Screen {
         User user = ui.user();
         boolean owned = user.getUnlockedPlants().contains(spec.getName());
         int level = user.getPlantLevel(spec.getName());
+        PlantSpec.Almanac almanac = spec.getAlmanac();
+
+        Map<String, String> numbers = new java.util.LinkedHashMap<>();
+        numbers.put("Family", pretty(spec.getCategory().name()));
+        numbers.put("Sun cost", String.valueOf(spec.getSunCost()));
+        numbers.put("Recharge", spec.getRechargeSeconds() + "s");
+        numbers.put("Health", String.valueOf(spec.getHp()));
+        numbers.put("Damage", almanac.damage());
+        numbers.put("Action interval",
+                "-".equals(almanac.interval()) ? "-" : almanac.interval() + "s");
+        numbers.put("Level", String.valueOf(level));
 
         panel.getChildren().addAll(
                 Forms.heading(pretty(spec.getName())),
                 Assets.view(Assets.plant(spec.getName()), DETAIL_ART),
-                stats(Map.of(
-                        "Family", pretty(spec.getCategory().name()),
-                        "Sun cost", String.valueOf(spec.getSunCost()),
-                        "Recharge", spec.getRechargeSeconds() + "s",
-                        "Health", String.valueOf(spec.getHp()),
-                        "Damage", String.valueOf(spec.getDamage()),
-                        "Level", String.valueOf(level))),
-                Forms.hint("Tags: " + String.join(", ", spec.getTags())));
+                stats(numbers),
+                Forms.hint("Tags: " + String.join(", ", spec.getTags())),
+                paragraph("Ability", almanac.ability()),
+                paragraph("Plant food", almanac.plantFood()),
+                upgradeLadder(almanac, level));
 
         if (owned) {
             int next = level + 1;
@@ -243,14 +260,62 @@ public final class CollectionScreen extends Screen {
     /**
      * A stat block, ordered so the same keys always appear in the same place.
      */
+    /**
+     * A titled block of the sheet's own wording, which is a sentence rather
+     * than a number and needs the room to wrap.
+     */
+    private VBox paragraph(String title, String body) {
+        Label caption = new Label(title);
+        caption.getStyleClass().add("stat-key");
+        Label text = new Label(body);
+        text.getStyleClass().add("stat-value");
+        text.setWrapText(true);
+        orientFor(text, body);
+        return new VBox(2, caption, text);
+    }
+
+    /**
+     * The sheet writes what a plant does in Persian, often with a run of Latin
+     * in the middle of it. Laying such a line out left to right breaks it up;
+     * telling the label the paragraph is right to left puts it back together.
+     */
+    private static void orientFor(Label label, String text) {
+        if (text.codePoints().anyMatch(CollectionScreen::isPersian)) {
+            label.setNodeOrientation(javafx.geometry.NodeOrientation.RIGHT_TO_LEFT);
+        }
+    }
+
+    private static boolean isPersian(int codePoint) {
+        return Character.UnicodeBlock.of(codePoint) == Character.UnicodeBlock.ARABIC
+                || Character.UnicodeBlock.of(codePoint)
+                        == Character.UnicodeBlock.ARABIC_PRESENTATION_FORMS_A;
+    }
+
+    /**
+     * What levels two, three and four give, with the ones this player has
+     * already paid for marked.
+     */
+    private VBox upgradeLadder(PlantSpec.Almanac almanac, int level) {
+        VBox box = new VBox(2);
+        Label caption = new Label("Upgrades");
+        caption.getStyleClass().add("stat-key");
+        box.getChildren().add(caption);
+        for (int step = 0; step < almanac.upgrades().size(); step++) {
+            int tier = step + 2;
+            String stepText = almanac.upgrades().get(step);
+            Label line = new Label("Lvl " + tier + ": " + stepText
+                    + (level >= tier ? "  \u2713" : ""));
+            line.getStyleClass().add(level >= tier ? "stat-value" : "hint");
+            line.setWrapText(true);
+            orientFor(line, stepText);
+            box.getChildren().add(line);
+        }
+        return box;
+    }
+
     private VBox stats(Map<String, String> values) {
         VBox box = new VBox(6);
-        List<String> order = List.of("Family", "Sun cost", "Recharge", "Health",
-                "Armor", "Damage", "Speed", "Wave cost", "Level");
-        for (String key : order) {
-            if (!values.containsKey(key)) {
-                continue;
-            }
+        for (String key : values.keySet()) {
             Label caption = new Label(key);
             caption.getStyleClass().add("stat-key");
             Label value = new Label(values.get(key));

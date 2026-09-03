@@ -86,6 +86,7 @@ public final class ScreenSnapshots extends Application {
         }
         // the news page a second time, to show the read marks having cleared
         planMenuShot(MenuType.NEWS, "news-reread");
+        planAlmanacShot();
 
         steps.add(this::openPicker);
         steps.add(() -> shoot("10-plant-picker"));
@@ -373,6 +374,26 @@ public final class ScreenSnapshots extends Application {
                 * ir.sharif.pvz.model.game.GameSession.TICKS_PER_SECOND);
         app.submit("advance time -t " + Math.max(1, ticks) + " ticks");
         ui.refresh();
+    }
+
+    /**
+     * The collection opened on one plant's almanac page and closed again.
+     */
+    private void planAlmanacShot() {
+        steps.add(this::openPlantDetail);
+        steps.add(() -> shoot("collection-plant"));
+        steps.add(() -> {
+            app.submit("menu exit");
+            ui.refresh();
+        });
+    }
+
+    /**
+     * The collection with one plant picked, so its almanac page shows.
+     */
+    private void openPlantDetail() {
+        app.submit("menu enter collection");
+        ui.show(new ir.sharif.pvz.view.fx.screen.CollectionScreen(ui, "kiwibeast"));
     }
 
     private void openPicker() {

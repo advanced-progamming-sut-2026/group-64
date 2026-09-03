@@ -3,6 +3,7 @@ package ir.sharif.pvz.model.game;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -60,6 +61,58 @@ class PlantRosterTest {
         for (String name : required) {
             assertNotNull(GameCatalog.get().plant(name), name + " is missing from the catalog");
         }
+    }
+
+    /**
+     * The collection menu reads every one of these off the spec, so a plant
+     * missing any of them would show a blank line to the player.
+     */
+    @Test
+    void everyPlantHasTheAlmanacTextTheCollectionShows() {
+        for (PlantSpec spec : GameCatalog.get().allPlants()) {
+            PlantSpec.Almanac almanac = spec.getAlmanac();
+            assertNotSame(PlantSpec.Almanac.UNKNOWN, almanac,
+                    spec.getName() + " has no almanac row at all");
+            assertFalse(almanac.ability().isBlank(), spec.getName() + " has no ability text");
+            assertFalse(almanac.plantFood().isBlank(),
+                    spec.getName() + " has no plant food text");
+            assertFalse(almanac.damage().isBlank(), spec.getName() + " has no damage");
+            assertFalse(almanac.interval().isBlank(), spec.getName() + " has no interval");
+            assertEquals(3, almanac.upgrades().size(),
+                    spec.getName() + " should describe levels 2, 3 and 4");
+            for (String upgrade : almanac.upgrades()) {
+                assertFalse(upgrade.isBlank(), spec.getName() + " has a blank upgrade step");
+            }
+        }
+    }
+
+    /**
+     * The damage a plant really deals is one number, but the sheet writes what
+     * it means — "20x2" for the repeater's two peas, a ladder for the pea pod.
+     * The collection shows the sheet's wording, so it has to survive loading.
+     */
+    @Test
+    void theAlmanacKeepsTheSheetsOwnWordingForDamage() {
+        assertEquals("20x2", GameCatalog.get().plant("repeater").getAlmanac().damage());
+        assertEquals("20/40/60/80/100",
+                GameCatalog.get().plant("pea-pod").getAlmanac().damage());
+        assertEquals("Insta-kill", GameCatalog.get().plant("chomper").getAlmanac().damage());
+        assertEquals("15/30/45", GameCatalog.get().plant("kiwibeast").getAlmanac().damage());
+    }
+
+    /**
+     * The plants that go off the moment they land never stand on the lawn, and
+     * the sheet gives them no health to show for it.
+     */
+    @Test
+    void theInstantPlantsCarryTheSheetsZeroHealth() {
+        for (String name : List.of("cherry-bomb", "jalapeno", "doom-shroom", "ice-shroom",
+                "hot-potato", "grave-buster", "gold-bloom", "imitater", "grapeshot")) {
+            assertEquals(0, GameCatalog.get().plant(name).getHp(),
+                    name + " is used the instant it lands, so it has no health");
+        }
+        assertEquals(4000, GameCatalog.get().plant("wall-nut").getHp(),
+                "a plant that does stand there still has its health");
     }
 
     @Test

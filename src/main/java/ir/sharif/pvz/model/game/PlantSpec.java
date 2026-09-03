@@ -15,6 +15,31 @@ public class PlantSpec {
     private final int damage;
     private final double attackPeriodSeconds;
     private final List<String> tags;
+    private Almanac almanac = Almanac.UNKNOWN;
+
+    /**
+     * What the project sheet says a plant does, as opposed to what the engine
+     * needs to make it fight. The damage and interval are the sheet's own
+     * wording — "20x2", "Insta-kill", "20/40/60/80/100" — because a single
+     * number cannot say what those mean.
+     *
+     * @param damage    damage as the sheet writes it
+     * @param interval  how often it acts, as the sheet writes it
+     * @param ability   what the plant does
+     * @param plantFood what a plant food does to it
+     * @param upgrades  what levels two, three and four give, in order
+     */
+    public record Almanac(String damage, String interval, String ability,
+                          String plantFood, List<String> upgrades) {
+
+        /** Stands in for a plant the sheet has no row for. */
+        public static final Almanac UNKNOWN =
+                new Almanac("-", "-", "-", "-", List.of("-", "-", "-"));
+
+        public Almanac {
+            upgrades = List.copyOf(upgrades);
+        }
+    }
 
     public PlantSpec(String name, PlantCategory category, int sunCost, double rechargeSeconds,
                      int hp, int damage, double attackPeriodSeconds, List<String> tags) {
@@ -62,5 +87,16 @@ public class PlantSpec {
 
     public boolean hasTag(String tag) {
         return tags.contains(tag);
+    }
+
+    /**
+     * What the sheet says about this plant, for the collection menu.
+     */
+    public Almanac getAlmanac() {
+        return almanac;
+    }
+
+    void setAlmanac(Almanac almanac) {
+        this.almanac = almanac;
     }
 }

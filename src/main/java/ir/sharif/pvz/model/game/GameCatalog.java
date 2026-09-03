@@ -42,6 +42,30 @@ public final class GameCatalog {
                     Double.parseDouble(row[3]), Integer.parseInt(row[4]), Integer.parseInt(row[5]), row[6]);
             zombies.put(spec.getName(), spec);
         }
+        loadAlmanac();
+    }
+
+    /**
+     * The wording that goes with each plant in the collection menu. It is a
+     * TSV rather than part of plants.csv because the sheet's own sentences
+     * contain commas.
+     */
+    private void loadAlmanac() {
+        for (String[] row : readTsv("/data/plant-almanac.tsv")) {
+            PlantSpec spec = plants.get(row[0]);
+            if (spec != null) {
+                spec.setAlmanac(new PlantSpec.Almanac(row[1], row[2], row[3], row[4],
+                        List.of(row[5], row[6], row[7])));
+            }
+        }
+    }
+
+    private static List<String[]> readTsv(String resource) {
+        List<String[]> rows = new ArrayList<>();
+        for (String[] row : read(resource, "\t")) {
+            rows.add(row);
+        }
+        return rows;
     }
 
     public static GameCatalog get() {
@@ -49,6 +73,10 @@ public final class GameCatalog {
     }
 
     private static List<String[]> readCsv(String resource) {
+        return read(resource, ",");
+    }
+
+    private static List<String[]> read(String resource, String separator) {
         InputStream stream = GameCatalog.class.getResourceAsStream(resource);
         if (stream == null) {
             throw new IllegalStateException("Missing resource: " + resource);
@@ -56,11 +84,11 @@ public final class GameCatalog {
         List<String[]> rows = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
             String header = reader.readLine();
-            int columns = header.split(",", -1).length;
+            int columns = header.split(separator, -1).length;
             String line;
             while ((line = reader.readLine()) != null) {
                 if (!line.isBlank()) {
-                    rows.add(line.split(",", columns));
+                    rows.add(line.split(separator, columns));
                 }
             }
         } catch (IOException e) {
