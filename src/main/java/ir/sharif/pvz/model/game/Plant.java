@@ -15,6 +15,8 @@ public class Plant {
     private int hp;
     private double attackCooldownSeconds;
     private double armSeconds;
+    private double ageSeconds;
+    private int stack = 1;
     private boolean boosted;
 
     public Plant(PlantSpec spec, int row, int col, boolean boosted) {
@@ -96,9 +98,50 @@ public class Plant {
         return armSeconds <= 0;
     }
 
+    /**
+     * How long this plant has been on the lawn. The short-lived shrooms wilt on
+     * it and the ramp-up plants (sun-shroom, kiwibeast) grow on it.
+     */
+    public double getAgeSeconds() {
+        return ageSeconds;
+    }
+
+    /**
+     * How many heads a stacking plant has (pea pod); one for everything else.
+     */
+    public int getStack() {
+        return stack;
+    }
+
+    /**
+     * Adds a head to a stacking plant, up to the five the document allows.
+     */
+    public boolean addToStack() {
+        if (stack >= 5) {
+            return false;
+        }
+        stack++;
+        return true;
+    }
+
+    /**
+     * The stage a ramp-up plant has grown into: 1 for the first 24 seconds,
+     * 2 up to 72, then 3.
+     */
+    public int getStage() {
+        if (!spec.hasTag("wramp-up")) {
+            return 1;
+        }
+        if (ageSeconds >= 72) {
+            return 3;
+        }
+        return ageSeconds >= 24 ? 2 : 1;
+    }
+
     public void passSeconds(double seconds) {
         attackCooldownSeconds = Math.max(0, attackCooldownSeconds - seconds);
         armSeconds = Math.max(0, armSeconds - seconds);
+        ageSeconds += seconds;
     }
 
     public boolean isBoosted() {

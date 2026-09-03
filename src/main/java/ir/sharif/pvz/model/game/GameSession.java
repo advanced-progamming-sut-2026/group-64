@@ -30,6 +30,7 @@ public class GameSession {
     private final LevelSpec level;
     private final ZombieAbilities abilities;
     private final PlantCombat combat;
+    private final PlantAbilities plantAbilities = new PlantAbilities(this);
     final SpecialLevelEngine special;
     private final ZombossEngine zomboss;
     private final Set<Plant> protectedPlants = new java.util.HashSet<>();
@@ -115,6 +116,7 @@ public class GameSession {
         for (int i = 0; i < ticks && !isOver(); i++) {
             tickCount++;
             passTimers();
+            plantAbilities.tick(1.0 / TICKS_PER_SECOND);
             produceSuns();
             sunSystem.tick(1.0 / TICKS_PER_SECOND, getElapsedSeconds());
             waves.tick(getElapsedSeconds());
@@ -205,6 +207,9 @@ public class GameSession {
     }
 
     void plantHit(Plant plant, int damage) {
+        if (plantAbilities.absorbedByShield(plant, damage)) {
+            return;
+        }
         if (plant.damage(damage)) {
             removePlant(plant);
             events.add("Plant " + plant.getSpec().getName() + " at (" + (plant.getCol() + 1)
@@ -294,6 +299,10 @@ public class GameSession {
             if (!zombies.contains(zombie)) {
                 continue;
             }
+            if (zombie.isHypnotized()) {
+                plantAbilities.walkBackAndFight(zombie, dt);
+                continue;
+            }
             Plant blocking = plantInFrontOf(zombie);
             if (blocking != null) {
                 eat(zombie, blocking, dt);
@@ -337,7 +346,10 @@ public class GameSession {
         double progress = eatProgress.merge(zombie, dt, Double::sum);
         if (progress >= 1) {
             eatProgress.put(zombie, progress - 1);
-            plantHit(plant, (int) Math.round(zombie.getSpec().getDamagePerSecond() * difficultyUp));
+            plantAbilities.onEaten(plant, zombie);
+            if (grid[plant.getRow()][plant.getCol()] == plant) {
+                plantHit(plant, (int) Math.round(zombie.getSpec().getDamagePerSecond() * difficultyUp));
+            }
         }
     }
 
@@ -578,37 +590,22 @@ public class GameSession {
     }
 
     public String pluck(int x, int y) {
-        if (!validTile(x, y)) {
-            return "Error: (" + x + ", " + y + ") is not a valid tile.";
-        }
-        Plant plant = grid[y - 1][x - 1];
-        if (plant == null) {
-            return "Error: there is no plant at (" + x + ", " + y + ").";
-        }
-        if (protectedPlants.contains(plant)) {
-            return "Error: the " + plant.getSpec().getName() + " at (" + x + ", " + y
-                    + ") must be protected, not plucked!";
-        }
-        removePlant(plant);
-        return "Plucked " + plant.getSpec().getName() + " from (" + x + ", " + y + ").";
+        return planting.pluck(x, y);
     }
 
     public String feedPlant(int x, int y) {
-        if (!validTile(x, y)) {
-            return "Error: (" + x + ", " + y + ") is not a valid tile.";
-        }
-        Plant plant = grid[y - 1][x - 1];
-        if (plant == null) {
-            return "Error: there is no plant at (" + x + ", " + y + ").";
-        }
-        if (plantFood <= 0) {
-            return "Error: you have no plant food.";
-        }
+        return planting.feedPlant(x, y);
+    }
+
+    /**
+     * Burns one plant food on this plant, returning the ability it broke free
+     * of, if any.
+     */
+    String spendPlantFoodOn(Plant plant) {
         plantFood--;
         String cured = disabledPlants.remove(plant);
         applyPlantFoodEffect(plant);
-        return "Plant food used on " + plant.getSpec().getName() + " at (" + x + ", " + y + ")."
-                + (cured == null ? "" : " It broke free of the " + cured + "!");
+        return cured;
     }
 
     void applyPlantFoodEffect(Plant plant) {
@@ -620,22 +617,7 @@ public class GameSession {
      * Collects a sun on the given tile. Collecting a still-falling radioactive sun makes it explode.
      */
     public String collectSun(int x, int y) {
-        if (!validTile(x, y)) {
-            return "Error: (" + x + ", " + y + ") is not a valid tile.";
-        }
-        Sun falling = sunSystem.fallingRadioactiveAt(y - 1, x - 1);
-        if (falling != null) {
-            sunSystem.remove(falling);
-            combat.radioactiveBlast(y - 1, x - 1);
-            return "The radioactive sun exploded!";
-        }
-        Sun sun = sunSystem.groundAt(y - 1, x - 1);
-        if (sun == null) {
-            return "Error: there is no sun at (" + x + ", " + y + ").";
-        }
-        sunSystem.remove(sun);
-        sunAmount += sun.value();
-        return "Collected " + sun.value() + " sun; you now have " + sunAmount + " sun.";
+        return planting.collectSun(x, y);
     }
 
     private void removePlant(Plant plant) {
@@ -643,6 +625,7 @@ public class GameSession {
             grid[plant.getRow()][plant.getCol()] = null;
         }
         disabledPlants.remove(plant);
+        plantAbilities.dropShield(plant);
     }
 
     // ===== package-private hooks for zombie abilities =====
@@ -657,6 +640,14 @@ public class GameSession {
 
     List<String> eventLog() {
         return events;
+    }
+
+    SunSystem sunSystem() {
+        return sunSystem;
+    }
+
+    PlantCombat combat() {
+        return combat;
     }
 
     List<Sun> sunList() {
@@ -905,4 +896,30 @@ public class GameSession {
         plantFood = Math.min(MAX_PLANT_FOOD, plantFood + count);
     }
 
+    // ===== hooks for the plant abilities =====
+
+    PlantAbilities plantAbilities() {
+        return plantAbilities;
+    }
+
+    /**
+     * The pumpkin wrapped around this plant, if any; the view draws it on top.
+     */
+    public Plant shieldOn(Plant plant) {
+        return plantAbilities.shieldOn(plant);
+    }
+
+    /**
+     * The session's own die, so the abilities stay reproducible under a seed.
+     */
+    int roll(int bound) {
+        return random.nextInt(bound);
+    }
+
+    /**
+     * The level's difficulty multiplier, which the abilities scale speed by.
+     */
+    double difficultyScale() {
+        return difficultyUp;
+    }
 }

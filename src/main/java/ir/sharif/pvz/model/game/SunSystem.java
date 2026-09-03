@@ -41,16 +41,32 @@ class SunSystem {
     void producePlantSuns(GameSession session) {
         for (Plant plant : session.plantedPlants()) {
             if (plant.getSpec().getCategory() != PlantCategory.SUN_PRODUCER
-                    || session.isDisabled(plant)) {
+                    || plant.getSpec().hasTag("instant") || session.isDisabled(plant)) {
                 continue;
             }
             if (plant.isReadyToAttack() && groundAt(plant.getRow(), plant.getCol()) == null) {
-                add(new Sun(Sun.Kind.NORMAL, plant.getRow(), plant.getCol(), 0));
+                int worth = yieldOf(plant);
+                add(new Sun(Sun.Kind.NORMAL, plant.getRow(), plant.getCol(), 0, worth));
                 plant.resetAttackCooldown();
-                events.add("plant " + plant.getSpec().getName() + " produced a sun at ("
-                        + (plant.getCol() + 1) + ", " + (plant.getRow() + 1) + ")");
+                events.add("plant " + plant.getSpec().getName() + " produced " + worth
+                        + " sun at (" + (plant.getCol() + 1) + ", " + (plant.getRow() + 1) + ")");
             }
         }
+    }
+
+    /**
+     * What one cycle of this producer is worth. The amount rides on the plant's
+     * own "sun:N" tag, so a new producer needs no code here; sun-shroom is the
+     * one that grows, yielding 25/50/75 as it reaches its three stages.
+     */
+    static int yieldOf(Plant plant) {
+        int base = 25;
+        for (String tag : plant.getSpec().getTags()) {
+            if (tag.startsWith("sun:")) {
+                base = Integer.parseInt(tag.substring(4));
+            }
+        }
+        return plant.getSpec().hasTag("wramp-up") ? base * plant.getStage() : base;
     }
 
     void tick(double dt, double seconds) {

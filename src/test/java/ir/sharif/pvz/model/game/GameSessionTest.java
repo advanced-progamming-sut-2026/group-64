@@ -70,9 +70,9 @@ class GameSessionTest {
         session.plant("sunflower", 1, 1);
         session.advance(24 * GameSession.TICKS_PER_SECOND + 5);
         List<String> events = session.drainEvents();
-        assertTrue(events.stream().anyMatch(e -> e.contains("produced a sun at (1, 1)")));
+        assertTrue(events.stream().anyMatch(e -> e.contains("produced 50 sun at (1, 1)")));
         int before = session.getSunAmount();
-        assertEquals("Collected 25 sun; you now have " + (before + 25) + " sun.", session.collectSun(1, 1));
+        assertEquals("Collected 50 sun; you now have " + (before + 50) + " sun.", session.collectSun(1, 1));
     }
 
     @Test

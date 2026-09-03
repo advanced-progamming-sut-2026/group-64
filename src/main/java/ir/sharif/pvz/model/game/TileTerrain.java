@@ -17,5 +17,7 @@ public enum TileTerrain {
     /** Slippery ice that pushes zombies one row down while they cross it. */
     SLIPPERY_DOWN,
     /** Low tide / necromancy tile: may spawn a zombie at each wave start. */
-    SPAWNER
+    SPAWNER,
+    /** The hole a doom-shroom leaves behind; nothing can be planted in it. */
+    CRATER
 }

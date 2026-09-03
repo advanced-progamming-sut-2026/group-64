@@ -17,14 +17,54 @@ RES = 768
 
 # our plant id -> seed packet sprite name in the dump
 PLANTS = {
-    "sunflower": "sunflower", "peashooter": "peashooter", "snow-pea": "snowpea",
-    "repeater": "repeater", "wall-nut": "wallnut", "tall-nut": "tallnut",
-    "cherry-bomb": "cherry_bomb", "potato-mine": "potatomine", "chomper": "chomper",
-    "cabbage-pult": "cabbagepult", "melon-pult": "melonpult", "puff-shroom": "puffshroom",
-    "sun-shroom": "sunshroom", "iceberg-lettuce": "iceburg", "torchwood": "torchwood",
-    "laser-bean": "laser_bean", "cattail": "homingthistle", "lily-pad": "lilypad",
-    "bowling-wallnut": "wallnut", "explode-o-nut": "explodeonut",
-    "giant-wallnut": "primalwallnut", "peppermint": "peppermint",
+    # sun producers
+    "sunflower": "sunflower", "twin-sunflower": "twinsunflower",
+    "sun-shroom": "sunshroom", "primal-sunflower": "primalsunflower",
+    "gold-bloom": "goldbloom",
+    # shooters
+    "peashooter": "peashooter", "repeater": "repeater", "threepeater": "threepeater",
+    "snow-pea": "snowpea", "pea-pod": "peapod", "split-pea": "splitpea",
+    "citron": "citron", "bowling-bulb": "bowlingbulb",
+    "fire-peashooter": "firepeashooter", "starfruit": "starfruit",
+    "goo-peashooter": "poisonpeashooter", "mega-gatling-pea": "megagatling",
+    "sea-shroom": "seashroom", "puff-shroom": "puffshroom",
+    # homing
+    "caulipower": "caulipower", "electric-blueberry": "electricblueberry",
+    "magnet-shroom": "magnetshroom", "cattail": "homingthistle",
+    # strike-through
+    "cactus": "cactus", "fume-shroom": "fumeshroom", "laser-bean": "laser_bean",
+    # lobbers
+    "cabbage-pult": "cabbagepult", "kernel-pult": "kernelpult",
+    "melon-pult": "melonpult", "winter-melon": "wintermelon",
+    "pepper-pult": "pepperpult",
+    # explosives and traps
+    "potato-mine": "potatomine", "primal-potato-mine": "primalpotatomine",
+    "cherry-bomb": "cherry_bomb", "squash": "squash", "grapeshot": "grapeshot",
+    "jalapeno": "jalapeno", "doom-shroom": "doomshroom", "tangle-kelp": "tanglekelp",
+    "iceberg-lettuce": "iceburg", "ice-shroom": "iceshroom",
+    "hot-potato": "hotpotato", "grave-buster": "gravebuster",
+    # melee
+    "bonk-choy": "bonkchoy", "phat-beet": "phatbeet", "chomper": "chomper",
+    "wasabi-whip": "wasabiwhip", "kiwibeast": "kiwibeast",
+    # walls
+    "wall-nut": "wallnut", "tall-nut": "tallnut", "endurian": "endurian",
+    "garlic": "garlic", "sweet-potato": "sweetpotato", "explode-o-nut": "explodeonut",
+    "pumpkin": "pumpkin", "sun-bean": "sunbean",
+    "bowling-wallnut": "wallnut", "giant-wallnut": "primalwallnut",
+    # modifiers
+    "torchwood": "torchwood", "hypno-shroom": "hypnoshroom",
+    "imitater": "imitater", "lily-pad": "lilypad",
+    # the mint family, one per plant family
+    "peppermint": "peppermint", "enlighten-mint": "enlightenmint",
+    "appease-mint": "appeasemint", "arma-mint": "armamint",
+    "bombard-mint": "bombardmint", "enforce-mint": "enforcemint",
+    "reinforce-mint": "reinforcemint", "enchant-mint": "enchantmint",
+    "pierce-mint": "spearmint", "cattail-mint": "ailmint",
+}
+
+# plants the dump has no seed packet for; taken from their in-game sprite instead
+PLANTS_NO_PACKET = {
+    "rotobaga": "plant/rotorutabaga/rotorutabaga_123x123",
 }
 
 # our zombie id -> almanac portrait name in the dump
@@ -134,6 +174,8 @@ def main():
     wanted = {}
     for our, theirs in PLANTS.items():
         wanted[f"plants/{our}"] = f"images/{RES}/initial/ui/packets/{theirs}"
+    for our, theirs in PLANTS_NO_PACKET.items():
+        wanted[f"plants/{our}"] = f"images/{RES}/initial/{theirs}"
     for our, theirs in {**ZOMBIES}.items():
         wanted[f"zombies/{our}"] = f"images/{RES}/initial/ui/almanac/packets_zombies/{theirs}"
     for our, theirs in ZOMBOTANY.items():

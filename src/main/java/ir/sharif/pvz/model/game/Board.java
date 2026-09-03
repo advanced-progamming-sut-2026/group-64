@@ -77,6 +77,9 @@ class Board {
         if (kind == TileTerrain.GRAVE) {
             return "Error: you cannot plant on the grave at " + tile + ".";
         }
+        if (kind == TileTerrain.CRATER) {
+            return "Error: the crater at " + tile + " cannot be planted in.";
+        }
         if (kind == TileTerrain.SLIPPERY_UP || kind == TileTerrain.SLIPPERY_DOWN) {
             return "Error: the slippery ice at " + tile + " cannot hold a plant.";
         }

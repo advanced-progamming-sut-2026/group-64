@@ -18,6 +18,9 @@ public class Zombie {
     private double chilledSeconds;
     private double frozenSeconds;
     private double eatingSeconds;
+    private double poisonedSeconds;
+    private int poisonPerSecond;
+    private boolean hypnotized;
 
     public Zombie(ZombieSpec spec, int row, double x, int hp, Map<String, Integer> armor, boolean glowing) {
         this.spec = spec;
@@ -68,7 +71,7 @@ public class Zombie {
     }
 
     /**
-     * Applies damage, consuming armor first (poison would bypass armor; not needed yet).
+     * Applies damage, consuming armor first.
      * Returns true when the zombie dies from this hit.
      */
     public boolean damage(int amount) {
@@ -84,6 +87,52 @@ public class Zombie {
         armor.values().removeIf(v -> v <= 0);
         hp -= remaining;
         return hp <= 0;
+    }
+
+    /**
+     * Goo-peashooter damage: it seeps past armour straight into the zombie.
+     */
+    public boolean damageIgnoringArmor(int amount) {
+        hp -= amount;
+        return hp <= 0;
+    }
+
+    /**
+     * Poisons the zombie for a while; the damage lands once per second and
+     * ignores armour, the way the document describes the goo pea.
+     */
+    public void poison(double seconds, int perSecond) {
+        poisonedSeconds = Math.max(poisonedSeconds, seconds);
+        poisonPerSecond = Math.max(poisonPerSecond, perSecond);
+    }
+
+    public boolean isPoisoned() {
+        return poisonedSeconds > 0;
+    }
+
+    public int getPoisonPerSecond() {
+        return poisonPerSecond;
+    }
+
+    /**
+     * Magnet-shroom pulls every metal piece off the zombie's head.
+     */
+    public Map<String, Integer> stripArmor() {
+        Map<String, Integer> taken = new LinkedHashMap<>(armor);
+        armor.clear();
+        return taken;
+    }
+
+    /**
+     * Hypno-shroom (and Caulipower) turn a zombie around: it now walks back
+     * toward the graveyard and attacks the zombies it meets instead of plants.
+     */
+    public void hypnotize() {
+        hypnotized = true;
+    }
+
+    public boolean isHypnotized() {
+        return hypnotized;
     }
 
     public void chill(double seconds) {
@@ -124,6 +173,10 @@ public class Zombie {
         chilledSeconds = Math.max(0, chilledSeconds - seconds);
         frozenSeconds = Math.max(0, frozenSeconds - seconds);
         eatingSeconds = Math.max(0, eatingSeconds - seconds);
+        poisonedSeconds = Math.max(0, poisonedSeconds - seconds);
+        if (poisonedSeconds <= 0) {
+            poisonPerSecond = 0;
+        }
     }
 
     public Map<String, Double> activeEffects() {
@@ -133,6 +186,9 @@ public class Zombie {
         }
         if (frozenSeconds > 0) {
             effects.put("frozen", frozenSeconds);
+        }
+        if (poisonedSeconds > 0) {
+            effects.put("poisoned", poisonedSeconds);
         }
         return effects;
     }

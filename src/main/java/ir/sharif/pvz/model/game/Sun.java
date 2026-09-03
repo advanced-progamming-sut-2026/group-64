@@ -12,13 +12,23 @@ public class Sun {
     private final Kind kind;
     private final int row;
     private final int col;
+    private final int value;
     private double secondsUntilLanding;
 
     public Sun(Kind kind, int row, int col, double secondsUntilLanding) {
+        this(kind, row, col, secondsUntilLanding, kind == Kind.SPECIAL ? 100 : 25);
+    }
+
+    /**
+     * A sun worth an explicit amount: the sun producers each yield their own
+     * (a twin sunflower's is worth two of a sunflower's).
+     */
+    public Sun(Kind kind, int row, int col, double secondsUntilLanding, int value) {
         this.kind = kind;
         this.row = row;
         this.col = col;
         this.secondsUntilLanding = secondsUntilLanding;
+        this.value = value;
     }
 
     public Kind getKind() {
@@ -49,6 +59,6 @@ public class Sun {
     }
 
     public int value() {
-        return kind == Kind.SPECIAL ? 100 : 25;
+        return value;
     }
 }
