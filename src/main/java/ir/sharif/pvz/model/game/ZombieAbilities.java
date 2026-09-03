@@ -26,7 +26,9 @@ class ZombieAbilities {
             Map.entry("king", 8.0),
             Map.entry("peashooter-zombie", 1.5),
             Map.entry("jalapeno-zombie", 10.0),
-            Map.entry("squash-zombie", 0.2));
+            Map.entry("squash-zombie", 0.2),
+            Map.entry("gargantuar", 3.0),
+            Map.entry("all-star", 4.0));
 
     private final GameSession session;
     private final Random random;
@@ -35,6 +37,8 @@ class ZombieAbilities {
     private final Map<Zombie, List<Plant>> sheepedPlants = new HashMap<>();
     private final Map<Plant, Integer> iceHits = new HashMap<>();
     private final Set<Zombie> torchOut = new HashSet<>();
+    /** Gargantuars that have already thrown their imp; each carries only one. */
+    private final Set<Zombie> thrownImps = new HashSet<>();
 
     ZombieAbilities(GameSession session, Random random) {
         this.session = session;
@@ -82,6 +86,8 @@ class ZombieAbilities {
             case "peashooter-zombie" -> shootPlant(zombie);
             case "jalapeno-zombie" -> burnRow(zombie);
             case "squash-zombie" -> squashAhead(zombie);
+            case "gargantuar" -> gargantuarTurn(zombie);
+            case "all-star" -> kickAhead(zombie);
             default -> { }
         }
     }
@@ -106,6 +112,61 @@ class ZombieAbilities {
     }
 
     /** The squash zombie flattens the plant it reaches, dying with it. */
+    /**
+     * The gargantuar's turn: it brings its hammer down on whatever is in front
+     * of it, and once it is half beaten it throws the imp riding on its back
+     * over your defences instead.
+     */
+    private void gargantuarTurn(Zombie gargantuar) {
+        if (gargantuar.getHp() * 2 <= gargantuar.getSpec().getHp() && !thrownImps.contains(gargantuar)) {
+            throwImp(gargantuar);
+            return;
+        }
+        Plant plant = plantInFrontOf(gargantuar);
+        if (plant != null) {
+            session.eventLog().add("The gargantuar smashed " + plant.getSpec().getName()
+                    + " with its hammer!");
+            session.recordBurst(Burst.Kind.EXPLOSION, plant.getCol() + 1.0, plant.getRow() + 1.0);
+            session.plantHit(plant, plant.getHp());
+        }
+    }
+
+    /**
+     * The imp lands a few tiles behind the front line, which is the whole
+     * point of it.
+     */
+    private void throwImp(Zombie gargantuar) {
+        thrownImps.add(gargantuar);
+        double landing = Math.max(1.5, gargantuar.getX() - 3.5);
+        session.spawnZombie(GameCatalog.get().zombie("imp"), gargantuar.getRow(), landing);
+        session.recordBurst(Burst.Kind.EXPLOSION, landing, gargantuar.getRow() + 1.0);
+        session.eventLog().add("The gargantuar hurled its imp over your plants, into lane "
+                + (gargantuar.getRow() + 1) + "!");
+    }
+
+    /**
+     * The all-star charges the plant in front of him and kicks it away.
+     */
+    private void kickAhead(Zombie allStar) {
+        Plant plant = plantInFrontOf(allStar);
+        if (plant == null) {
+            return;
+        }
+        session.eventLog().add("The all-star kicked " + plant.getSpec().getName() + " aside!");
+        session.plantHit(plant, Math.max(1, plant.maxHp() / 2));
+    }
+
+    /**
+     * The plant this zombie is standing over, or null when there is none.
+     */
+    private Plant plantInFrontOf(Zombie zombie) {
+        int col = (int) Math.round(zombie.getX()) - 1;
+        if (col < 0 || col >= GameSession.COLS) {
+            return null;
+        }
+        return session.gridArray()[zombie.getRow()][col];
+    }
+
     private void squashAhead(Zombie zombie) {
         int col = (int) Math.round(zombie.getX()) - 1;
         if (col < 0 || col >= GameSession.COLS) {

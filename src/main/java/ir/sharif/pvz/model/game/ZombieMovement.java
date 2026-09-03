@@ -21,6 +21,7 @@ final class ZombieMovement {
 
     void tick() {
         double dt = 1.0 / GameSession.TICKS_PER_SECOND;
+        driveMowers(dt);
         session.abilities.tick(dt);
         for (Zombie zombie : new ArrayList<>(session.zombies)) {
             if (!session.zombies.contains(zombie)) {
@@ -109,14 +110,28 @@ final class ZombieMovement {
         }
         session.mowers[row] = false;
         session.recordBurst(Burst.Kind.MOWER, 1, row + 1.0);
-        List<Zombie> killed = session.zombies.stream().filter(z -> z.getRow() == row).toList();
-        session.eventLog().add("The lawn mower in the row " + (row + 1)
-                + " is triggered and killed these zombies:");
+        session.rolling.add(new Mower(row));
+        session.eventLog().add("The lawn mower in the row " + (row + 1) + " is triggered.");
+    }
+
+    /**
+     * Rolls the mowers already on their way, taking whatever they catch up
+     * with, until they leave the far edge.
+     */
+    private void driveMowers(double dt) {
         session.log.creditTo(LevelLog.MOWER);
-        for (Zombie victim : killed) {
-            session.eventLog().add("- " + victim.getSpec().getName());
-            session.log.onKill(session.tickCount, false, false);
-            session.removeZombieQuietly(victim);
+        for (Mower mower : new ArrayList<>(session.rolling)) {
+            mower.advance(dt);
+            for (Zombie victim : new ArrayList<>(session.zombies)) {
+                if (mower.catches(victim)) {
+                    session.eventLog().add("The mower ran over a "
+                            + victim.getSpec().getName() + ".");
+                    session.killZombie(victim);
+                }
+            }
+            if (mower.isGone()) {
+                session.rolling.remove(mower);
+            }
         }
         session.log.creditTo(null);
     }

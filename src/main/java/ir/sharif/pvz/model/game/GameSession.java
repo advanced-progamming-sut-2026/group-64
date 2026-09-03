@@ -48,6 +48,10 @@ public class GameSession {
     final WaveSystem waves;
     final Map<Plant, String> disabledPlants = new HashMap<>();
     final boolean[] mowers = new boolean[ROWS];
+    /** Mowers already rolling down their lane. */
+    final List<Mower> rolling = new ArrayList<>();
+    /** Plant food lying on the lawn, as {column, row} zero-based tiles. */
+    final List<int[]> droppedFood = new ArrayList<>();
     final List<Zombie> zombies = new ArrayList<>();
     final Map<String, Double> plantCooldowns = new HashMap<>();
     /** Collection-menu upgrade levels per plant type; missing means level 1. */
@@ -282,9 +286,12 @@ public class GameSession {
         }
         events.add("Zombie of type " + zombie.getSpec().getName() + " is dead at ("
                 + trim(zombie.getX()) + ", " + (zombie.getRow() + 1) + ")");
-        if (zombie.isGlowing() && plantFood < MAX_PLANT_FOOD) {
-            plantFood++;
-            events.add("The glowing zombie dropped a plant food; you have " + plantFood + " plant foods now.");
+        if (zombie.isGlowing()) {
+            // it lands on the lawn to be picked up rather than going straight
+            // into the bar, which is what the document asks for
+            droppedFood.add(new int[] {(int) Math.round(zombie.getX()) - 1, zombie.getRow()});
+            events.add("The glowing zombie dropped a plant food at ("
+                    + Math.round(zombie.getX()) + ", " + (zombie.getRow() + 1) + ").");
         }
         rollDeathDrop();
     }
@@ -444,6 +451,32 @@ public class GameSession {
      */
     public LevelLog getLog() {
         return log;
+    }
+
+    /**
+     * The mowers currently driving across the lawn, for the view to draw.
+     */
+    /**
+     * The tiles with plant food waiting to be picked up, 1-based.
+     */
+    public List<int[]> getDroppedPlantFood() {
+        return droppedFood.stream().map(tile -> new int[] {tile[0] + 1, tile[1] + 1}).toList();
+    }
+
+    /**
+     * Picks up the plant food lying on this tile, if any.
+     */
+    public String collectPlantFood(int x, int y) {
+        boolean found = droppedFood.removeIf(tile -> tile[0] == x - 1 && tile[1] == y - 1);
+        if (!found) {
+            return "Error: there is no plant food at (" + x + ", " + y + ").";
+        }
+        plantFood = Math.min(MAX_PLANT_FOOD, plantFood + 1);
+        return "Picked up a plant food; you have " + plantFood + " now.";
+    }
+
+    public List<Mower> getRollingMowers() {
+        return rolling;
     }
 
     public List<Debris> getDebris() {

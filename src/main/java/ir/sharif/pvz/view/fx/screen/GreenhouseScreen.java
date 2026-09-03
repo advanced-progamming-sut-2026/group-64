@@ -89,12 +89,14 @@ public final class GreenhouseScreen extends Screen {
             return new StackPane(body);
         }
 
-        body.getChildren().add(Assets.view(Assets.plant(pot.getPlantType()), POT_ART));
+        long now = System.currentTimeMillis();
+        javafx.scene.image.ImageView art = Assets.view(Assets.plant(pot.getPlantType()), POT_ART);
+        sway(art, pot.isReady(now));
+        body.getChildren().add(art);
         Label name = new Label(pot.getPlantType());
         name.getStyleClass().add("pot-name");
         body.getChildren().add(name);
 
-        long now = System.currentTimeMillis();
         if (pot.isReady(now)) {
             Button collect = new Button("Harvest");
             collect.getStyleClass().add("primary-button");
@@ -110,6 +112,24 @@ public final class GreenhouseScreen extends Screen {
             body.getChildren().addAll(left, grow);
         }
         return new StackPane(body);
+    }
+
+    /**
+     * Gives a potted plant a little life: growing ones rock gently on the
+     * spot, and one that is ready to pick bounces to say so.
+     */
+    private void sway(javafx.scene.Node art, boolean ready) {
+        javafx.animation.Timeline timeline = new javafx.animation.Timeline(
+                new javafx.animation.KeyFrame(javafx.util.Duration.ZERO,
+                        new javafx.animation.KeyValue(art.rotateProperty(), ready ? 0 : -5),
+                        new javafx.animation.KeyValue(art.translateYProperty(), 0)),
+                new javafx.animation.KeyFrame(javafx.util.Duration.seconds(ready ? 0.45 : 1.6),
+                        new javafx.animation.KeyValue(art.rotateProperty(), ready ? 0 : 5),
+                        new javafx.animation.KeyValue(art.translateYProperty(),
+                                ready ? -POT_ART * 0.12 : 0)));
+        timeline.setAutoReverse(true);
+        timeline.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        timeline.play();
     }
 
     /**

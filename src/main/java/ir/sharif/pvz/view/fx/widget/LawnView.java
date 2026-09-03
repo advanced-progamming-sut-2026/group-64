@@ -35,6 +35,9 @@ import javafx.scene.text.TextAlignment;
  */
 public class LawnView extends Canvas {
 
+    /** A zombie this far across is close enough to the house to be flagged. */
+    private static final double DANGER_COLUMN = 2.2;
+
     private static final double GRID_LEFT = 0.2461;
     private static final double GRID_TOP = 0.2500;
     private static final double GRID_RIGHT = 0.9883;
@@ -94,12 +97,47 @@ public class LawnView extends Canvas {
         drawMowers(gc, session);
         drawSandstorm(gc, session, "back");
         drawSuns(gc, session);
+        drawDroppedPlantFood(gc, session, seconds);
         drawRows(gc, session, seconds);
         drawSandstorm(gc, session, "front");
         drawZomboss(gc, session, seconds);
         drawDebris(gc, session);
+        drawDangerRings(gc, session, seconds);
         drawBursts(gc, session);
         gc.restore();
+    }
+
+    /**
+     * Plant food a glowing zombie left behind, bobbing until it is picked up.
+     */
+    private void drawDroppedPlantFood(GraphicsContext gc, GameSession session, double seconds) {
+        Image art = Assets.ui("plant-food");
+        for (int[] tile : session.getDroppedPlantFood()) {
+            double bob = Math.sin(seconds * 4 + tile[0]) * tileHeight() * 0.06;
+            drawSprite(gc, art, tileX(tile[0]), tileY(tile[1]) + bob,
+                    tileHeight() * 0.55, Color.web("#8bc34a"));
+        }
+    }
+
+    /**
+     * A pulsing ring under any zombie that is nearly at the house, so the
+     * player can see which lane is about to go.
+     */
+    private void drawDangerRings(GraphicsContext gc, GameSession session, double seconds) {
+        Image art = Assets.ui("alert-ring");
+        for (Zombie zombie : session.getZombies()) {
+            if (zombie.getX() > DANGER_COLUMN) {
+                continue;
+            }
+            double pulse = 0.75 + 0.25 * Math.sin(seconds * 6);
+            double height = tileHeight() * 0.5 * pulse;
+            gc.save();
+            gc.setGlobalAlpha(0.85);
+            drawSprite(gc, art, tileX(1) + (zombie.getX() - 1) * tileWidth(),
+                    tileY(zombie.getRow() + 1) + tileHeight() * 0.32, height,
+                    Color.web("#e74c3c"));
+            gc.restore();
+        }
     }
 
     /**
@@ -450,18 +488,28 @@ public class LawnView extends Canvas {
     }
 
     private void drawMowers(GraphicsContext gc, GameSession session) {
+        Image art = Assets.image("props/mower");
+        double height = tileHeight() * 0.7;
         for (int row = 0; row < GameSession.ROWS; row++) {
-            if (!session.isMowerAvailable(row)) {
-                continue;
+            if (session.isMowerAvailable(row)) {
+                drawMower(gc, art, tileX(1) - tileWidth() * 0.85, tileY(row + 1), height);
             }
-            double x = tileX(1) - tileWidth() * 0.85;
-            double y = tileY(row + 1);
+        }
+        // the ones already on their way down a lane
+        for (ir.sharif.pvz.model.game.Mower mower : session.getRollingMowers()) {
+            drawMower(gc, art, tileX(1) + (mower.getCol() - 1) * tileWidth(),
+                    tileY(mower.getRow() + 1), height);
+        }
+    }
+
+    private void drawMower(GraphicsContext gc, Image art, double x, double y, double height) {
+        if (art == null) {
             gc.setFill(Color.web("#c0392b"));
             gc.fillRoundRect(x - 16, y - 11, 32, 22, 8, 8);
-            gc.setFill(Color.web("#2c3e50"));
-            gc.fillOval(x - 14, y + 4, 10, 10);
-            gc.fillOval(x + 4, y + 4, 10, 10);
+            return;
         }
+        double width = height * art.getWidth() / art.getHeight();
+        gc.drawImage(art, x - width / 2, y - height / 2, width, height);
     }
 
     private void drawSuns(GraphicsContext gc, GameSession session) {

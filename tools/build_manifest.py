@@ -134,6 +134,9 @@ ZOMBIE_PARTS = {
     "block": "zombie/zombie_tutorial/zombie_tutorial_115x115",
 }
 
+# the lawn mower that rolls down a lane when a zombie gets past everything
+MOWER = "mowers/mower_egypt/mower_egypt_76x120"
+
 # the sandstorm that sweeps across an Ancient Egypt lawn, in two layers
 SANDSTORM = {
     "sandstorm-back": "effects/sandstorm_rear/sandstorm_back1",
@@ -213,6 +216,7 @@ def main():
         wanted[f"ice/{our}"] = f"images/{RES}/initial/{theirs}"
     for our, theirs in ZOMBIE_PARTS.items():
         wanted[f"parts/{our}"] = f"images/{RES}/initial/{theirs}"
+    wanted["props/mower"] = f"images/{RES}/initial/{MOWER}"
     for our, theirs in SANDSTORM.items():
         wanted[f"props/{our}"] = f"images/{RES}/initial/{theirs}"
     for our, theirs in GRAVES.items():

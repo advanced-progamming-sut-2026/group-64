@@ -625,6 +625,9 @@ public final class BattleScreen extends Screen {
         if (tile == null) {
             return;
         }
+        if (collectPlantFoodAt(session, tile)) {
+            return;
+        }
         String location = " -l (" + tile[0] + ", " + tile[1] + ")";
         if (session.minigameObjective() != null) {
             swapAt(tile);
@@ -695,6 +698,21 @@ public final class BattleScreen extends Screen {
         // a packet lying where a vase used to be is picked up, not smashed again
         ui.submitQuietly(("packet".equals(here) ? "take packet" : "break vase") + location);
         return true;
+    }
+
+    /**
+     * Picks up the plant food a glowing zombie dropped, when the click is on
+     * the tile it fell on.
+     */
+    private boolean collectPlantFoodAt(GameSession session, int[] tile) {
+        for (int[] dropped : session.getDroppedPlantFood()) {
+            if (dropped[0] == tile[0] && dropped[1] == tile[1]) {
+                ui.submitQuietly("collect plant food -l (" + tile[0] + ", " + tile[1] + ")");
+                Sfx.play(Sfx.Sound.SUN);
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -859,7 +877,8 @@ public final class BattleScreen extends Screen {
         retry.getStyleClass().add("ghost-button");
         retry.setOnAction(event -> {
             ui.closeModal();
-            ui.refresh();
+            // actually play it again rather than dropping back at the picker
+            ui.submit("replay level");
         });
 
         HBox buttons = new HBox(12, back, retry);

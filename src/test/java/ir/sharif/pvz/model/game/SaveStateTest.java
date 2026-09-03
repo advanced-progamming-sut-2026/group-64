@@ -190,6 +190,42 @@ class SaveStateTest {
                         java.io.OutputStream.nullOutputStream())), context);
     }
 
+    /**
+     * The win/lose screen offers to play the level again. It used to do
+     * nothing the "back to the menu" button did not, so this pins down that
+     * the command behind it actually starts the same level over.
+     */
+    @Test
+    void tryingAgainStartsTheSameLevelWithTheSameLineUp() {
+        ir.sharif.pvz.controller.GameApp app = harness();
+        app.submit("menu enter game");
+        app.submit("add plant -t sunflower");
+        app.submit("add plant -t peashooter");
+        app.submit("select level -c egypt -d 2");
+        app.submit("start game");
+        String title = session(app).getLevel().title();
+        app.submit("forfeit level");
+        app.submit("advance time -t 1 ticks");
+
+        app.submit("replay level");
+        assertNotNull(session(app), "the level should be running again");
+        assertEquals(title, session(app).getLevel().title(), "and it is the same level");
+        assertEquals(List.of("sunflower", "peashooter"), session(app).getSelectedPlants(),
+                "with the plants it was played with");
+    }
+
+    @Test
+    void thereIsNothingToPlayAgainBeforeAnyLevelHasBeenPlayed() {
+        ir.sharif.pvz.controller.GameApp app = harness();
+        app.submit("menu enter game");
+        app.submit("replay level");
+        assertNull(session(app), "nothing starts");
+    }
+
+    private GameSession session(ir.sharif.pvz.controller.GameApp app) {
+        return ((ir.sharif.pvz.controller.GameMenuController) app.currentController()).getSession();
+    }
+
     // ===== the store =====
 
     @Test

@@ -37,6 +37,8 @@ public class GameMenuController extends MenuController {
             "^swap\\s+plant\\s+-l\\s+" + LOCATION + "\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern FEED = Pattern.compile("^feed\\s+plant\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern COLLECT_SUN = Pattern.compile("^collect\\s+sun\\s+-l\\s+" + LOCATION + "$");
+    private static final Pattern COLLECT_FOOD =
+            Pattern.compile("^collect\\s+plant\\s+food\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern TILE_STATUS = Pattern.compile("^show\\s+tile\\s+status\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern CHEAT_SUNS = Pattern.compile("^cheat\\s+add\\s+-n\\s+(\\d+)\\s+suns$");
     private static final Pattern CHEAT_WALLET =
@@ -54,6 +56,9 @@ public class GameMenuController extends MenuController {
     private final boolean scoreMode;
     /** Adventure index picked with "select level", or -1 to just continue. */
     private int chosenIndex = -1;
+    /** The level and line-up of the last game, so it can be played again. */
+    private int lastPlayedIndex = -1;
+    private final Set<String> lastLineUp = new LinkedHashSet<>();
     protected GameSession session;
     private java.util.function.IntConsumer scoreReporter;
 
@@ -147,6 +152,8 @@ public class GameMenuController extends MenuController {
             startGame();
         } else if (input.equals("resume game")) {
             resumeSavedGame();
+        } else if (input.equals("replay level")) {
+            replayLastLevel();
         } else {
             view.unknownCommand();
         }
@@ -282,6 +289,22 @@ public class GameMenuController extends MenuController {
     }
 
     /**
+     * Plays the level that just finished again, with the same plants. The
+     * win/lose screen's "Try again" is this, and without it that button only
+     * dropped the player back at the picker.
+     */
+    private void replayLastLevel() {
+        if (lastLineUp.isEmpty()) {
+            view.error("There is no level to play again yet.");
+            return;
+        }
+        chosenIndex = lastPlayedIndex;
+        selectedPlants.clear();
+        selectedPlants.addAll(lastLineUp);
+        startGame();
+    }
+
+    /**
      * Picks up the level this player walked away from, exactly where it was.
      */
     private void resumeSavedGame() {
@@ -353,6 +376,9 @@ public class GameMenuController extends MenuController {
             view.info("You start with " + user.getPendingPlantFood() + " plant food(s) from the shop.");
             user.setPendingPlantFood(0);
         }
+        lastPlayedIndex = chosenIndex;
+        lastLineUp.clear();
+        lastLineUp.addAll(selectedPlants);
         view.info(level.title() + (level.isNight() ? " (night)" : ""));
         view.info("The game started! Zombies are coming; use 'advance time -t <count> ticks'.");
         flushGameState();
@@ -393,6 +419,8 @@ public class GameMenuController extends MenuController {
             view.info(session.feedPlant(group(matcher, 1), group(matcher, 2)));
         } else if ((matcher = COLLECT_SUN.matcher(input)).matches()) {
             view.info(session.collectSun(group(matcher, 1), group(matcher, 2)));
+        } else if ((matcher = COLLECT_FOOD.matcher(input)).matches()) {
+            view.info(session.collectPlantFood(group(matcher, 1), group(matcher, 2)));
         } else if (!handleInfoOrCheat(input)) {
             view.unknownCommand();
         }
