@@ -25,6 +25,8 @@ public class GameMenuController extends MenuController {
     private static final int WIN_COIN_REWARD = 150;
     private static final String LOCATION = "\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)";
 
+    private static final Pattern SELECT_LEVEL =
+            Pattern.compile("^select\\s+level\\s+-c\\s+(\\S+)\\s+-d\\s+(\\d+)$");
     private static final Pattern ADD_PLANT = Pattern.compile("^add\\s+plant\\s+-t\\s+(\\S+)$");
     private static final Pattern REMOVE_PLANT = Pattern.compile("^remove\\s+plant\\s+-t\\s+(\\S+)$");
     private static final Pattern BOOST_PLANT = Pattern.compile("^boost\\s+plant\\s+-t\\s+(\\S+)$");
@@ -48,6 +50,8 @@ public class GameMenuController extends MenuController {
     private final Set<String> boostedPlants = new HashSet<>();
     private final MenuType menuType;
     private final boolean scoreMode;
+    /** Adventure index picked with "select level", or -1 to just continue. */
+    private int chosenIndex = -1;
     protected GameSession session;
     private java.util.function.IntConsumer scoreReporter;
 
@@ -105,6 +109,7 @@ public class GameMenuController extends MenuController {
         }
         selectedPlants.clear();
         boostedPlants.clear();
+        chosenIndex = -1;
         context.setCurrentMenu(MenuType.MAIN);
         view.info("You are back in the main menu.");
     }
@@ -126,6 +131,10 @@ public class GameMenuController extends MenuController {
             showPlantList(GameCatalog.get().allPlants().stream().map(PlantSpec::getName).toList());
         } else if (input.equals("show available plants")) {
             showPlantList(new ArrayList<>(context.getCurrentUser().getUnlockedPlants()));
+        } else if (input.equals("show chapters")) {
+            showChapters();
+        } else if ((matcher = SELECT_LEVEL.matcher(input)).matches()) {
+            selectLevel(matcher.group(1), Integer.parseInt(matcher.group(2)));
         } else if ((matcher = ADD_PLANT.matcher(input)).matches()) {
             addPlant(matcher.group(1));
         } else if ((matcher = REMOVE_PLANT.matcher(input)).matches()) {
@@ -151,6 +160,68 @@ public class GameMenuController extends MenuController {
     }
 
     /**
+     * The adventure map: every chapter with its days, marking what is cleared,
+     * what is playable now and what is still locked.
+     */
+    private void showChapters() {
+        if (scoreMode) {
+            view.error("The score game always plays today's level.");
+            return;
+        }
+        int passed = context.getCurrentUser().getLevelsPassed();
+        for (ir.sharif.pvz.model.game.Chapter chapter : ir.sharif.pvz.model.game.Chapter.values()) {
+            StringBuilder line = new StringBuilder(chapter.id() + ":");
+            for (int day = 1; day <= ir.sharif.pvz.model.game.Levels.daysPerChapter(); day++) {
+                int index = ir.sharif.pvz.model.game.Levels.indexOf(chapter, day);
+                String mark = index < passed ? "cleared" : index == passed ? "playable" : "locked";
+                line.append(" day ").append(day).append(" [").append(mark).append(']');
+            }
+            view.info(line.toString());
+        }
+        view.info("Play one with: select level -c <chapter> -d <day>");
+    }
+
+    /**
+     * Picks a cleared or newly unlocked level instead of simply continuing from
+     * where the player left off; locked levels stay out of reach.
+     */
+    private void selectLevel(String chapterId, int day) {
+        if (scoreMode) {
+            view.error("The score game always plays today's level.");
+            return;
+        }
+        ir.sharif.pvz.model.game.Chapter chapter = ir.sharif.pvz.model.game.Chapter.fromId(chapterId);
+        if (chapter == null) {
+            view.error("There is no chapter named '" + chapterId + "'; try 'show chapters'.");
+            return;
+        }
+        int index = ir.sharif.pvz.model.game.Levels.indexOf(chapter, day);
+        if (index < 0) {
+            view.error(chapter.displayName() + " has no day " + day + ".");
+            return;
+        }
+        if (index > context.getCurrentUser().getLevelsPassed()) {
+            view.error("That level is locked; finish the levels before it first.");
+            return;
+        }
+        chosenIndex = index;
+        view.info("Selected " + ir.sharif.pvz.model.game.Levels.adventure().get(index).title() + ".");
+    }
+
+    /**
+     * The level "start game" will run: the one the player selected, or the
+     * next unfinished one when nothing was selected.
+     */
+    private ir.sharif.pvz.model.game.LevelSpec upcomingLevel() {
+        if (scoreMode) {
+            return ir.sharif.pvz.model.game.Levels.scoreGame();
+        }
+        return chosenIndex < 0
+                ? ir.sharif.pvz.model.game.Levels.byProgress(context.getCurrentUser().getLevelsPassed())
+                : ir.sharif.pvz.model.game.Levels.adventure().get(chosenIndex);
+    }
+
+    /**
      * The level the player is about to start; special levels restrict the
      * plant selection before the game even begins.
      */
@@ -158,8 +229,7 @@ public class GameMenuController extends MenuController {
         if (scoreMode) {
             return null;
         }
-        return ir.sharif.pvz.model.game.Levels
-                .byProgress(context.getCurrentUser().getLevelsPassed()).getSpecial();
+        return upcomingLevel().getSpecial();
     }
 
     private void addPlant(String type) {
@@ -209,9 +279,7 @@ public class GameMenuController extends MenuController {
 
     private void startGame() {
         User user = context.getCurrentUser();
-        ir.sharif.pvz.model.game.LevelSpec level = scoreMode
-                ? ir.sharif.pvz.model.game.Levels.scoreGame()
-                : ir.sharif.pvz.model.game.Levels.byProgress(user.getLevelsPassed());
+        ir.sharif.pvz.model.game.LevelSpec level = upcomingLevel();
         if (level.getSpecial() != null) {
             for (String forced : level.getSpecial().getForcedPlants()) {
                 if (selectedPlants.add(forced)) {
@@ -229,6 +297,7 @@ public class GameMenuController extends MenuController {
         Random random = scoreMode ? new Random(java.time.LocalDate.now().toEpochDay()) : new Random();
         session = new GameSession(level, user.getDifficulty(),
                 new ArrayList<>(selectedPlants), boosts, random);
+        applyPlantLevels(user);
         if (scoreMode) {
             session.attachScoreTracker(new ir.sharif.pvz.model.game.ScoreTracker());
         }
@@ -240,6 +309,24 @@ public class GameMenuController extends MenuController {
         view.info(level.title() + (level.isNight() ? " (night)" : ""));
         view.info("The game started! Zombies are coming; use 'advance time -t <count> ticks'.");
         flushGameState();
+    }
+
+    /**
+     * Hands the session the collection upgrades, so a plant the player paid to
+     * upgrade is planted with more damage and health than a fresh one.
+     */
+    protected void applyPlantLevels(User user) {
+        java.util.Map<String, Integer> levels = new java.util.HashMap<>();
+        for (PlantSpec spec : GameCatalog.get().allPlants()) {
+            int level = user.getPlantLevel(spec.getName());
+            if (level > 1) {
+                levels.put(spec.getName(), level);
+                if (selectedPlants.contains(spec.getName())) {
+                    view.info("Your " + spec.getName() + " fights at level " + level + ".");
+                }
+            }
+        }
+        session.setPlantLevels(levels);
     }
 
     // ===== in-game phase =====
@@ -358,6 +445,7 @@ public class GameMenuController extends MenuController {
         context.getUserRepository().save();
         session = null;
         boostedPlants.clear();
+        chosenIndex = -1;
         view.info("You are back in the " + menuType.id() + " menu.");
     }
 
@@ -369,7 +457,11 @@ public class GameMenuController extends MenuController {
             finishScoreGame(user);
         } else if (session.isWon()) {
             user.addCoins(WIN_COIN_REWARD);
-            user.setLevelsPassed(user.getLevelsPassed() + 1);
+            // replaying a cleared level pays coins but must not push the
+            // player past the level they have actually reached
+            if (chosenIndex < 0 || chosenIndex == user.getLevelsPassed()) {
+                user.setLevelsPassed(user.getLevelsPassed() + 1);
+            }
             view.info("You won! You earned " + (session.getEarnedCoins() + WIN_COIN_REWARD) + " coins.");
         } else {
             view.info("You lost! Better luck next time.");

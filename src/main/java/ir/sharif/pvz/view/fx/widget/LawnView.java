@@ -566,7 +566,7 @@ public class LawnView extends Canvas {
             gc.setGlobalAlpha(1);
         }
 
-        double healthy = plant.getHp() / (double) plant.getSpec().getHp();
+        double healthy = plant.getHp() / (double) plant.maxHp();
         if (healthy < 0.999) {
             drawHealthBar(gc, centreX, centreY - height * 0.62, height * 0.8, healthy,
                     Color.web("#7cd12a"));

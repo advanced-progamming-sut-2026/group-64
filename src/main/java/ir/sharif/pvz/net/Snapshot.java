@@ -56,7 +56,7 @@ public record Snapshot(
         List<PlantView> plants = new ArrayList<>();
         for (Plant plant : session.plantedPlants()) {
             plants.add(new PlantView(plant.getSpec().getName(), plant.getCol() + 1,
-                    plant.getRow() + 1, plant.getHp(), plant.getSpec().getHp(),
+                    plant.getRow() + 1, plant.getHp(), plant.maxHp(),
                     session.isPlantDisabled(plant.getCol() + 1, plant.getRow() + 1)));
         }
         List<ZombieView> zombies = new ArrayList<>();

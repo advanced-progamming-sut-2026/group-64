@@ -55,6 +55,27 @@ public final class Levels {
     }
 
     /**
+     * Where the given level sits in the adventure, or -1 when it is not part
+     * of it. The index is also how many levels must be passed to unlock it.
+     */
+    public static int indexOf(Chapter chapter, int day) {
+        for (int i = 0; i < ADVENTURE.size(); i++) {
+            LevelSpec level = ADVENTURE.get(i);
+            if (level.getChapter() == chapter && level.getDay() == day) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * How many days one chapter has.
+     */
+    public static int daysPerChapter() {
+        return ADVENTURE.size() / Chapter.values().length;
+    }
+
+    /**
      * The score-game level: a flat lawn where only the mow points matter.
      * Day 0 marks it as the daily score game in the level title.
      */
@@ -96,7 +117,10 @@ public final class Levels {
                 Map.of(), 2, false, false, false).waveIncrement(increment(0, 1)));
         days.add(new LevelSpec(Chapter.ANCIENT_EGYPT, 2, waves(2), budget(0, 2),
                 merge(COMMON, "ra", "newspaper"),
-                Map.of(), 3, false, false, false).waveIncrement(increment(0, 2)));
+                Map.of(), 3, false, false, false,
+                SpecialRules.saveOurSeeds(Map.of(
+                        LevelSpec.tileKey(1, 1), "wall-nut",
+                        LevelSpec.tileKey(3, 1), "wall-nut"))).waveIncrement(increment(0, 2)));
         days.add(new LevelSpec(Chapter.ANCIENT_EGYPT, 3, waves(3), budget(0, 3), pool,
                 Map.of(), 3, false, true, false,
                 SpecialRules.timedWar(15, 150)).waveIncrement(increment(0, 3)));
@@ -120,7 +144,8 @@ public final class Levels {
                 slides, 0, false, false, false).waveIncrement(increment(1, 1)));
         days.add(new LevelSpec(Chapter.FROSTBITE_CAVES, 2, waves(2), budget(1, 2),
                 merge(COMMON, "dodo-rider", "hunter"),
-                slides, 0, false, false, false).waveIncrement(increment(1, 2)));
+                slides, 0, false, false, false,
+                SpecialRules.loveYourPlants(3)).waveIncrement(increment(1, 2)));
         days.add(new LevelSpec(Chapter.FROSTBITE_CAVES, 3, waves(3), budget(1, 3), pool,
                 moreSlides, 0, false, false, false,
                 SpecialRules.conveyorBelt(List.of("peashooter", "snow-pea", "wall-nut", "cherry-bomb")))
@@ -149,7 +174,9 @@ public final class Levels {
                 shallows, 0, false, false, false).waveIncrement(increment(2, 1)));
         days.add(new LevelSpec(Chapter.BIG_WAVE_BEACH, 2, waves(2), budget(2, 2),
                 merge(COMMON, "snorkel", "parasol"),
-                shallows, 0, false, false, false).waveIncrement(increment(2, 2)));
+                shallows, 0, false, false, false,
+                SpecialRules.lockedPlants(java.util.Set.of("cherry-bomb", "melon-pult"),
+                        List.of("lily-pad"))).waveIncrement(increment(2, 2)));
         days.add(new LevelSpec(Chapter.BIG_WAVE_BEACH, 3, waves(3), budget(2, 3), pool,
                 deeps, 0, false, false, false,
                 SpecialRules.deadLine(3)).waveIncrement(increment(2, 3)));
@@ -171,7 +198,8 @@ public final class Levels {
                 Map.of(), 2, true, false, true).waveIncrement(increment(3, 1)));
         days.add(new LevelSpec(Chapter.DARK_AGES, 2, waves(2), budget(3, 2),
                 merge(COMMON, "jester", "wizard"),
-                necromancy, 2, true, false, true).waveIncrement(increment(3, 2)));
+                necromancy, 2, true, false, true,
+                SpecialRules.nightOps()).waveIncrement(increment(3, 2)));
         days.add(new LevelSpec(Chapter.DARK_AGES, 3, waves(3), budget(3, 3), pool,
                 necromancy, 3, true, false, true,
                 SpecialRules.plantWhatYouGet(800, java.util.Set.of("sunflower", "sun-shroom")))

@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The knobs of one special level. Each of the eight kinds appears at least
- * once in the adventure, on days 2 and 3 of every chapter.
+ * The knobs of one special level. Each of the eight kinds appears exactly once
+ * in the adventure: day 2 of every chapter carries one and day 3 the other.
  */
 public final class SpecialRules {
 

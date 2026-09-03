@@ -5,21 +5,55 @@ package ir.sharif.pvz.model.game;
  */
 public class Plant {
 
+    /** What each level above the first adds to the plant's damage and health. */
+    public static final double LEVEL_BONUS = 0.25;
+
     private final PlantSpec spec;
     private final int row;
     private final int col;
+    private final int level;
     private int hp;
     private double attackCooldownSeconds;
     private double armSeconds;
     private boolean boosted;
 
     public Plant(PlantSpec spec, int row, int col, boolean boosted) {
+        this(spec, row, col, boosted, 1);
+    }
+
+    public Plant(PlantSpec spec, int row, int col, boolean boosted, int level) {
         this.spec = spec;
         this.row = row;
         this.col = col;
-        this.hp = spec.getHp();
+        this.level = Math.max(1, level);
+        this.hp = maxHp();
         this.boosted = boosted;
         this.armSeconds = spec.getCategory() == PlantCategory.TRAP ? 15 : 0;
+    }
+
+    /**
+     * The level the player upgraded this plant to in the collection menu.
+     */
+    public int getLevel() {
+        return level;
+    }
+
+    /**
+     * Damage after the collection upgrades, which is what the combat uses.
+     */
+    public int getDamage() {
+        return (int) Math.round(spec.getDamage() * levelMultiplier());
+    }
+
+    /**
+     * Health after the collection upgrades; a fresh plant starts here.
+     */
+    public int maxHp() {
+        return (int) Math.round(spec.getHp() * levelMultiplier());
+    }
+
+    private double levelMultiplier() {
+        return 1 + LEVEL_BONUS * (level - 1);
     }
 
     public PlantSpec getSpec() {
@@ -39,7 +73,7 @@ public class Plant {
     }
 
     public void heal() {
-        this.hp = spec.getHp();
+        this.hp = maxHp();
     }
 
     /**

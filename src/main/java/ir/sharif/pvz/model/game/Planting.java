@@ -32,7 +32,8 @@ final class Planting {
             session.board.setTerrain(y - 1, x - 1, TileTerrain.LILY);
             return "Planted lily-pad at (" + x + ", " + y + "); the tile is now plantable.";
         }
-        Plant plant = new Plant(spec, y - 1, x - 1, session.boostedPlants.remove(type));
+        Plant plant = new Plant(spec, y - 1, x - 1, session.boostedPlants.remove(type),
+                session.plantLevel(type));
         session.gridArray()[y - 1][x - 1] = plant;
         if (plant.isBoosted()) {
             plant.consumeBoost();

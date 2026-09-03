@@ -141,7 +141,7 @@ public class ConsoleView implements GameView {
         Plant plant = session.plantAtTile(x, y);
         if (plant != null) {
             out.println("Plant " + plant.getSpec().getName() + ": hp " + plant.getHp()
-                    + "/" + plant.getSpec().getHp()
+                    + "/" + plant.maxHp()
                     + (session.isPlantDisabled(x, y) ? " (disabled)" : ""));
         }
         List<Zombie> here = session.getZombies().stream()

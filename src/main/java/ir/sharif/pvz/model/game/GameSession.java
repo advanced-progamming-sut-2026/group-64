@@ -44,6 +44,8 @@ public class GameSession {
     private final boolean[] mowers = new boolean[ROWS];
     final List<Zombie> zombies = new ArrayList<>();
     final Map<String, Double> plantCooldowns = new HashMap<>();
+    /** Collection-menu upgrade levels per plant type; missing means level 1. */
+    final Map<String, Integer> plantLevels = new HashMap<>();
     private final Map<Zombie, Double> eatProgress = new HashMap<>();
     private final List<String> events = new ArrayList<>();
     private final List<Shot> shots = new ArrayList<>();
@@ -263,7 +265,7 @@ public class GameSession {
                 + trim(zombie.getX()) + ", " + (zombie.getRow() + 1) + ")");
         if (zombie.isGlowing() && plantFood < MAX_PLANT_FOOD) {
             plantFood++;
-            events.add("The glowing zombie dropeed a plant food; you have " + plantFood + " plant foods now.");
+            events.add("The glowing zombie dropped a plant food; you have " + plantFood + " plant foods now.");
         }
         rollDeathDrop();
     }
@@ -275,13 +277,13 @@ public class GameSession {
         int kind = random.nextInt(3);
         if (kind == 0) {
             earnedDiamonds++;
-            events.add("A zombie dropeed a diamond; you have " + earnedDiamonds + " diamonds now.");
+            events.add("A zombie dropped a diamond; you have " + earnedDiamonds + " diamonds now.");
         } else if (kind == 1) {
             earnedCoins += 50;
-            events.add("A zombie dropeed a coin; you have " + earnedCoins + " coins now.");
+            events.add("A zombie dropped a coin; you have " + earnedCoins + " coins now.");
         } else {
             earnedPots++;
-            events.add("A zombie dropeed a pot; you have " + earnedPots + " pots now.");
+            events.add("A zombie dropped a pot; you have " + earnedPots + " pots now.");
         }
     }
 
@@ -525,6 +527,22 @@ public class GameSession {
 
     public Set<String> getSeenZombieTypes() {
         return new java.util.LinkedHashSet<>(seenZombieTypes);
+    }
+
+    /**
+     * Applies the upgrade levels the player bought in the collection menu, so
+     * an upgraded plant is planted stronger for the rest of this level.
+     */
+    public void setPlantLevels(Map<String, Integer> levels) {
+        plantLevels.clear();
+        plantLevels.putAll(levels);
+    }
+
+    /**
+     * The level this plant type was upgraded to; 1 when it was never upgraded.
+     */
+    public int plantLevel(String type) {
+        return plantLevels.getOrDefault(type, 1);
     }
 
     /**

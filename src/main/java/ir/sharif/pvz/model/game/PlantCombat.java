@@ -81,11 +81,11 @@ class PlantCombat {
             return;
         }
         if (category == PlantCategory.MINT && plant.isArmed()) {
-            session.damageRowFrom(plant.getRow(), 0, plant.getSpec().getDamage());
+            session.damageRowFrom(plant.getRow(), 0, plant.getDamage());
             session.destroyPlantSilently(plant);
             return;
         }
-        if (!plant.isReadyToAttack() || plant.getSpec().getDamage() == 0) {
+        if (!plant.isReadyToAttack() || plant.getDamage() == 0) {
             return;
         }
         switch (category) {
@@ -108,19 +108,19 @@ class PlantCombat {
         if (!lobbed) {
             int grave = session.graveColumnBetween(plant.getRow(), plant.getCol() + 1, target.getX());
             if (grave >= 0) {
-                session.damageGraveAt(plant.getRow(), grave, plant.getSpec().getDamage());
+                session.damageGraveAt(plant.getRow(), grave, plant.getDamage());
                 plant.resetAttackCooldown();
                 return;
             }
             if (target.getSpec().getName().equals("jester")) {
                 session.eventLog().add("The jester reflected " + plant.getSpec().getName()
                         + "'s shot back at it!");
-                session.plantHit(plant, plant.getSpec().getDamage());
+                session.plantHit(plant, plant.getDamage());
                 plant.resetAttackCooldown();
                 return;
             }
         }
-        int damage = plant.getSpec().getDamage() + torchwoodBonus(plant, target);
+        int damage = plant.getDamage() + torchwoodBonus(plant, target);
         if (plant.getSpec().hasTag("ice")) {
             target.chill(5);
             session.abilitiesRef().onIceHit(target);
@@ -141,7 +141,7 @@ class PlantCombat {
         }
         session.recordShot(plant, boss.getColumn(),
                 lobbed ? Shot.Flight.LOBBED : Shot.Flight.STRAIGHT);
-        session.zombossEngine().hit(plant.getSpec().getDamage());
+        session.zombossEngine().hit(plant.getDamage());
         plant.resetAttackCooldown();
     }
 
@@ -194,9 +194,9 @@ class PlantCombat {
         boolean facingBoss = boss != null && !boss.isDefeated() && boss.covers(plant.getRow());
         if (anyZombie || facingBoss) {
             session.recordShot(plant, GameSession.COLS + 1.0, Shot.Flight.STRAIGHT);
-            session.damageRowFrom(plant.getRow(), plant.getCol() + 1.0, plant.getSpec().getDamage());
+            session.damageRowFrom(plant.getRow(), plant.getCol() + 1.0, plant.getDamage());
             if (facingBoss) {
-                session.zombossEngine().hit(plant.getSpec().getDamage());
+                session.zombossEngine().hit(plant.getDamage());
             }
             plant.resetAttackCooldown();
         }
@@ -215,7 +215,7 @@ class PlantCombat {
         }
         if (target != null) {
             session.recordShot(plant, target.getX(), Shot.Flight.LOBBED);
-            session.hitZombie(target, plant.getSpec().getDamage());
+            session.hitZombie(target, plant.getDamage());
             plant.resetAttackCooldown();
         }
     }
@@ -223,7 +223,7 @@ class PlantCombat {
     private void biteAdjacent(Plant plant) {
         Zombie target = session.frontmost(plant.getRow(), plant.getCol() + 1.0);
         if (target != null && target.getX() <= plant.getCol() + 2.2) {
-            session.hitZombie(target, plant.getSpec().getDamage());
+            session.hitZombie(target, plant.getDamage());
             plant.resetAttackCooldown();
         }
     }
@@ -234,7 +234,7 @@ class PlantCombat {
                 if (plant.getSpec().hasTag("ice")) {
                     zombie.freeze(5);
                 } else {
-                    session.hitZombie(zombie, plant.getSpec().getDamage());
+                    session.hitZombie(zombie, plant.getDamage());
                 }
                 session.destroyPlantSilently(plant);
                 return;

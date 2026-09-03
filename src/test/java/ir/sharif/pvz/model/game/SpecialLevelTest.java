@@ -22,25 +22,36 @@ class SpecialLevelTest {
     }
 
     @Test
-    void dayThreeOfEveryChapterIsItsSpecialLevel() {
+    void everySpecialKindIsPlacedOnDayTwoOrThreeOfAChapter() {
         List<SpecialRules.Type> placed = Levels.adventure().stream()
-                .filter(level -> level.getDay() == 3)
+                .filter(level -> level.getDay() == 2 || level.getDay() == 3)
                 .map(LevelSpec::getSpecial)
                 .map(rules -> {
-                    assertTrue(rules != null, "day 3 must carry the chapter's special level");
+                    assertTrue(rules != null, "days 2 and 3 must carry a special level");
                     return rules.getType();
                 })
                 .distinct()
                 .toList();
-        assertEquals(4, placed.size());
+        // all eight kinds of the document, each used exactly once
+        assertEquals(SpecialRules.Type.values().length, placed.size());
         for (LevelSpec level : Levels.adventure()) {
             // the boss level carries a conveyor belt of its own, so only the
             // ordinary days are expected to be free of special rules
-            if (level.getDay() != 3 && !level.isBoss()) {
+            if (level.getDay() != 2 && level.getDay() != 3 && !level.isBoss()) {
                 assertEquals(null, level.getSpecial(),
                         level.title() + " should be a normal level");
             }
         }
+    }
+
+    @Test
+    void nightOpsStopsSkySunsEvenOnADaytimeLevel() {
+        LevelSpec level = new LevelSpec(Chapter.ANCIENT_EGYPT, 2, 4, 4, List.of("normal"),
+                Map.of(), 0, false, false, false, SpecialRules.nightOps());
+        GameSession session = new GameSession(level, 3, List.of(), new HashSet<>(), new Random(5));
+        session.setWavesEnabled(false);
+        session.advance(60 * GameSession.TICKS_PER_SECOND);
+        assertTrue(session.groundSuns().isEmpty(), "no sun may fall on a night-ops level");
     }
 
     @Test

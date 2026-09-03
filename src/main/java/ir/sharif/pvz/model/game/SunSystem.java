@@ -21,7 +21,8 @@ class SunSystem {
     private double nextFallAtSeconds;
 
     SunSystem(LevelSpec level, double difficultyUp, Random random, List<String> events) {
-        this.night = level.isNight();
+        this.night = level.isNight() || (level.getSpecial() != null
+                && level.getSpecial().getType() == SpecialRules.Type.NIGHT_OPS);
         this.difficultyUp = difficultyUp;
         this.random = random;
         this.events = events;
