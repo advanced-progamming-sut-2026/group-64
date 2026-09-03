@@ -116,6 +116,19 @@ public final class Matchmaker {
     }
 
     /**
+     * Ends every game in progress, for a server that is shutting down. Without
+     * this each match's loop thread outlives the server and goes on ticking a
+     * game nobody is watching.
+     */
+    void endEveryMatch() {
+        for (Match match : java.util.Set.copyOf(byPlayer.values())) {
+            match.markOver();
+        }
+        byPlayer.clear();
+        pendingInvites.clear();
+    }
+
+    /**
      * Takes a player out of whatever they were in, telling the other side.
      */
     public void leave(String username, String reason) {

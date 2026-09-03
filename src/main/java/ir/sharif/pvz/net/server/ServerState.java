@@ -73,6 +73,23 @@ public final class ServerState {
         }
     }
 
+    /**
+     * Winds the server down: every game in progress stops and every client is
+     * told why, so no loop thread is left ticking behind a closed server.
+     */
+    public void shutdown() {
+        matchmaker.endEveryMatch();
+        for (ClientHandler handler : online.values()) {
+            handler.disconnect("The server is shutting down.");
+        }
+        online.clear();
+        clearQueue();
+    }
+
+    private synchronized void clearQueue() {
+        queue.clear();
+    }
+
     public boolean isOnline(String username) {
         return online.containsKey(username);
     }

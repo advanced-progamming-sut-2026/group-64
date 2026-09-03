@@ -1,8 +1,12 @@
 package ir.sharif.pvz.net;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ir.sharif.pvz.model.RegisterRequest;
+import ir.sharif.pvz.model.net.RemoteAuthService;
+import ir.sharif.pvz.model.net.RemoteUserRepository;
 import ir.sharif.pvz.net.client.ServerConnection;
 import ir.sharif.pvz.net.server.PvzServer;
 import java.io.IOException;
@@ -10,8 +14,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +59,60 @@ class ServerConnectionTest {
 
     private ServerConnection connect() throws IOException {
         return new ServerConnection("localhost", server.port());
+    }
+
+    private static Set<String> matchThreads() {
+        return Thread.getAllStackTraces().keySet().stream()
+                .filter(Thread::isAlive)
+                .map(Thread::getName)
+                .filter(name -> name.startsWith("pvz-match-"))
+                .collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    /**
+     * Closing the server has to stop the games it is running. It used to leave
+     * each match's loop thread behind, ticking a board nobody was watching and
+     * serialising it ten times a second for as long as the process lived — a
+     * leak on a real server, and enough noise in a test run to push the other
+     * network tests over their timeout.
+     */
+    @Test
+    void closingTheServerStopsTheGamesItWasRunning() throws Exception {
+        Set<String> before = matchThreads();
+        try (ServerConnection one = signedIn("alpha"); ServerConnection two = signedIn("beta")) {
+            one.ask(one.request(Protocol.QUEUE_JOIN));
+            two.ask(two.request(Protocol.QUEUE_JOIN));
+            Set<String> playing = new TreeSet<>(matchThreads());
+            playing.removeAll(before);
+            assertFalse(playing.isEmpty(), "the match should be running while both players are in");
+
+            // the players walk out without hanging up, the way a dropped
+            // connection or a killed client does
+            server.close();
+
+            long deadline = System.currentTimeMillis() + 5000;
+            while (System.currentTimeMillis() < deadline) {
+                Set<String> left = new TreeSet<>(matchThreads());
+                left.removeAll(before);
+                if (left.isEmpty()) {
+                    return;
+                }
+                Thread.sleep(50);
+            }
+            Set<String> left = new TreeSet<>(matchThreads());
+            left.removeAll(before);
+            assertTrue(left.isEmpty(), "these match threads outlived the server: " + left);
+        }
+    }
+
+    private ServerConnection signedIn(String name) throws Exception {
+        ServerConnection link = connect();
+        RemoteUserRepository users = new RemoteUserRepository(link);
+        RemoteAuthService auth = new RemoteAuthService(link, users);
+        auth.register(new RegisterRequest(name, "Aa1!aaaa", "Aa1!aaaa",
+                "Nick", name + "@example.com", "female"), 1, "green");
+        auth.login(name, "Aa1!aaaa");
+        return link;
     }
 
     @Test

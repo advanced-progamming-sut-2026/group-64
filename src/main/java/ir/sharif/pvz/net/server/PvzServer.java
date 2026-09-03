@@ -68,6 +68,7 @@ public final class PvzServer implements AutoCloseable {
     @Override
     public void close() {
         running = false;
+        state.shutdown();
         clients.shutdownNow();
         try {
             socket.close();
