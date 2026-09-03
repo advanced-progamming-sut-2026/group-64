@@ -21,6 +21,15 @@ import javafx.scene.layout.VBox;
  */
 public final class NewsScreen extends Screen {
 
+    /**
+     * The menu commands this screen drives the controller with. They are the
+     * full commands the news menu answers to, not the bare switch names — the
+     * screen used to send those and the menu quietly rejected every one, so
+     * nothing was ever marked read.
+     */
+    public static final String SHOW_UNREAD = "menu news show-unread";
+    public static final String SHOW_ALL = "menu news show-all";
+
     private static final double PANEL_WIDTH = 720;
 
     private boolean showAll;
@@ -32,7 +41,9 @@ public final class NewsScreen extends Screen {
     @Override
     public Parent build() {
         List<NewsItem> items = ui.user().getNews();
+        // what is unread has to be read off before the controller marks it read
         List<NewsItem> shown = showAll ? items : items.stream().filter(item -> !item.isRead()).toList();
+        List<NewsItem> freshlyRead = items.stream().filter(item -> !item.isRead()).toList();
 
         VBox list = new VBox(10);
         if (shown.isEmpty()) {
@@ -60,7 +71,21 @@ public final class NewsScreen extends Screen {
         BorderPane layout = new BorderPane(column);
         layout.setTop(Chrome.bar(ui, "News and updates"));
         layout.getStyleClass().addAll("screen", "news-screen");
+        // opening the page is what reads it, so the NEW tags clear next time
+        markRead(freshlyRead);
         return layout;
+    }
+
+    /**
+     * Hands the marking to the controller, which is what saves it, and keeps
+     * its console-shaped output out of the notification stack.
+     */
+    private void markRead(List<NewsItem> unread) {
+        boolean onThisMenu = ui.app().getContext().getCurrentMenu()
+                == ir.sharif.pvz.controller.MenuType.NEWS;
+        if (!unread.isEmpty() && onThisMenu) {
+            ui.view().capture(() -> ui.app().submit(SHOW_UNREAD));
+        }
     }
 
     private HBox filterBar() {
@@ -68,8 +93,8 @@ public final class NewsScreen extends Screen {
         Button all = new Button("All");
         unread.getStyleClass().add(showAll ? "tab-button" : "tab-button-active");
         all.getStyleClass().add(showAll ? "tab-button-active" : "tab-button");
-        unread.setOnAction(event -> switchTo(false, "show-unread"));
-        all.setOnAction(event -> switchTo(true, "show-all"));
+        unread.setOnAction(event -> switchTo(false));
+        all.setOnAction(event -> switchTo(true));
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -78,13 +103,8 @@ public final class NewsScreen extends Screen {
         return bar;
     }
 
-    /**
-     * Runs the phase-1 command for its side effect of marking items read, but
-     * keeps its console-shaped output out of the notification stack.
-     */
-    private void switchTo(boolean all, String command) {
+    private void switchTo(boolean all) {
         showAll = all;
-        ui.view().capture(() -> ui.app().submit(command));
         ui.show(this);
     }
 

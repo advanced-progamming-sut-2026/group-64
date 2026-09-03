@@ -59,6 +59,21 @@ public final class ScreenSnapshots extends Application {
         runNext();
     }
 
+    /**
+     * Enters a menu, photographs it under the given name and comes back out.
+     */
+    private void planMenuShot(MenuType menu, String name) {
+        steps.add(() -> {
+            app.submit("menu enter " + menu.id());
+            ui.refresh();
+        });
+        steps.add(() -> shoot(name));
+        steps.add(() -> {
+            app.submit("menu exit");
+            ui.refresh();
+        });
+    }
+
     private void planSteps() {
         steps.add(() -> shoot("00-signup"));
         steps.add(this::signIn);
@@ -67,16 +82,10 @@ public final class ScreenSnapshots extends Application {
         for (MenuType menu : new MenuType[] {MenuType.PROFILE, MenuType.SETTINGS, MenuType.NEWS,
                 MenuType.COLLECTION, MenuType.GREENHOUSE, MenuType.SHOP,
                 MenuType.LEADERBOARD, MenuType.TRAVEL_LOG}) {
-            steps.add(() -> {
-                app.submit("menu enter " + menu.id());
-                ui.refresh();
-            });
-            steps.add(() -> shoot(menu.id()));
-            steps.add(() -> {
-                app.submit("menu exit");
-                ui.refresh();
-            });
+            planMenuShot(menu, menu.id());
         }
+        // the news page a second time, to show the read marks having cleared
+        planMenuShot(MenuType.NEWS, "news-reread");
 
         steps.add(this::openPicker);
         steps.add(() -> shoot("10-plant-picker"));
