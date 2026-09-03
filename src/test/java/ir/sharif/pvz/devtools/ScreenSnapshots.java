@@ -109,6 +109,8 @@ public final class ScreenSnapshots extends Application {
         steps.add(() -> shoot("17-beghouled"));
         steps.add(this::showExplosion);
         steps.add(() -> shoot("18-explosion"));
+        steps.add(this::showFlyingParts);
+        steps.add(() -> shoot("18-zombie-parts"));
         steps.add(this::showPauseMenu);
         steps.add(() -> shoot("19-pause-menu"));
         steps.add(this::showZomboss);
@@ -230,6 +232,24 @@ public final class ScreenSnapshots extends Application {
     /**
      * Opens the pause menu over a running level.
      */
+    /**
+     * Knocks a few armoured zombies down and catches the heads, arms and
+     * armour while they are still in the air.
+     */
+    private void showFlyingParts() {
+        startLevelAt(0, "peashooter");
+        var session = ((ir.sharif.pvz.controller.GameMenuController) app.currentController())
+                .getSession();
+        session.cheats().spawnZombie("conehead", 6, 2);
+        session.cheats().spawnZombie("buckethead", 7, 3);
+        session.cheats().spawnZombie("normal", 5, 4);
+        session.cheats().spawnZombie("conehead", 8, 5);
+        app.submit("release the nuke");
+        // a couple of ticks in, the pieces are up off the ground
+        app.submit("advance time -t 3 ticks");
+        ui.refresh();
+    }
+
     private void showPauseMenu() {
         if (ui.current() instanceof ir.sharif.pvz.view.fx.screen.BattleScreen battle) {
             battle.openPauseMenuForSnapshot();

@@ -17,7 +17,7 @@ class PlantCombat {
      * The plant-food (and boost) effect of each category.
      */
     void applyPlantFood(Plant plant) {
-        if (session.plantAbilities().plantFood(plant)) {
+        if (session.plantAbilities.plantFood(plant)) {
             return;
         }
         switch (plant.getSpec().getCategory()) {
@@ -74,7 +74,7 @@ class PlantCombat {
     }
 
     private void act(Plant plant) {
-        if (session.plantAbilities().act(plant)) {
+        if (session.plantAbilities.act(plant)) {
             return;
         }
         PlantCategory category = plant.getSpec().getCategory();
@@ -127,14 +127,14 @@ class PlantCombat {
                 return;
             }
         }
-        int damage = session.plantAbilities().scaledDamage(plant) + torchwoodBonus(plant, target);
+        int damage = session.plantAbilities.scaledDamage(plant) + torchwoodBonus(plant, target);
         if (plant.getSpec().hasTag("ice")) {
             target.chill(5);
-            session.abilitiesRef().onIceHit(target);
+            session.abilities.onIceHit(target);
         }
         session.recordShot(plant, target.getX(),
                 lobbed ? Shot.Flight.LOBBED : Shot.Flight.STRAIGHT);
-        session.plantAbilities().onShotLanded(plant, target);
+        session.plantAbilities.onShotLanded(plant, target);
         session.hitZombie(target, damage);
         plant.resetAttackCooldown();
     }
@@ -149,7 +149,7 @@ class PlantCombat {
         }
         session.recordShot(plant, boss.getColumn(),
                 lobbed ? Shot.Flight.LOBBED : Shot.Flight.STRAIGHT);
-        session.zombossEngine().hit(plant.getDamage());
+        session.zomboss.hit(plant.getDamage());
         plant.resetAttackCooldown();
     }
 
@@ -203,9 +203,9 @@ class PlantCombat {
         if (anyZombie || facingBoss) {
             session.recordShot(plant, GameSession.COLS + 1.0, Shot.Flight.STRAIGHT);
             session.damageRowFrom(plant.getRow(), plant.getCol() + 1.0,
-                    session.plantAbilities().scaledDamage(plant));
+                    session.plantAbilities.scaledDamage(plant));
             if (facingBoss) {
-                session.zombossEngine().hit(plant.getDamage());
+                session.zomboss.hit(plant.getDamage());
             }
             plant.resetAttackCooldown();
         }

@@ -23,26 +23,27 @@ public class GameSession {
     private static final int INITIAL_SUN = 50;
 
     private final Random random;
-    private final int difficultyLevel;
-    private final double difficultyUp;
+    final int difficultyLevel;
+    final double difficultyUp;
     private final double difficultyDown;
     private final List<String> selectedPlants;
     final Set<String> boostedPlants;
     private final LevelSpec level;
-    private final ZombieAbilities abilities;
+    final ZombieAbilities abilities;
     final PlantCombat combat;
-    private final PlantAbilities plantAbilities = new PlantAbilities(this);
+    final PlantAbilities plantAbilities = new PlantAbilities(this);
     final SpecialLevelEngine special;
-    private final ZombossEngine zomboss;
+    final ZombossEngine zomboss;
     final Set<Plant> protectedPlants = new java.util.HashSet<>();
     private final Cheats cheats = new Cheats(this);
+    private final Dismemberment dismemberment;
     private final Sandstorm sandstorm;
     private final Planting planting = new Planting(this);
 
     private final Plant[][] grid = new Plant[ROWS][COLS];
     final Board board;
     final SunSystem sunSystem;
-    private final WaveSystem waves;
+    final WaveSystem waves;
     final Map<Plant, String> disabledPlants = new HashMap<>();
     final boolean[] mowers = new boolean[ROWS];
     final List<Zombie> zombies = new ArrayList<>();
@@ -86,6 +87,7 @@ public class GameSession {
         java.util.Arrays.fill(mowers, true);
         this.board = new Board(level, difficultyUp, random, events);
         this.sandstorm = new Sandstorm(level.getChapter());
+        this.dismemberment = new Dismemberment(random);
         this.sunSystem = new SunSystem(level, difficultyUp, random, events);
         this.waves = new WaveSystem(this, level, difficultyDown, random);
         this.special = new SpecialLevelEngine(this, level.getSpecial(), random);
@@ -158,6 +160,7 @@ public class GameSession {
             burst.passSeconds(dt);
         }
         bursts.removeIf(Burst::isDone);
+        dismemberment.tick(dt);
     }
 
     private void produceSuns() {
@@ -258,11 +261,14 @@ public class GameSession {
     private void hit(Zombie zombie, int damage) {
         if (zombie.damage(damage)) {
             killZombie(zombie);
+            return;
         }
+        dismemberment.onArmourLost(zombie);
     }
 
     void killZombie(Zombie zombie) {
         recordBurst(Burst.Kind.ZOMBIE_DOWN, zombie.getX(), zombie.getRow() + 1.0);
+        dismemberment.onDeath(zombie);
         zombies.remove(zombie);
         eatProgress.remove(zombie);
         abilities.onDeath(zombie);
@@ -405,18 +411,6 @@ public class GameSession {
      */
     // ===== reading and rebuilding a suspended level =====
 
-    int difficulty() {
-        return difficultyLevel;
-    }
-
-    long ticks() {
-        return tickCount;
-    }
-
-    WaveSystem waves() {
-        return waves;
-    }
-
     /**
      * The chapter's weather, which the view draws and nothing else reads.
      */
@@ -520,8 +514,11 @@ public class GameSession {
     /**
      * The boss engine of this level, or null on an ordinary one.
      */
-    ZombossEngine zombossEngine() {
-        return zomboss;
+    /**
+     * The heads, arms and armour still tumbling across the lawn.
+     */
+    public List<Debris> getDebris() {
+        return dismemberment.pieces();
     }
 
     public List<Burst> getBursts() {
@@ -681,10 +678,6 @@ public class GameSession {
 
     boolean isDisabled(Plant plant) {
         return disabledPlants.containsKey(plant);
-    }
-
-    ZombieAbilities abilitiesRef() {
-        return abilities;
     }
 
     void explodePlant(Plant plant, int radius) {
@@ -915,10 +908,6 @@ public class GameSession {
 
     // ===== hooks for the plant abilities =====
 
-    PlantAbilities plantAbilities() {
-        return plantAbilities;
-    }
-
     /**
      * The pumpkin wrapped around this plant, if any; the view draws it on top.
      */
@@ -933,10 +922,4 @@ public class GameSession {
         return random.nextInt(bound);
     }
 
-    /**
-     * The level's difficulty multiplier, which the abilities scale speed by.
-     */
-    double difficultyScale() {
-        return difficultyUp;
-    }
 }

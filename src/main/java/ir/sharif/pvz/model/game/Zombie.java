@@ -15,6 +15,8 @@ public class Zombie {
     private double x;
     private int hp;
     private final Map<String, Integer> armor;
+    /** Armour knocked off by the most recent hit, for the view to drop. */
+    private final java.util.List<String> armourJustLost = new java.util.ArrayList<>();
     private double chilledSeconds;
     private double frozenSeconds;
     private double eatingSeconds;
@@ -75,6 +77,7 @@ public class Zombie {
      * Returns true when the zombie dies from this hit.
      */
     public boolean damage(int amount) {
+        armourJustLost.clear();
         int remaining = amount;
         for (Map.Entry<String, Integer> piece : armor.entrySet()) {
             if (remaining <= 0) {
@@ -84,9 +87,22 @@ public class Zombie {
             piece.setValue(piece.getValue() - absorbed);
             remaining -= absorbed;
         }
+        armor.forEach((name, left) -> {
+            if (left <= 0) {
+                armourJustLost.add(name);
+            }
+        });
         armor.values().removeIf(v -> v <= 0);
         hp -= remaining;
         return hp <= 0;
+    }
+
+    /**
+     * The armour this zombie lost to the last hit it took, so the piece can be
+     * sent tumbling off rather than just vanishing.
+     */
+    public java.util.List<String> armourJustLost() {
+        return java.util.List.copyOf(armourJustLost);
     }
 
     /**

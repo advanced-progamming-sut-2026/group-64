@@ -55,11 +55,11 @@ class ZombossTest {
         int part = boss.getMaxHp() / 3;
 
         assertEquals(0, boss.getPartsDestroyed());
-        session.zombossEngine().hit(part);
+        session.zomboss.hit(part);
         assertEquals(1, boss.getPartsDestroyed(), "one section should be gone");
         assertTrue(boss.isStunned(), "and the boss reels afterwards");
 
-        session.zombossEngine().hit(part);
+        session.zomboss.hit(part);
         assertEquals(2, boss.getPartsDestroyed());
         assertFalse(boss.isDefeated());
     }
@@ -67,7 +67,7 @@ class ZombossTest {
     @Test
     void takingTheLastPartOffWinsTheLevel() {
         GameSession session = bossLevel(Chapter.BIG_WAVE_BEACH);
-        session.zombossEngine().hit(session.getZomboss().getMaxHp());
+        session.zomboss.hit(session.getZomboss().getMaxHp());
         session.advance(1);
 
         assertTrue(session.getZomboss().isDefeated());
@@ -78,7 +78,7 @@ class ZombossTest {
     void aStunnedBossStopsActingUntilItRecovers() {
         GameSession session = bossLevel(Chapter.ANCIENT_EGYPT);
         Zomboss boss = session.getZomboss();
-        session.zombossEngine().hit(boss.getMaxHp() / 3);
+        session.zomboss.hit(boss.getMaxHp() / 3);
         assertTrue(boss.isStunned());
 
         session.advance(GameSession.TICKS_PER_SECOND * 7);

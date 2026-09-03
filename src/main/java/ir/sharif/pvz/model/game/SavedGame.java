@@ -9,9 +9,10 @@ import java.util.Map;
  *
  * <p>Everything here is plain data so it can go straight to JSON next to the
  * accounts. Nothing that can be worked out again is stored: the level itself is
- * named by its chapter and day and looked up on the way back in, and the shots
- * and blast effects in flight are left behind because they last a fraction of a
- * second and would be gone before the player looked at the screen.
+ * named by its chapter and day and looked up on the way back in. The shots,
+ * blast effects and tumbling zombie parts are left behind too — they are all
+ * over within a few seconds, and a player coming back to a level would never
+ * know they had been mid-flight.
  */
 public record SavedGame(String chapter, int day, int difficulty, long ticks,
                         List<String> selectedPlants, Map<String, Integer> plantLevels,

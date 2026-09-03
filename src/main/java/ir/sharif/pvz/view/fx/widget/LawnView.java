@@ -1,6 +1,7 @@
 package ir.sharif.pvz.view.fx.widget;
 
 import ir.sharif.pvz.model.game.Burst;
+import ir.sharif.pvz.model.game.Debris;
 import ir.sharif.pvz.model.game.GameSession;
 import ir.sharif.pvz.model.game.Plant;
 import ir.sharif.pvz.model.game.MinigameProp;
@@ -96,8 +97,32 @@ public class LawnView extends Canvas {
         drawRows(gc, session, seconds);
         drawSandstorm(gc, session, "front");
         drawZomboss(gc, session, seconds);
+        drawDebris(gc, session);
         drawBursts(gc, session);
         gc.restore();
+    }
+
+    /**
+     * The heads, arms and armour tumbling off the zombies. They are drawn over
+     * the lawn because they leave the zombie and land in front of it.
+     */
+    private void drawDebris(GraphicsContext gc, GameSession session) {
+        for (Debris piece : session.getDebris()) {
+            Image art = Assets.image("parts/" + piece.getArt());
+            if (art == null) {
+                continue;
+            }
+            double height = tileHeight() * (piece.getKind() == Debris.Kind.ARM ? 0.28 : 0.42);
+            double width = height * art.getWidth() / art.getHeight();
+            double x = tileX(1) + (piece.getCol() - 1) * tileWidth();
+            double y = tileY(piece.getRow() + 1) - piece.getLift() * tileHeight();
+            gc.save();
+            gc.setGlobalAlpha(piece.getOpacity());
+            gc.translate(x, y);
+            gc.rotate(Math.toDegrees(piece.getSpin()));
+            gc.drawImage(art, -width / 2, -height / 2, width, height);
+            gc.restore();
+        }
     }
 
     /**

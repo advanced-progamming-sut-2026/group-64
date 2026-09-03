@@ -119,6 +119,17 @@ ICE = {
     "zombie-front": "effects/frostbite_ice_block_zombie/frostbite_ice_block_zombie_153x243",
 }
 
+# the bits that come off a zombie: its head and an arm, and the armour it wore.
+# The dump names a zombie's body parts by their pixel size rather than by what
+# they are, so these were picked out of the plain zombie's sprite set by eye.
+ZOMBIE_PARTS = {
+    "head": "zombie/zombie_tutorial/zombie_tutorial_82x69",
+    "arm": "zombie/zombie_tutorial/zombie_tutorial_36x45",
+    "cone": "zombie/zombie_tutorial/zombie_tutorial_80x83_2",
+    "bucket": "zombie/zombie_tutorial/zombie_tutorial_96x97",
+    "block": "zombie/zombie_tutorial/zombie_tutorial_115x115",
+}
+
 # the sandstorm that sweeps across an Ancient Egypt lawn, in two layers
 SANDSTORM = {
     "sandstorm-back": "effects/sandstorm_rear/sandstorm_back1",
@@ -196,6 +207,8 @@ def main():
         wanted[f"zombies/{our}-bare"] = f"images/{RES}/initial/ui/almanac/packets_zombies/{theirs}"
     for our, theirs in ICE.items():
         wanted[f"ice/{our}"] = f"images/{RES}/initial/{theirs}"
+    for our, theirs in ZOMBIE_PARTS.items():
+        wanted[f"parts/{our}"] = f"images/{RES}/initial/{theirs}"
     for our, theirs in SANDSTORM.items():
         wanted[f"props/{our}"] = f"images/{RES}/initial/{theirs}"
     for our, theirs in GRAVES.items():

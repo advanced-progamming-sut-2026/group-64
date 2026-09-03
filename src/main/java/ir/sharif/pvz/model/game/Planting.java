@@ -46,7 +46,7 @@ final class Planting {
         Plant plant = new Plant(spec, y - 1, x - 1, session.boostedPlants.remove(type),
                 session.plantLevel(type));
         session.gridArray()[y - 1][x - 1] = plant;
-        session.plantAbilities().onPlanted(plant);
+        session.plantAbilities.onPlanted(plant);
         if (plant.isBoosted()) {
             plant.consumeBoost();
             session.applyPlantFoodEffect(plant);
@@ -71,7 +71,7 @@ final class Planting {
                 return "Error: " + standing.getSpec().getName() + " at " + tile
                         + " already has a pumpkin around it.";
             }
-            session.plantAbilities().putShield(standing, new Plant(spec, y - 1, x - 1, false,
+            session.plantAbilities.putShield(standing, new Plant(spec, y - 1, x - 1, false,
                     session.plantLevel(spec.getName())));
             return "Planted a pumpkin around " + standing.getSpec().getName() + " at " + tile + ".";
         }

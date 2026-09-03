@@ -28,7 +28,7 @@ public final class SaveState {
     public static SavedGame capture(GameSession session) {
         LevelSpec level = session.getLevel();
         return new SavedGame(level.getChapter().name(), level.getDay(),
-                session.difficulty(), session.ticks(),
+                session.difficultyLevel, session.tickCount,
                 List.copyOf(session.getSelectedPlants()),
                 new LinkedHashMap<>(session.plantLevels),
                 List.copyOf(session.boostedPlants),
@@ -37,7 +37,7 @@ public final class SaveState {
                 session.getEarnedCoins(), session.getEarnedDiamonds(), session.getEarnedPots(),
                 mowers(session), List.copyOf(session.getSeenZombieTypes()),
                 plants(session), zombies(session), suns(session), terrain(session),
-                session.waves().capture());
+                session.waves.capture());
     }
 
     private static List<Boolean> mowers(GameSession session) {
@@ -170,7 +170,7 @@ public final class SaveState {
         saved.zombies().forEach(zombie -> placeZombie(session, zombie));
         session.sunSystem.live().clear();
         saved.suns().forEach(sun -> session.sunSystem.add(sunOf(sun)));
-        session.waves().load(saved.wave());
+        session.waves.load(saved.wave());
         session.events.clear();
     }
 
@@ -218,7 +218,7 @@ public final class SaveState {
             if (shellSpec != null) {
                 Plant shell = new Plant(shellSpec, state.row(), state.col(), false);
                 shell.restoreTo(state.shieldHp(), 1, 0);
-                session.plantAbilities().putShield(plant, shell);
+                session.plantAbilities.putShield(plant, shell);
             }
         }
         if (state.disabledBy() != null) {

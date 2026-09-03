@@ -694,7 +694,7 @@ class PlantAbilities {
             return;
         }
         double speed = zombie.getSpec().getTilesPerSecond()
-                * session.difficultyScale() * zombie.speedMultiplier();
+                * session.difficultyUp * zombie.speedMultiplier();
         zombie.walk(-speed * dt);
         if (zombie.getX() > GameSession.COLS + 1) {
             session.removeZombieQuietly(zombie);
