@@ -40,6 +40,26 @@ class WaveSystem {
         return currentWave;
     }
 
+    /**
+     * How far the waves have got, for a level being put away.
+     */
+    SavedGame.WaveState capture() {
+        return new SavedGame.WaveState(currentWave, waveBudget, spawnedHealth, enabled);
+    }
+
+    /**
+     * Picks the waves back up where a saved level left them. The zombies of the
+     * wave in progress are whatever the save put back on the lawn.
+     */
+    void load(SavedGame.WaveState state) {
+        currentWave = state.currentWave();
+        waveBudget = state.budget();
+        spawnedHealth = state.spawnedHealth();
+        enabled = state.enabled();
+        currentWaveZombies.clear();
+        currentWaveZombies.addAll(session.getZombies());
+    }
+
     boolean allWavesSpawned() {
         return currentWave >= level.getTotalWaves();
     }

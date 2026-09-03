@@ -15,6 +15,7 @@ import java.util.Random;
 public class AppContext {
 
     private final UserRepository userRepository;
+    private final ir.sharif.pvz.model.SavedGameStore savedGames;
     private final SessionStore sessionStore;
     private final AuthService authService;
     private final ProfileService profileService;
@@ -30,6 +31,14 @@ public class AppContext {
 
     public AppContext(UserRepository userRepository, SessionStore sessionStore,
                       AuthService authService, ProfileService profileService) {
+        this(userRepository, sessionStore, authService, profileService,
+                new ir.sharif.pvz.model.SavedGameStore());
+    }
+
+    public AppContext(UserRepository userRepository, SessionStore sessionStore,
+                      AuthService authService, ProfileService profileService,
+                      ir.sharif.pvz.model.SavedGameStore savedGames) {
+        this.savedGames = savedGames;
         this.userRepository = userRepository;
         this.sessionStore = sessionStore;
         this.authService = authService;
@@ -54,6 +63,13 @@ public class AppContext {
 
     public UserRepository getUserRepository() {
         return userRepository;
+    }
+
+    /**
+     * The levels players walked away from, one per account.
+     */
+    public ir.sharif.pvz.model.SavedGameStore getSavedGames() {
+        return savedGames;
     }
 
     public SessionStore getSessionStore() {

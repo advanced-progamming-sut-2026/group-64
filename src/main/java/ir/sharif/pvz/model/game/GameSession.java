@@ -23,47 +23,48 @@ public class GameSession {
     private static final int INITIAL_SUN = 50;
 
     private final Random random;
+    private final int difficultyLevel;
     private final double difficultyUp;
     private final double difficultyDown;
     private final List<String> selectedPlants;
     final Set<String> boostedPlants;
     private final LevelSpec level;
     private final ZombieAbilities abilities;
-    private final PlantCombat combat;
+    final PlantCombat combat;
     private final PlantAbilities plantAbilities = new PlantAbilities(this);
     final SpecialLevelEngine special;
     private final ZombossEngine zomboss;
-    private final Set<Plant> protectedPlants = new java.util.HashSet<>();
+    final Set<Plant> protectedPlants = new java.util.HashSet<>();
     private final Cheats cheats = new Cheats(this);
     private final Sandstorm sandstorm;
     private final Planting planting = new Planting(this);
 
     private final Plant[][] grid = new Plant[ROWS][COLS];
     final Board board;
-    private final SunSystem sunSystem;
+    final SunSystem sunSystem;
     private final WaveSystem waves;
-    private final Map<Plant, String> disabledPlants = new HashMap<>();
-    private final boolean[] mowers = new boolean[ROWS];
+    final Map<Plant, String> disabledPlants = new HashMap<>();
+    final boolean[] mowers = new boolean[ROWS];
     final List<Zombie> zombies = new ArrayList<>();
     final Map<String, Double> plantCooldowns = new HashMap<>();
     /** Collection-menu upgrade levels per plant type; missing means level 1. */
     final Map<String, Integer> plantLevels = new HashMap<>();
-    private final Map<Zombie, Double> eatProgress = new HashMap<>();
-    private final List<String> events = new ArrayList<>();
+    final Map<Zombie, Double> eatProgress = new HashMap<>();
+    final List<String> events = new ArrayList<>();
     private final List<Shot> shots = new ArrayList<>();
     private final List<Burst> bursts = new ArrayList<>();
-    private final Set<String> seenZombieTypes = new java.util.LinkedHashSet<>();
+    final Set<String> seenZombieTypes = new java.util.LinkedHashSet<>();
 
-    private long tickCount;
+    long tickCount;
     int sunAmount = INITIAL_SUN;
-    private int plantFood;
+    int plantFood;
     boolean cooldownsDisabled;
     boolean cooldownsSuspended;
     private ScoreTracker scoreTracker;
     MinigameLogic minigame;
-    private int earnedCoins;
-    private int earnedDiamonds;
-    private int earnedPots;
+    int earnedCoins;
+    int earnedDiamonds;
+    int earnedPots;
     private boolean won;
     private boolean lost;
 
@@ -75,6 +76,7 @@ public class GameSession {
                        Set<String> boostedPlants, Random random) {
         this.level = level;
         this.random = random;
+        this.difficultyLevel = difficulty;
         this.difficultyUp = difficulty / 3.0;
         this.difficultyDown = 3.0 / difficulty;
         this.selectedPlants = List.copyOf(selectedPlants);
@@ -401,6 +403,20 @@ public class GameSession {
      * The level being played, so a view can pick the right background and show
      * the wave count without keeping its own copy of the level data.
      */
+    // ===== reading and rebuilding a suspended level =====
+
+    int difficulty() {
+        return difficultyLevel;
+    }
+
+    long ticks() {
+        return tickCount;
+    }
+
+    WaveSystem waves() {
+        return waves;
+    }
+
     /**
      * The chapter's weather, which the view draws and nothing else reads.
      */
@@ -649,22 +665,6 @@ public class GameSession {
 
     List<String> eventLog() {
         return events;
-    }
-
-    SunSystem sunSystem() {
-        return sunSystem;
-    }
-
-    PlantCombat combat() {
-        return combat;
-    }
-
-    List<Sun> sunList() {
-        return sunSystem.live();
-    }
-
-    LevelSpec levelSpec() {
-        return level;
     }
 
     void hitZombie(Zombie zombie, int damage) {

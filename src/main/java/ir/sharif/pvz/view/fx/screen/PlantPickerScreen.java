@@ -140,6 +140,25 @@ public final class PlantPickerScreen extends Screen {
         };
     }
 
+    /**
+     * The way back into a level the player walked away from. It only appears
+     * when they actually have one waiting.
+     */
+    private Button resumeButton() {
+        var saved = ui.app().getContext().getSavedGames().of(ui.user().getUsername());
+        Button resume = new Button();
+        resume.setManaged(saved != null);
+        resume.setVisible(saved != null);
+        if (saved == null) {
+            return resume;
+        }
+        resume.setText("Continue " + ir.sharif.pvz.model.game.SaveState.describe(saved));
+        resume.getStyleClass().add("primary-button");
+        resume.setMaxWidth(Double.MAX_VALUE);
+        resume.setOnAction(event -> ui.submit("resume game"));
+        return resume;
+    }
+
     private VBox catalogue(Set<String> picked, Set<String> boosted) {
         User user = ui.user();
         FlowPane grid = new FlowPane(12, 12);
@@ -211,7 +230,8 @@ public final class PlantPickerScreen extends Screen {
         ScrollPane scroller = new ScrollPane(slots);
         scroller.setFitToWidth(true);
         scroller.getStyleClass().add("picker-scroll");
-        VBox panel = Forms.panel(10, Forms.heading("Your line-up"), scroller, start);
+        VBox panel = Forms.panel(10, Forms.heading("Your line-up"), scroller,
+                resumeButton(), start);
         VBox.setVgrow(scroller, Priority.ALWAYS);
         panel.setPrefWidth(240);
         panel.setMinWidth(240);

@@ -132,17 +132,17 @@ final class Planting {
         if (!session.validTile(x, y)) {
             return "Error: " + tile + " is not a valid tile.";
         }
-        Sun falling = session.sunSystem().fallingRadioactiveAt(y - 1, x - 1);
+        Sun falling = session.sunSystem.fallingRadioactiveAt(y - 1, x - 1);
         if (falling != null) {
-            session.sunSystem().remove(falling);
-            session.combat().radioactiveBlast(y - 1, x - 1);
+            session.sunSystem.remove(falling);
+            session.combat.radioactiveBlast(y - 1, x - 1);
             return "The radioactive sun exploded!";
         }
-        Sun sun = session.sunSystem().groundAt(y - 1, x - 1);
+        Sun sun = session.sunSystem.groundAt(y - 1, x - 1);
         if (sun == null) {
             return "Error: there is no sun at " + tile + ".";
         }
-        session.sunSystem().remove(sun);
+        session.sunSystem.remove(sun);
         session.setSunAmount(session.getSunAmount() + sun.value());
         return "Collected " + sun.value() + " sun; you now have "
                 + session.getSunAmount() + " sun.";

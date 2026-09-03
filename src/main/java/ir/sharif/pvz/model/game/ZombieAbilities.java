@@ -120,12 +120,12 @@ class ZombieAbilities {
     }
 
     private void stealSun(Zombie ra) {
-        List<Sun> ground = session.sunList().stream().filter(Sun::isOnGround).toList();
+        List<Sun> ground = session.sunSystem.live().stream().filter(Sun::isOnGround).toList();
         if (ground.isEmpty()) {
             return;
         }
         Sun stolen = ground.get(0);
-        session.sunList().remove(stolen);
+        session.sunSystem.live().remove(stolen);
         stolenSuns.merge(ra, stolen.value(), Integer::sum);
         session.eventLog().add("Ra stole a sun worth " + stolen.value() + "!");
     }
@@ -137,7 +137,7 @@ class ZombieAbilities {
         }
         int col = Math.min(GameSession.COLS - 1, Math.max(0, (int) Math.round(zombie.getX()) - 1));
         for (int value = amount; value > 0; value -= 25) {
-            session.sunList().add(new Sun(Sun.Kind.NORMAL, zombie.getRow(), col, 0));
+            session.sunSystem.live().add(new Sun(Sun.Kind.NORMAL, zombie.getRow(), col, 0));
         }
         session.eventLog().add("Ra dropped the stolen suns (" + amount + ") at ("
                 + (col + 1) + ", " + (zombie.getRow() + 1) + ").");

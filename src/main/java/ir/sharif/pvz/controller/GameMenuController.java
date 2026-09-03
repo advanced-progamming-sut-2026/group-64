@@ -145,6 +145,8 @@ public class GameMenuController extends MenuController {
             boostPlant(matcher.group(1));
         } else if (input.equals("start game")) {
             startGame();
+        } else if (input.equals("resume game")) {
+            resumeSavedGame();
         } else {
             view.unknownCommand();
         }
@@ -279,6 +281,49 @@ public class GameMenuController extends MenuController {
         }
     }
 
+    /**
+     * Picks up the level this player walked away from, exactly where it was.
+     */
+    private void resumeSavedGame() {
+        User user = context.getCurrentUser();
+        ir.sharif.pvz.model.game.SavedGame saved = context.getSavedGames().of(user.getUsername());
+        if (saved == null) {
+            view.error("You have no saved game to come back to.");
+            return;
+        }
+        session = ir.sharif.pvz.model.game.SaveState.restore(saved, new Random());
+        if (session == null) {
+            view.error("That saved game is from a level this build no longer has.");
+            context.getSavedGames().clear(user.getUsername());
+            return;
+        }
+        selectedPlants.clear();
+        selectedPlants.addAll(session.getSelectedPlants());
+        chosenIndex = -1;
+        context.getSavedGames().clear(user.getUsername());
+        view.info("Picking up " + session.getLevel().title() + " where you left it.");
+        flushGameState();
+    }
+
+    /**
+     * Puts the running level away so it can be come back to, and leaves the
+     * game menu without counting it as a loss.
+     */
+    protected void saveAndLeave() {
+        if (session == null) {
+            view.error("There is no game running to save.");
+            return;
+        }
+        User user = context.getCurrentUser();
+        context.getSavedGames().put(user.getUsername(),
+                ir.sharif.pvz.model.game.SaveState.capture(session));
+        context.getUserRepository().save();
+        session = null;
+        boostedPlants.clear();
+        chosenIndex = -1;
+        view.info("Saved. Come back to it with 'resume game'.");
+    }
+
     private void startGame() {
         User user = context.getCurrentUser();
         ir.sharif.pvz.model.game.LevelSpec level = upcomingLevel();
@@ -351,7 +396,10 @@ public class GameMenuController extends MenuController {
         } else if (!handleInfoOrCheat(input)) {
             view.unknownCommand();
         }
-        flushGameState();
+        // putting the level away ends the session, so there is nothing to flush
+        if (session != null) {
+            flushGameState();
+        }
     }
 
     private boolean handleInfoOrCheat(String input) {
@@ -366,23 +414,37 @@ public class GameMenuController extends MenuController {
             view.showTileStatus(session, group(matcher, 1), group(matcher, 2));
         } else if (input.equals("zombies info")) {
             view.showZombiesInfo(session.getZombies());
-        } else if ((matcher = CHEAT_WALLET.matcher(input)).matches()) {
-            view.info(cheatWallet(Integer.parseInt(matcher.group(1)), matcher.group(2)));
-        } else if ((matcher = CHEAT_SUNS.matcher(input)).matches()) {
-            view.info(session.cheats().addSuns(Integer.parseInt(matcher.group(1))));
-        } else if (input.equals("cheat remove-cooldown")) {
-            view.info(session.cheats().removeCooldown());
         } else if (input.equals("start zombie waves")) {
             view.info(session.startZombieWaves());
         } else if (input.equals("show conveyor belt")) {
             List<String> belt = session.conveyorBelt();
             view.info(belt.isEmpty() ? "The conveyor belt is empty." : "Belt: " + String.join(", ", belt));
+        } else if (input.equals("save game")) {
+            saveAndLeave();
+        } else if (input.equals("forfeit level")) {
+            session.forfeit();
+        } else {
+            return handleCheat(input);
+        }
+        return true;
+    }
+
+    /**
+     * The debug commands the document lists, kept apart from the ordinary
+     * in-game ones.
+     */
+    private boolean handleCheat(String input) {
+        Matcher matcher;
+        if ((matcher = CHEAT_WALLET.matcher(input)).matches()) {
+            view.info(cheatWallet(Integer.parseInt(matcher.group(1)), matcher.group(2)));
+        } else if ((matcher = CHEAT_SUNS.matcher(input)).matches()) {
+            view.info(session.cheats().addSuns(Integer.parseInt(matcher.group(1))));
+        } else if (input.equals("cheat remove-cooldown")) {
+            view.info(session.cheats().removeCooldown());
         } else if (input.equals("cheat add-plant-food")) {
             view.info(session.cheats().addPlantFood());
         } else if ((matcher = CHEAT_ZOMBIE.matcher(input)).matches()) {
             view.info(session.cheats().spawnZombie(matcher.group(1), group(matcher, 2), group(matcher, 3)));
-        } else if (input.equals("forfeit level")) {
-            session.forfeit();
         } else if (input.equals("release the nuke")) {
             view.info(session.cheats().releaseTheNuke());
         } else {

@@ -35,7 +35,7 @@ public final class GameApp {
      * The offline build: accounts live in a file next to the game.
      */
     public GameApp(GameView view) {
-        this(view, null);
+        this(view, (ServerConnection) null);
     }
 
     /**
@@ -56,6 +56,17 @@ public final class GameApp {
         this.context = new AppContext(userRepository, sessionStore, authService, profileService);
         registerControllers();
         restoreSession();
+    }
+
+    /**
+     * A game around an application state built by the caller, which is how a
+     * test drives the menus without touching the files next to the game.
+     */
+    public GameApp(GameView view, AppContext context) {
+        this.view = view;
+        this.connection = null;
+        this.context = context;
+        registerControllers();
     }
 
     /**

@@ -135,6 +135,33 @@ public class Zombie {
         return hypnotized;
     }
 
+    /**
+     * Puts a restored zombie back under whatever was affecting it.
+     */
+    void restoreEffects(double chilled, double frozen, double poisoned, int poisonPerSecond,
+                        boolean charmed) {
+        this.chilledSeconds = chilled;
+        this.frozenSeconds = frozen;
+        this.poisonedSeconds = poisoned;
+        this.poisonPerSecond = poisonPerSecond;
+        this.hypnotized = charmed;
+    }
+
+    /** How long this zombie stays chilled, for a save. */
+    public double chilledSeconds() {
+        return chilledSeconds;
+    }
+
+    /** How long this zombie stays frozen, for a save. */
+    public double frozenSeconds() {
+        return frozenSeconds;
+    }
+
+    /** How long the poison on this zombie lasts, for a save. */
+    public double poisonedSeconds() {
+        return poisonedSeconds;
+    }
+
     public void chill(double seconds) {
         chilledSeconds = Math.max(chilledSeconds, seconds);
     }

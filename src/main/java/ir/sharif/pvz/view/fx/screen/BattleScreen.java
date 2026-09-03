@@ -780,7 +780,17 @@ public final class BattleScreen extends Screen {
         quit.setOnAction(event -> {
             ui.closeModal();
             loop.stop();
+            // the level itself is put away, not just the account
+            ui.submitQuietly("save game");
             ui.app().save();
+            finish();
+        });
+
+        Button giveUp = new Button("Give up");
+        giveUp.getStyleClass().add("ghost-button");
+        giveUp.setOnAction(event -> {
+            ui.closeModal();
+            loop.stop();
             ui.submitQuietly("forfeit level");
             finish();
         });
@@ -794,7 +804,7 @@ public final class BattleScreen extends Screen {
             ui.refresh();
         });
 
-        HBox buttons = new HBox(12, resume, restart, quit);
+        HBox buttons = new HBox(12, resume, restart, quit, giveUp);
         buttons.setAlignment(Pos.CENTER);
         Label note = new Label("Nothing moves while this is open.");
         note.getStyleClass().add("modal-body");

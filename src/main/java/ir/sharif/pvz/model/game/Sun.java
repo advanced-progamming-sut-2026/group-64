@@ -47,6 +47,11 @@ public class Sun {
         return secondsUntilLanding <= 0;
     }
 
+    /** How long it still has to fall, for a save. */
+    public double secondsUntilLanding() {
+        return secondsUntilLanding;
+    }
+
     /**
      * Advances the fall; returns true at the moment the sun touches the ground.
      */

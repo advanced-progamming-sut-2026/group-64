@@ -80,6 +80,16 @@ public class Plant {
     }
 
     /**
+     * Puts a restored plant back at the health, size and age it was saved with.
+     */
+    void restoreTo(int hp, int stack, double ageSeconds) {
+        this.hp = hp;
+        this.stack = Math.max(1, stack);
+        this.ageSeconds = ageSeconds;
+        this.armSeconds = 0;
+    }
+
+    /**
      * Applies damage and reports whether the plant was destroyed by it.
      */
     public boolean damage(int amount) {
