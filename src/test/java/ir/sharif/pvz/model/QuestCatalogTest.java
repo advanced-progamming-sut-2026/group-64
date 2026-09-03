@@ -3,6 +3,7 @@ package ir.sharif.pvz.model;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ir.sharif.pvz.model.game.Chapter;
@@ -158,6 +159,49 @@ class QuestCatalogTest {
         assertTrue(quest("daily-family-free-wall").isMet(user, TODAY),
                 "no wall was planted at all");
         assertFalse(quest("daily-family-free-shooter").isMet(user, TODAY));
+    }
+
+    /**
+     * The travel log has to show how far along a counting quest is, not just
+     * that it is unfinished — the phase 1 sheet asks for it by name.
+     */
+    @Test
+    void theCountingQuestsSayHowFarAlongTheyAre() {
+        User user = player();
+        assertEquals("0 / 5000", quest("daily-sun-5000").progress(user, TODAY));
+
+        user.getQuestProgress().record(sunPicked(3200), TODAY);
+        assertEquals("3200 / 5000", quest("daily-sun-5000").progress(user, TODAY));
+        assertEquals("3000 / 3000", quest("daily-sun-3000").progress(user, TODAY),
+                "a finished one reads as done rather than overshooting");
+
+        user.getQuestProgress().record(killsIn(Chapter.DARK_AGES, 12), TODAY);
+        assertEquals("12 / 50", quest("story-hunter-dark-ages").progress(user, TODAY));
+    }
+
+    @Test
+    void aQuestThatSimplyHappensHasNoNumberToShow() {
+        User user = player();
+        assertNull(quest("epic-defence-master").progress(user, TODAY));
+        assertNull(quest("daily-symmetry").progress(user, TODAY));
+    }
+
+    @Test
+    void theProgressShowsUpOnTheTravelLogLine() {
+        User user = player();
+        user.getQuestProgress().record(sunPicked(1500), TODAY);
+        UserRepository users = new UserRepository(
+                java.nio.file.Path.of("build", "quest-lines-" + System.nanoTime() + ".json")) {
+            @Override
+            public void save() {
+                // keep the test off the disk
+            }
+        };
+        QuestService service = new QuestService(users, System::currentTimeMillis);
+        String line = service.lines(user, "daily").stream()
+                .filter(text -> text.contains("daily-sun-5000"))
+                .findFirst().orElseThrow();
+        assertTrue(line.contains("/ 5000"), line);
     }
 
     // ===== the report a real level produces =====

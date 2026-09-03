@@ -45,19 +45,19 @@ public final class QuestCatalog {
         List<Quest> quests = new ArrayList<>();
         for (int target : new int[] {3000, 4000, 5000}) {
             int coins = target / 100;
-            quests.add(new Quest("daily-sun-" + target,
+            quests.add(countingToday(new Quest("daily-sun-" + target,
                     "Collect " + target + " sun in one day", "daily", Quest.Priority.MEDIUM,
                     coins + " coins", true,
                     (user, today) -> user.getQuestProgress().todays(QuestProgress.SUN, today) >= target,
-                    user -> currency(user, coins, 0)));
+                    user -> currency(user, coins, 0)), QuestProgress.SUN, target));
         }
         for (Chapter chapter : Chapter.values()) {
             String key = QuestProgress.chapterKills(chapter.name());
-            quests.add(new Quest("story-hunter-" + chapter.id(),
+            quests.add(counting(new Quest("story-hunter-" + chapter.id(),
                     "Beat 50 zombies in " + chapter.displayName(), "story", Quest.Priority.HIGH,
                     "10 seed packets", false,
                     (user, today) -> user.getQuestProgress().total(key) >= 50,
-                    user -> packets(user, "peashooter", 10)));
+                    user -> packets(user, "peashooter", 10)), key, 50));
         }
         return quests;
     }
@@ -68,37 +68,38 @@ public final class QuestCatalog {
                 "Kill ten zombies in a level with a single plant", "daily", Quest.Priority.HIGH,
                 "a plant you do not own yet", true,
                 (user, today) -> bestSolePlant(user, today) >= 10,
-                QuestCatalog::unlockSomethingNew));
-        quests.add(new Quest("daily-only-cactus",
+                QuestCatalog::unlockSomethingNew)
+                .measuredBy((user, today) -> Math.min(bestSolePlant(user, today), 10) + " / 10"));
+        quests.add(countingToday(new Quest("daily-only-cactus",
                 "Kill ten zombies in a level using only the cactus", "daily", Quest.Priority.HIGH,
                 "20 diamonds", true,
                 (user, today) -> user.getQuestProgress()
                         .todays(QuestProgress.soleKiller("cactus"), today) >= 10,
-                user -> currency(user, 0, 20)));
-        quests.add(new Quest("story-speed",
+                user -> currency(user, 0, 20)), QuestProgress.soleKiller("cactus"), 10));
+        quests.add(counting(new Quest("story-speed",
                 "Kill ten zombies within thirty seconds of the first wave", "story",
                 Quest.Priority.MEDIUM, "500 coins", false,
                 (user, today) -> user.getQuestProgress().total(QuestProgress.FAST_TEN) >= 10,
-                user -> currency(user, 500, 0)));
-        quests.add(new Quest("daily-close-call",
+                user -> currency(user, 500, 0)), QuestProgress.FAST_TEN, 10));
+        quests.add(countingToday(new Quest("daily-close-call",
                 "Kill ten zombies at the door of a lane with no mower left", "daily",
                 Quest.Priority.MEDIUM, "300 coins", true,
                 (user, today) -> user.getQuestProgress()
                         .todays(QuestProgress.AT_THE_DOOR, today) >= 10,
-                user -> currency(user, 300, 0)));
-        quests.add(new Quest("daily-demolition",
+                user -> currency(user, 300, 0)), QuestProgress.AT_THE_DOOR, 10));
+        quests.add(countingToday(new Quest("daily-demolition",
                 "Use three explosive plants in one level", "daily", Quest.Priority.LOW,
                 "100 coins", true,
                 (user, today) -> user.getQuestProgress()
                         .todays(QuestProgress.EXPLOSIVES_USED, today) >= 3,
-                user -> currency(user, 100, 0)));
+                user -> currency(user, 100, 0)), QuestProgress.EXPLOSIVES_USED, 3));
         for (int target : new int[] {10, 20, 30, 40, 50}) {
-            quests.add(new Quest("epic-mowing-" + target,
+            quests.add(counting(new Quest("epic-mowing-" + target,
                     "Finish off " + target + " zombies with lawn mowers", "epic",
                     Quest.Priority.MEDIUM, target + " diamonds", false,
                     (user, today) -> user.getQuestProgress()
                             .total(QuestProgress.MOWER_KILLS) >= target,
-                    user -> currency(user, 0, target)));
+                    user -> currency(user, 0, target)), QuestProgress.MOWER_KILLS, target));
         }
         return quests;
     }
@@ -137,12 +138,12 @@ public final class QuestCatalog {
                 (user, today) -> user.getQuestProgress()
                         .total(QuestProgress.NIGHT_ON_A_DAY_WIN) > 0,
                 user -> currency(user, 0, 20)));
-        quests.add(new Quest("daily-streak",
+        quests.add(counting(new Quest("daily-streak",
                 "Win five levels in a row on the hardest difficulty", "daily",
                 Quest.Priority.MEDIUM, "5000 coins", true,
                 (user, today) -> user.getQuestProgress()
                         .total(QuestProgress.HARDEST_WIN_STREAK) >= 5,
-                user -> currency(user, 5000, 0)));
+                user -> currency(user, 5000, 0)), QuestProgress.HARDEST_WIN_STREAK, 5));
         quests.add(new Quest("daily-overcast",
                 "Win a level with no more than three sun producers", "daily",
                 Quest.Priority.HIGH, "10 diamonds", true,
@@ -204,6 +205,23 @@ public final class QuestCatalog {
                     user -> currency(user, 0, 25)));
         }
         return quests;
+    }
+
+    /**
+     * A readout of a lifetime tally against what the quest wants, e.g.
+     * "34 / 50".
+     */
+    private static Quest counting(Quest quest, String key, int target) {
+        return quest.measuredBy((user, today) ->
+                Math.min(user.getQuestProgress().total(key), target) + " / " + target);
+    }
+
+    /**
+     * The same for a tally that starts again each day.
+     */
+    private static Quest countingToday(Quest quest, String key, int target) {
+        return quest.measuredBy((user, today) ->
+                Math.min(user.getQuestProgress().todays(key, today), target) + " / " + target);
     }
 
     // ===== conditions that need more than one lookup =====

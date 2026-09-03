@@ -86,6 +86,24 @@ public final class TravelLogScreen extends Screen {
         return button;
     }
 
+    /**
+     * A bar filled to match a "34 / 50" readout.
+     */
+    private javafx.scene.control.ProgressBar progressBar(String measured) {
+        javafx.scene.control.ProgressBar bar = new javafx.scene.control.ProgressBar(0);
+        bar.setPrefWidth(140);
+        String[] parts = measured.split("/");
+        try {
+            double done = Double.parseDouble(parts[0].trim());
+            double target = Double.parseDouble(parts[1].trim());
+            bar.setProgress(target <= 0 ? 0 : Math.min(1, done / target));
+        } catch (RuntimeException e) {
+            // a readout that is not two numbers just leaves the bar empty
+            bar.setProgress(0);
+        }
+        return bar;
+    }
+
     private HBox row(Quest quest, QuestService service) {
         User user = ui.user();
         String status = service.status(user, quest);
@@ -100,6 +118,13 @@ public final class TravelLogScreen extends Screen {
                 "priority-" + quest.getPriority().name().toLowerCase(java.util.Locale.ROOT));
 
         VBox text = new VBox(4, new HBox(10, title, priority), reward);
+        // the counting quests say how far along they are, with a bar to match
+        String measured = quest.progress(user, java.time.LocalDate.now().toString());
+        if (measured != null) {
+            Label done = new Label(measured);
+            done.getStyleClass().add("quest-reward");
+            text.getChildren().add(new HBox(8, progressBar(measured), done));
+        }
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 

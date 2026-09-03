@@ -33,8 +33,11 @@ public class QuestService {
                 .toList();
         List<String> lines = new ArrayList<>();
         for (Quest quest : quests) {
+            String progress = quest.progress(user, today());
             lines.add("[" + quest.getId() + "] " + quest.getTitle()
-                    + " -> " + quest.getRewardDescription() + " (" + status(user, quest) + ")");
+                    + " -> " + quest.getRewardDescription()
+                    + " (" + status(user, quest)
+                    + (progress == null ? "" : ": " + progress) + ")");
         }
         if (lines.isEmpty()) {
             lines.add("There is no quest page named '" + page + "'.");
