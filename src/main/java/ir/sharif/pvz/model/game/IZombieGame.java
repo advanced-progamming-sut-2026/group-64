@@ -12,6 +12,7 @@ import java.util.Random;
 class IZombieGame implements MinigameLogic {
 
     private static final int RED_LINE_COLUMN = 5;
+    private static final String SUN_ZOMBIE = "sun-zombie";
     private static final int STARTING_SUN = 150;
     private static final List<String> DEFENDERS =
             List.of("peashooter", "snow-pea", "repeater", "wall-nut", "cabbage-pult", "chomper");
@@ -38,7 +39,7 @@ class IZombieGame implements MinigameLogic {
             for (int i = 0; i < 1 + stage; i++) {
                 placeDefender(session, row);
             }
-            session.spawnZombie(GameCatalog.get().zombie("sun-zombie"), row, 8);
+            session.spawnZombie(GameCatalog.get().zombie(SUN_ZOMBIE), row, 8);
         }
         session.eventLog().add("You ARE the zombies! Place them right of column " + RED_LINE_COLUMN
                 + " with 'place zombie -t <type> -l (x, y)' and eat all five brains.");
@@ -103,8 +104,7 @@ class IZombieGame implements MinigameLogic {
 
     @Override
     public void tick(GameSession session, double seconds) {
-        long sunZombies = session.getZombies().stream()
-                .filter(z -> z.getSpec().getName().equals("sun-zombie")).count();
+        long sunZombies = session.getZombies().stream().filter(IZombieGame::isSunZombie).count();
         if (seconds >= nextSunAt) {
             nextSunAt = seconds + Math.max(3, 10 - 0.05 * seconds);
             if (sunZombies > 0) {
@@ -116,13 +116,34 @@ class IZombieGame implements MinigameLogic {
         checkDefeat(session);
     }
 
+    private static boolean isSunZombie(Zombie zombie) {
+        return zombie.getSpec().getName().equals(SUN_ZOMBIE);
+    }
+
+    /**
+     * The zombie side is beaten once it can no longer send anything forward:
+     * nothing of its own is still walking, it cannot afford the cheapest
+     * zombie, and the plants have shot down every sun-zombie that would have
+     * paid for one. The stationary sun-zombies are deliberately not counted as
+     * attackers here — they never move, so counting them made defeat
+     * impossible.
+     */
     private void checkDefeat(GameSession session) {
-        if (session.isOver() || !session.getZombies().isEmpty()) {
+        if (session.isOver()) {
+            return;
+        }
+        boolean attackerLeft = session.getZombies().stream().anyMatch(z -> !isSunZombie(z));
+        if (attackerLeft) {
             return;
         }
         int cheapest = prices.values().stream().mapToInt(Integer::intValue).min().orElse(0);
-        if (session.getSunAmount() < cheapest) {
-            session.loseNow("No zombie left and not enough sun; the plants survived.");
+        if (session.getSunAmount() >= cheapest) {
+            return;
         }
+        if (session.getZombies().stream().anyMatch(IZombieGame::isSunZombie)) {
+            return;
+        }
+        session.loseNow("No zombie left, no sun-zombie to make more, and not enough sun "
+                + "to send another; the plants held the lawn.");
     }
 }

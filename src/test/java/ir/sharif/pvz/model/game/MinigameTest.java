@@ -78,6 +78,26 @@ class MinigameTest {
     }
 
     @Test
+    void iZombieIsLostOnceTheZombieSideRunsDry() {
+        GameSession session = Minigames.start("i-zombie", 1, 3, List.of(), new Random(7));
+        // strip the side's whole economy: no walkers, no sun-zombies, no sun
+        for (Zombie zombie : List.copyOf(session.getZombies())) {
+            session.removeZombieQuietly(zombie);
+        }
+        session.spendSun(session.getSunAmount());
+        session.advance(GameSession.TICKS_PER_SECOND);
+        assertTrue(session.isLost(), "with nothing left to send, the plants win");
+    }
+
+    @Test
+    void iZombieKeepsGoingWhileASunZombieCanStillPay() {
+        GameSession session = Minigames.start("i-zombie", 1, 3, List.of(), new Random(7));
+        session.spendSun(session.getSunAmount());
+        session.advance(GameSession.TICKS_PER_SECOND);
+        assertFalse(session.isLost(), "the sun-zombies are still making sun; the round goes on");
+    }
+
+    @Test
     void iZombieWinsWhenAllBrainsAreEaten() {
         GameSession session = Minigames.start("i-zombie", 1, 3, List.of(), new Random(7));
         session.cheats().addSuns(100000);
