@@ -27,6 +27,9 @@ public final class VersusLobbyScreen extends Screen {
 
     private static final Gson GSON = new Gson();
 
+    /** How wide the panels are, so the wrapped text knows where to break. */
+    private static final double PANEL_WIDTH = 500;
+
     private final Label status = new Label("Pick an opponent to get started.");
 
     private boolean queued;
@@ -41,7 +44,9 @@ public final class VersusLobbyScreen extends Screen {
 
     @Override
     public Parent build() {
-        VBox column = new VBox(18, byName(), random(), couchPlay(), onlineList(), status);
+        boolean online = ui.app().isOnline();
+        VBox column = new VBox(18, banner(online), byName(online), random(online),
+                couchPlay(), onlineList(online), status);
         column.setAlignment(Pos.TOP_CENTER);
         column.setPadding(new Insets(24));
         column.setMaxWidth(560);
@@ -63,10 +68,31 @@ public final class VersusLobbyScreen extends Screen {
     }
 
     /**
+     * Says at the top whether there is a server to play against, because
+     * everything on this page apart from couch play needs one and finding out
+     * by clicking a dead button is no way to learn it.
+     */
+    private VBox banner(boolean online) {
+        Label headline = new Label(online
+                ? "Connected. Challenge somebody or join the queue."
+                : "You are playing offline, so there is nobody to play against.");
+        headline.getStyleClass().add(online ? "quest-title" : "field-label");
+        headline.setWrapText(true);
+        if (online) {
+            return Forms.panel(6, headline);
+        }
+        headline.setMaxWidth(PANEL_WIDTH);
+        // two short lines rather than one long one, which the panel clips
+        return Forms.panel(6, headline,
+                Forms.hint("To play online: ./gradlew run --args=\"--server\""),
+                Forms.hint("Couch play below needs no server."));
+    }
+
+    /**
      * Challenging a particular player, which the server turns into a pop-up on
      * their screen.
      */
-    private VBox byName() {
+    private VBox byName(boolean online) {
         TextField name = new TextField();
         name.setPromptText("their username");
 
@@ -77,16 +103,19 @@ public final class VersusLobbyScreen extends Screen {
             status.setText("Waiting for " + name.getText().trim() + " to answer...");
         }));
 
+        name.setDisable(!online);
+        invite.setDisable(!online);
         return Forms.panel(10,
                 Forms.heading("Challenge someone"),
-                Forms.hint("They have to be signed in right now."),
+                Forms.hint(online ? "They have to be signed in right now."
+                        : "Needs a server."),
                 new HBox(10, name, invite));
     }
 
     /**
      * The queue: pair with whoever is already waiting, or wait to be paired.
      */
-    private VBox random() {
+    private VBox random(boolean online) {
         Button join = new Button("Find any opponent");
         join.getStyleClass().add("primary-button");
         join.setOnAction(event -> safely(() -> {
@@ -105,9 +134,12 @@ public final class VersusLobbyScreen extends Screen {
             status.setText("You left the queue.");
         }));
 
+        join.setDisable(!online);
+        leave.setDisable(!online);
         return Forms.panel(10,
                 Forms.heading("Play a stranger"),
-                new HBox(10, join, leave));
+                online ? new HBox(10, join, leave)
+                        : new VBox(6, new HBox(10, join, leave), Forms.hint("Needs a server.")));
     }
 
     /**
@@ -127,9 +159,13 @@ public final class VersusLobbyScreen extends Screen {
     /**
      * Who else is signed in, so the player knows who they can challenge.
      */
-    private VBox onlineList() {
+    private VBox onlineList(boolean online) {
         ListView<String> list = new ListView<>();
         list.setPrefHeight(180);
+        list.setPlaceholder(Forms.hint(online
+                ? "Nobody else is signed in right now."
+                : "Playing offline, so this stays empty."));
+        list.setDisable(!online);
         safely(() -> {
             Message reply = link().ask(link().request(Protocol.ONLINE_USERS));
             List<String> names = GSON.fromJson(reply.getData().get("users"),

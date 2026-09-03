@@ -336,7 +336,12 @@ public final class ScreenSnapshots extends Application {
         // the ones that finish by clearing the lawn
         for (int i = 0; i < 20 && controller.getSession() != null; i++) {
             app.submit("forfeit level");
-            app.submit("advance time -t 1 ticks");
+            // only tick while a level is still running: once it is over the
+            // selection menu refuses this, and the refusal shows up as an
+            // error toast in whatever gets photographed next
+            if (controller.getSession() != null) {
+                app.submit("advance time -t 1 ticks");
+            }
         }
     }
 
