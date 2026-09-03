@@ -52,6 +52,7 @@ public class User {
     private Map<String, String> claimedQuests = new HashMap<>();
     private String lastPlayedDate;
     private Map<String, Integer> minigameProgress = new HashMap<>();
+    private QuestProgress questProgress = new QuestProgress();
 
     /**
      * The loadout a new gardener starts with: one of each of the basic roles,
@@ -223,6 +224,16 @@ public class User {
             news = new ArrayList<>();
         }
         return news;
+    }
+
+    /**
+     * What this player has done in the terms the quests ask about.
+     */
+    public QuestProgress getQuestProgress() {
+        if (questProgress == null) {
+            questProgress = new QuestProgress();
+        }
+        return questProgress;
     }
 
     public void addNews(String text) {

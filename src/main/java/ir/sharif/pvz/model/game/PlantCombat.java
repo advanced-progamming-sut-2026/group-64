@@ -74,6 +74,15 @@ class PlantCombat {
     }
 
     private void act(Plant plant) {
+        session.log.creditTo(plant.getSpec().getName());
+        try {
+            attack(plant);
+        } finally {
+            session.log.creditTo(null);
+        }
+    }
+
+    private void attack(Plant plant) {
         if (session.plantAbilities.act(plant)) {
             return;
         }

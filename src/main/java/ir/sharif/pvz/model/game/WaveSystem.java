@@ -127,6 +127,9 @@ class WaveSystem {
      * tiles (low tides / necromancy graves).
      */
     private void onWaveStart() {
+        // the sheet times one quest from the moment the first wave lands
+        session.log.onFirstWave((long) Math.round(
+                session.getElapsedSeconds() * GameSession.TICKS_PER_SECOND));
         if (level.hasWaveGraves()) {
             String[] contents = {null, null, "sun", "plant food"};
             session.raiseGrave(random.nextInt(GameSession.ROWS), random.nextInt(GameSession.COLS),

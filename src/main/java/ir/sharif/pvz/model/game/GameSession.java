@@ -37,6 +37,8 @@ public class GameSession {
     final Set<Plant> protectedPlants = new java.util.HashSet<>();
     private final Cheats cheats = new Cheats(this);
     private final Dismemberment dismemberment;
+    private final ZombieMovement zombieMovement = new ZombieMovement(this);
+    final LevelLog log = new LevelLog();
     private final Sandstorm sandstorm;
     private final Planting planting = new Planting(this);
 
@@ -134,7 +136,7 @@ public class GameSession {
                 minigame.tick(this, getElapsedSeconds());
             }
             plantsAct();
-            zombiesAct();
+            zombieMovement.tick();
             checkVictory();
         }
     }
@@ -219,6 +221,7 @@ public class GameSession {
         }
         if (plant.damage(damage)) {
             removePlant(plant);
+            log.onPlantLost();
             events.add("Plant " + plant.getSpec().getName() + " at (" + (plant.getCol() + 1)
                     + ", " + (plant.getRow() + 1) + ") is destroyed.");
             recordBurst(Burst.Kind.PLANT_LOST, plant.getCol() + 1.0, plant.getRow() + 1.0);
@@ -267,6 +270,7 @@ public class GameSession {
     }
 
     void killZombie(Zombie zombie) {
+        log.onKill(tickCount, zombie.getX() < 2, !mowers[zombie.getRow()]);
         recordBurst(Burst.Kind.ZOMBIE_DOWN, zombie.getX(), zombie.getRow() + 1.0);
         dismemberment.onDeath(zombie);
         zombies.remove(zombie);
@@ -299,88 +303,6 @@ public class GameSession {
         } else {
             earnedPots++;
             events.add("A zombie dropped a pot; you have " + earnedPots + " pots now.");
-        }
-    }
-
-    private void zombiesAct() {
-        double dt = 1.0 / TICKS_PER_SECOND;
-        abilities.tick(dt);
-        for (Zombie zombie : new ArrayList<>(zombies)) {
-            if (!zombies.contains(zombie)) {
-                continue;
-            }
-            if (zombie.isHypnotized()) {
-                plantAbilities.walkBackAndFight(zombie, dt);
-                continue;
-            }
-            Plant blocking = plantInFrontOf(zombie);
-            if (blocking != null) {
-                eat(zombie, blocking, dt);
-            } else {
-                zombie.walk(walkSpeed(zombie) * dt);
-                board.slideIfOnIce(zombie);
-                special.onZombieMoved(zombie);
-                if (!lost && zombie.getX() < 1) {
-                    reachHouse(zombie);
-                }
-            }
-        }
-    }
-
-    private double walkSpeed(Zombie zombie) {
-        double speed = zombie.getSpec().getTilesPerSecond() * difficultyUp * zombie.speedMultiplier();
-        if (zombie.getSpec().getName().equals("newspaper") && zombie.getArmor().isEmpty()) {
-            speed *= 3;
-        }
-        return speed;
-    }
-
-    private Plant plantInFrontOf(Zombie zombie) {
-        int col = (int) Math.round(zombie.getX()) - 1;
-        if (col < 0 || col >= COLS) {
-            return null;
-        }
-        Plant plant = grid[zombie.getRow()][col];
-        if (plant != null && zombie.getSpec().getName().equals("dodo-rider")
-                && plant.getSpec().getCategory() != PlantCategory.WALL) {
-            return null;
-        }
-        return plant;
-    }
-
-    private void eat(Zombie zombie, Plant plant, double dt) {
-        if (zombie.isFrozen()) {
-            return;
-        }
-        zombie.startEating();
-        double progress = eatProgress.merge(zombie, dt, Double::sum);
-        if (progress >= 1) {
-            eatProgress.put(zombie, progress - 1);
-            plantAbilities.onEaten(plant, zombie);
-            if (grid[plant.getRow()][plant.getCol()] == plant) {
-                plantHit(plant, (int) Math.round(zombie.getSpec().getDamagePerSecond() * difficultyUp));
-            }
-        }
-    }
-
-    private void reachHouse(Zombie zombie) {
-        if (minigame != null && minigame.onHouseReached(this, zombie)) {
-            return;
-        }
-        int row = zombie.getRow();
-        if (mowers[row]) {
-            mowers[row] = false;
-            recordBurst(Burst.Kind.MOWER, 1, row + 1.0);
-            List<Zombie> killed = zombies.stream().filter(z -> z.getRow() == row).toList();
-            events.add("The lawn mower in the row " + (row + 1) + " is triggered and killed these zombies:");
-            for (Zombie victim : killed) {
-                events.add("- " + victim.getSpec().getName());
-                zombies.remove(victim);
-                eatProgress.remove(victim);
-            }
-        } else {
-            lost = true;
-            events.add("The zombie ate your brain; LOSER!!!");
         }
     }
 
@@ -517,6 +439,13 @@ public class GameSession {
     /**
      * The heads, arms and armour still tumbling across the lawn.
      */
+    /**
+     * What this level's play looked like, for the quests to read afterwards.
+     */
+    public LevelLog getLog() {
+        return log;
+    }
+
     public List<Debris> getDebris() {
         return dismemberment.pieces();
     }

@@ -47,6 +47,7 @@ final class Planting {
                 session.plantLevel(type));
         session.gridArray()[y - 1][x - 1] = plant;
         session.plantAbilities.onPlanted(plant);
+        session.log.onPlanted(type);
         if (plant.isBoosted()) {
             plant.consumeBoost();
             session.applyPlantFoodEffect(plant);
@@ -144,6 +145,7 @@ final class Planting {
         }
         session.sunSystem.remove(sun);
         session.setSunAmount(session.getSunAmount() + sun.value());
+        session.log.onSunCollected(sun.value());
         return "Collected " + sun.value() + " sun; you now have "
                 + session.getSunAmount() + " sun.";
     }

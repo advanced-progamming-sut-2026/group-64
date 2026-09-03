@@ -508,6 +508,11 @@ public class GameMenuController extends MenuController {
             }
         }
         user.getObservedZombies().addAll(session.getSeenZombieTypes());
+        // what the quests ask about is how the level was played, so it has to
+        // be read off before the session is let go
+        user.getQuestProgress().record(
+                ir.sharif.pvz.model.game.LevelReport.of(session),
+                java.time.LocalDate.now().toString());
         applyOutcome(user);
         context.getUserRepository().save();
         session = null;
