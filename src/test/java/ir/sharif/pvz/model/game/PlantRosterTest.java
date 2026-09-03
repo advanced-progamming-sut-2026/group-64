@@ -84,6 +84,23 @@ class PlantRosterTest {
         }
     }
 
+    @Test
+    void theStarterLoadoutAndEveryQuestRewardNameARealPlant() {
+        ir.sharif.pvz.model.User fresh = new ir.sharif.pvz.model.User(
+                "grader", "hash", "Grader", "g@example.com", ir.sharif.pvz.model.Gender.FEMALE);
+        assertFalse(fresh.getUnlockedPlants().isEmpty());
+        for (String name : fresh.getUnlockedPlants()) {
+            assertNotNull(GameCatalog.get().plant(name), name + " is not a plant");
+        }
+        for (ir.sharif.pvz.model.Quest quest : ir.sharif.pvz.model.QuestCatalog.all()) {
+            quest.grant(fresh);
+        }
+        for (String name : fresh.getUnlockedPlants()) {
+            assertNotNull(GameCatalog.get().plant(name),
+                    name + " is handed out by a quest but is not a plant");
+        }
+    }
+
     // ===== sun producers =====
 
     @Test

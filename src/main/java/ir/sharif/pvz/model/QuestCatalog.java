@@ -15,25 +15,37 @@ public final class QuestCatalog {
                     (user, today) -> user.getLevelsPassed() >= 1,
                     user -> unlock(user, "snow-pea")),
             new Quest("story-pharaoh", "Finish Ancient Egypt (5 levels)", "story", Quest.Priority.CRITICAL,
-                    "unlocks repeater", false,
+                    "unlocks the Ancient Egypt plants", false,
                     (user, today) -> user.getLevelsPassed() >= 5,
-                    user -> unlock(user, "repeater")),
+                    user -> unlock(user, "repeater", "threepeater", "grave-buster", "squash")),
             new Quest("story-thaw", "Finish Frostbite Caves (10 levels)", "story", Quest.Priority.CRITICAL,
-                    "unlocks cabbage-pult", false,
+                    "unlocks the Frostbite Caves plants", false,
                     (user, today) -> user.getLevelsPassed() >= 10,
-                    user -> unlock(user, "cabbage-pult")),
+                    user -> unlock(user, "cabbage-pult", "hot-potato", "winter-melon",
+                            "iceberg-lettuce")),
             new Quest("story-dry-land", "Finish Big Wave Beach (15 levels)", "story", Quest.Priority.CRITICAL,
-                    "unlocks melon-pult", false,
+                    "unlocks the Big Wave Beach plants", false,
                     (user, today) -> user.getLevelsPassed() >= 15,
-                    user -> unlock(user, "melon-pult")),
+                    user -> unlock(user, "melon-pult", "tangle-kelp", "sea-shroom", "cattail")),
+            new Quest("story-dark-knight", "Finish the Dark Ages (20 levels)", "story",
+                    Quest.Priority.CRITICAL, "unlocks the Dark Ages plants", false,
+                    (user, today) -> user.getLevelsPassed() >= 20,
+                    user -> unlock(user, "fume-shroom", "hypno-shroom", "magnet-shroom",
+                            "doom-shroom")),
             new Quest("epic-mow-master", "Reach 500 mow points in the score game", "epic", Quest.Priority.HIGH,
                     "5 diamonds", false,
                     (user, today) -> user.getMaxMewPoints() >= 500,
                     user -> currency(user, 0, 5)),
-            new Quest("epic-collector", "Own 8 different plants", "epic", Quest.Priority.HIGH,
+            new Quest("epic-collector", "Own 20 different plants", "epic", Quest.Priority.HIGH,
                     "10 diamonds", false,
-                    (user, today) -> user.getUnlockedPlants().size() >= 8,
+                    (user, today) -> user.getUnlockedPlants().size() >= 20,
                     user -> currency(user, 0, 10)),
+            new Quest("epic-mint-family", "Own 25 different plants", "epic", Quest.Priority.HIGH,
+                    "unlocks the whole mint family", false,
+                    (user, today) -> user.getUnlockedPlants().size() >= 25,
+                    user -> unlock(user, "enlighten-mint", "appease-mint", "arma-mint",
+                            "bombard-mint", "enforce-mint", "reinforce-mint", "enchant-mint",
+                            "pierce-mint", "cattail-mint")),
             new Quest("epic-zombologist", "Observe 10 zombie types", "epic", Quest.Priority.HIGH,
                     "5 diamonds", false,
                     (user, today) -> user.getObservedZombies().size() >= 10,
@@ -54,11 +66,13 @@ public final class QuestCatalog {
         return QUESTS;
     }
 
-    private static String unlock(User user, String plant) {
-        if (user.getUnlockedPlants().add(plant)) {
-            user.addNews("New plant unlocked: " + plant);
+    private static String unlock(User user, String... plants) {
+        for (String plant : plants) {
+            if (user.getUnlockedPlants().add(plant)) {
+                user.addNews("New plant unlocked: " + plant);
+            }
         }
-        return "Plant " + plant + " is now available!";
+        return "Now available: " + String.join(", ", plants) + "!";
     }
 
     private static String currency(User user, int coins, int diamonds) {

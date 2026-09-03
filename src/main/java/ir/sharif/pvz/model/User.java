@@ -53,9 +53,15 @@ public class User {
     private String lastPlayedDate;
     private Map<String, Integer> minigameProgress = new HashMap<>();
 
+    /**
+     * The loadout a new gardener starts with: one of each of the basic roles,
+     * so the plant picker is usable before any quest has been claimed. The rest
+     * of the roster arrives through the travel log or the collection shop.
+     */
     private static Set<String> defaultPlants() {
-        return new LinkedHashSet<>(
-                List.of("sunflower", "peashooter", "wall-nut", "cherry-bomb", "potato-mine"));
+        return new LinkedHashSet<>(List.of("sunflower", "peashooter", "wall-nut",
+                "cherry-bomb", "potato-mine", "sun-shroom", "puff-shroom", "bonk-choy",
+                "lily-pad", "torchwood"));
     }
 
     public User(String username, String passwordHash, String nickname, String email, Gender gender) {
