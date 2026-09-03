@@ -92,7 +92,10 @@ class GameSessionTest {
         session.advance(GameSession.TICKS_PER_SECOND);
         double after = session.getZombies().get(0).getX();
         assertTrue(after < before);
-        assertEquals(0.25, before - after, 1e-9);
+        // one second of walking is exactly the speed the sheet gives it, so
+        // this stays true when the sheet's numbers change
+        assertEquals(GameCatalog.get().zombie("normal").getTilesPerSecond(),
+                before - after, 1e-9);
     }
 
     @Test

@@ -372,12 +372,16 @@ class PlantRosterTest {
     void aCharmedZombieMaulsTheOnesBehindIt() {
         GameSession session = quietSession(List.of("hypno-shroom"));
         session.plant("hypno-shroom", 3, 3);
-        spawn(session, "normal", 2, 3.2);
+        Zombie biter = spawn(session, "normal", 2, 3.2);
         Zombie victim = spawn(session, "normal", 2, 4.0);
-        session.advance(3 * GameSession.TICKS_PER_SECOND);
-        int start = victim.totalRemainingHealth();
-        session.advance(10 * GameSession.TICKS_PER_SECOND);
-        assertTrue(victim.totalRemainingHealth() < start, "the charmed zombie bites its own kind");
+        // the hypno-shroom does no damage of its own, so the only thing on
+        // this lawn that can hurt the second zombie is the first one
+        session.advance(6 * GameSession.TICKS_PER_SECOND);
+
+        assertTrue(biter.isHypnotized(), "the biter changed sides");
+        assertFalse(session.getZombies().contains(victim),
+                "the charmed zombie ate its own kind");
+        assertTrue(session.getZombies().contains(biter), "and is still going");
     }
 
     // ===== one-shot plants =====

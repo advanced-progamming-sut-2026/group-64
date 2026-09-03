@@ -14,11 +14,18 @@ public final class Minigames {
             List.of("vasebreaker", "bowling", "i-zombie", "zombotany", "beghouled");
     public static final int STAGES = 3;
 
-    /** The five placeable zombies of every i,Zombie stage (13 distinct overall). */
+    /**
+     * The placeable zombies of every i,Zombie stage. This is also the only
+     * place the player meets the four the sheet lists from chapters this build
+     * does not have, so they are somewhere rather than only in the data.
+     */
     private static final List<Map<String, Integer>> I_ZOMBIE_SETS = List.of(
-            Map.of("normal", 50, "imp", 25, "conehead", 75, "newspaper", 75, "dodo-rider", 100),
-            Map.of("normal", 50, "buckethead", 125, "jester", 100, "imp-dragon", 50, "all-star", 150),
-            Map.of("knight", 150, "hunter", 125, "parasol", 100, "troglobite", 175, "normal", 50));
+            Map.of("normal", 50, "imp", 25, "conehead", 75, "newspaper", 75,
+                    "dodo-rider", 100, "prospector", 50),
+            Map.of("normal", 50, "buckethead", 125, "jester", 100, "imp-dragon", 50,
+                    "all-star", 150, "arcade", 125),
+            Map.of("knight", 150, "hunter", 125, "parasol", 100, "troglobite", 175,
+                    "turquoise", 100, "piano", 150));
 
     private Minigames() {
     }

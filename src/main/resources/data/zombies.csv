@@ -1,27 +1,31 @@
 name,hp,armor,tilesPerSecond,damagePerSecond,waveCost,description
-normal,200,,0.25,100,200,Walks and eats the first plant it reaches
-conehead,200,cone:370,0.25,100,350,Normal zombie protected by a traffic cone
-buckethead,200,bucket:1100,0.25,100,550,Normal zombie protected by a metal bucket
-knight,200,crown:800;shoulderArmor:800,0.25,100,650,Armored knight; magnet-shroom can steal its helmet
-blockhead,200,block:2200,0.2,100,700,Zombie with a stone block on its head
-imp,100,,0.5,150,150,Small and fast; damages plants quicker
-gargantuar,3000,,0.125,600,1200,Slow giant; kills a plant in one hit and throws its imp at half health
-all-star,400,,0.6,200,550,Charges fast; first plant hit is destroyed instantly then he slows down
-ra,200,,0.25,100,350,Pulls suns lying on the ground toward himself; returns them all when killed
-explorer,200,,0.3,100,400,His torch burns any plant less than a tile ahead; icy shots put the torch out
-tombraiser,300,,0.2,100,400,Every few seconds throws bones that raise graves on two random tiles
-newspaper,150,newspaper:200,0.25,100,300,Loses his newspaper when hit enough and then storms forward enraged
-dodo-rider,300,,0.4,100,400,Flies over plants and obstacles; only tall defensive walls stop it
-hunter,250,,0.2,100,500,Throws ice at the closest plant in his row; three hits freeze it solid
-troglobite,800,,0.15,400,650,Pushes ice blocks that crush any plant standing in the way
-fisherman,300,,0,0,500,Anchors at the far right and reels your plants toward himself
-snorkel,200,,0.3,100,300,Dives underwater where only lobbed shots can reach him
-octopus,350,,0.2,100,500,Throws octopuses that pin down plants in his row until removed
-parasol,300,,0.25,100,400,Her parasol deflects every lobbed projectile
-jester,350,,0.3,100,500,Spins and reflects straight projectiles back at your plants
-wizard,300,,0.2,100,500,Turns a plant into a harmless sheep every few seconds
-king,500,,0,0,700,Sits on his throne and knights nearby simple zombies
-imp-dragon,100,,0.5,150,150,A quick imp whose scales shrug off fiery shots
+normal,190,,0.185,100,100,Walks and eats the first plant it reaches
+conehead,190,cone:370,0.185,100,200,Normal zombie protected by a traffic cone
+buckethead,190,bucket:1100,0.185,100,400,Normal zombie protected by a metal bucket
+blockhead,190,block:2200,0.185,100,700,Zombie with a stone block on its head
+knight,190,crown:800;shoulderArmor:800,0.185,100,550,Armored knight; magnet-shroom can steal its helmet
+gargantuar,3600,,0.24,1500,1500,Slow giant; kills a plant in one hit and throws its imp at half health
+imp,190,,0.22,100,100,Small and fast; damages plants quicker
+ra,190,,0.2,100,100,Pulls suns lying on the ground toward himself; returns them all when killed
+explorer,250,,0.25,100,250,His torch burns any plant less than a tile ahead; icy shots put the torch out
+tombraiser,380,,0.185,100,300,Every few seconds throws bones that raise graves on two random tiles
+dodo-rider,490,,0.3,100,600,Flies over plants and obstacles; only tall defensive walls stop it
+hunter,700,,0.12,100,500,Throws ice at the closest plant in his row; three hits freeze it solid
+troglobite,470,,0.185,100,600,Pushes ice blocks that crush any plant standing in the way
+fisherman,1000,,0.185,100,700,Wades in from the sea and reels your plants toward himself
+octopus,910,,0.12,100,900,Throws octopuses that pin down plants in his row until removed
+snorkel,350,,0.185,100,200,Dives underwater where only lobbed shots can reach him
+jester,420,,0.2,100,450,Spins and reflects straight projectiles back at your plants
+wizard,490,,0.12,100,800,Turns a plant into a harmless sheep every few seconds
+king,1000,,0,100,750,Sits on his throne and knights nearby simple zombies
+imp-dragon,190,,0.185,100,150,A quick imp whose scales shrug off fiery shots
+all-star,1100,,0.16,100,1000,Charges fast; first plant hit is destroyed instantly then he slows down
+arcade,490,,0.19,100,600,Solid and steady; soaks up a great many peas before he drops
+parasol,350,,0.25,100,200,Her parasol deflects every lobbed projectile
+turquoise,250,,0.185,100,500,Costly to field for how little he can take; send him with company
+prospector,190,,0.16,100,200,The slowest walker on the lawn, and among the cheapest to send
+piano,840,,0.12,4000,450,Crawls along, but chews through even a wall-nut in about a second
+newspaper,460,newspaper:200,0.22,200,700,Loses his newspaper when hit enough and then storms forward enraged
 peashooter-zombie,200,,0.2,100,400,Zombotany zombie with a peashooter head; shoots your plants from afar
 wallnut-zombie,2000,,0.25,100,650,Zombotany zombie with a wall-nut head; very tough but slow
 jalapeno-zombie,300,,0.3,100,400,Zombotany zombie that burns its whole row if not killed within ten seconds

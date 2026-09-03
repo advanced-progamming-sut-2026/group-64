@@ -77,6 +77,10 @@ ZOMBIES = {
     "fisherman": "beach_fisherman", "snorkel": "beach_snorkel", "octopus": "beach_octopus",
     "parasol": "beach_fem_armor1", "jester": "dark_juggler", "wizard": "dark_wizard",
     "king": "dark_king", "imp-dragon": "dark_imp_dragon",
+    # the four the sheet lists from chapters this build does not have; they are
+    # in the collection so its almanac is complete
+    "arcade": "eighties_arcade", "turquoise": "lostcity_crystalskull",
+    "prospector": "prospector", "piano": "piano",
 }
 
 # zombotany zombies have no official art; reuse the plant they wear as a head.
