@@ -62,9 +62,14 @@ public class LoginMenuController extends MenuController {
         return MenuType.LOGIN;
     }
 
+    /**
+     * Somebody at the sign-in form who has no account needs to be able to go
+     * and make one. Leaving this menu goes back to signup as well, but "create
+     * an account" is a move to a menu, not a way out of this one.
+     */
     @Override
     protected Set<MenuType> allowedTargets() {
-        return Set.of();
+        return Set.of(MenuType.SIGNUP);
     }
 
     @Override

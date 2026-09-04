@@ -137,6 +137,25 @@ class ScreenCommandsTest {
     }
 
     /**
+     * The two sign-in screens link to each other, and a link that is refused
+     * is a dead one. The login menu allowed no destinations at all, so
+     * "Create an account" went nowhere.
+     */
+    @Test
+    void theSignInScreensCanReachEachOther() {
+        app.getContext().setCurrentUser(null);
+        app.getContext().setCurrentMenu(MenuType.LOGIN);
+        String reply = inMenu(MenuType.LOGIN, "menu enter signup");
+        assertFalse(reply.toLowerCase(Locale.ROOT).contains("cannot enter"), reply);
+        assertEquals(MenuType.SIGNUP, app.getContext().getCurrentMenu(),
+                "create an account lands on the signup menu");
+
+        String back = inMenu(MenuType.SIGNUP, "menu enter login");
+        assertFalse(back.toLowerCase(Locale.ROOT).contains("cannot enter"), back);
+        assertEquals(MenuType.LOGIN, app.getContext().getCurrentMenu());
+    }
+
+    /**
      * The commands that work from any menu.
      */
     @Test
