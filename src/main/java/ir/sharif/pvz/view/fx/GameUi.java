@@ -156,6 +156,16 @@ public final class GameUi {
     }
 
     /**
+     * Leaves the game menu back onto the chapter map, which is where the level
+     * was chosen. Going straight out lands on the main menu and skips the map
+     * the player came through, so the way back does not retrace the way in.
+     */
+    public void exitToAdventure() {
+        view.runQuietly(() -> app.submit("menu exit"));
+        show(new ir.sharif.pvz.view.fx.screen.AdventureScreen(this));
+    }
+
+    /**
      * Rebuilds the screen for the menu the controllers say we are in.
      */
     public void refresh() {

@@ -867,11 +867,17 @@ public final class BattleScreen extends Screen {
     private void showOutcome() {
         Music.stop();
         Sfx.play(lastGameWon ? Sfx.Sound.WIN : Sfx.Sound.LOSE);
-        Button back = new Button("Back to the menu");
+        Button back = new Button(menu == MenuType.GAME ? "Back to the map" : "Back to the menu");
         back.getStyleClass().add("primary-button");
         back.setOnAction(event -> {
             ui.closeModal();
-            ui.refresh();
+            // a finished adventure level goes back to the chapter map, where
+            // the next one is picked and the progress just made shows
+            if (menu == MenuType.GAME) {
+                ui.exitToAdventure();
+            } else {
+                ui.refresh();
+            }
         });
         Button retry = new Button("Try again");
         retry.getStyleClass().add("ghost-button");

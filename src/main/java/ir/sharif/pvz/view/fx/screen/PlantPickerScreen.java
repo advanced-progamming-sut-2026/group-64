@@ -56,7 +56,10 @@ public final class PlantPickerScreen extends Screen {
         body.setPadding(new Insets(18));
 
         BorderPane layout = new BorderPane(body);
-        layout.setTop(Chrome.bar(ui, "Choose your plants", ui::exitMenu));
+        // an adventure level was chosen on the chapter map, so back goes there;
+        // the daily challenge is reached from the main menu, so back goes there
+        layout.setTop(Chrome.bar(ui, "Choose your plants",
+                menu == MenuType.GAME ? ui::exitToAdventure : ui::exitMenu));
         layout.getStyleClass().addAll("screen", "picker-screen");
         String chapter = AdventureScreen.chapterId(level.getChapter());
         layout.setStyle("-fx-background-image: url('" + Assets.url("backgrounds/" + chapter) + "');"

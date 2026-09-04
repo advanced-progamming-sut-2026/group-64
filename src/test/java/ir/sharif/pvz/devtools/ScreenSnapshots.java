@@ -88,6 +88,8 @@ public final class ScreenSnapshots extends Application {
         planMenuShot(MenuType.NEWS, "news-reread");
         planAlmanacShot();
 
+        steps.add(this::openAdventureMap);
+        steps.add(() -> shoot("09-adventure-map"));
         steps.add(this::openPicker);
         steps.add(() -> shoot("10-plant-picker"));
         steps.add(this::startBattle);
@@ -411,6 +413,14 @@ public final class ScreenSnapshots extends Application {
     private void openPlantDetail() {
         app.submit("menu enter collection");
         ui.show(new ir.sharif.pvz.view.fx.screen.CollectionScreen(ui, "kiwibeast"));
+    }
+
+    /**
+     * The chapter map, which is where a level is chosen and where finishing
+     * one lands again.
+     */
+    private void openAdventureMap() {
+        ui.show(new ir.sharif.pvz.view.fx.screen.AdventureScreen(ui));
     }
 
     private void openPicker() {
