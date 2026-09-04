@@ -105,7 +105,10 @@ final class ZombieMovement {
         }
         int row = zombie.getRow();
         if (!session.mowers[row]) {
-            session.loseNow("The zombie ate your brain; LOSER!!!");
+            // loseNow adds the "ate your brain" line itself, so this says
+            // which lane it happened in rather than repeating it
+            session.loseNow("A zombie got through lane " + (row + 1)
+                    + ", and its mower was already spent.");
             return;
         }
         session.mowers[row] = false;
