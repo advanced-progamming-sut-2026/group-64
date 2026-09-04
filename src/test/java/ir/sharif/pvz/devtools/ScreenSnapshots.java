@@ -2,7 +2,9 @@ package ir.sharif.pvz.devtools;
 
 import ir.sharif.pvz.controller.GameApp;
 import ir.sharif.pvz.controller.MenuType;
+import ir.sharif.pvz.model.game.Chapter;
 import ir.sharif.pvz.model.game.GameSession;
+import ir.sharif.pvz.model.game.Levels;
 import ir.sharif.pvz.view.fx.FxView;
 import ir.sharif.pvz.view.fx.GameUi;
 import java.io.File;
@@ -112,6 +114,7 @@ public final class ScreenSnapshots extends Application {
         steps.add(() -> shoot("14-dark-ages-graves"));
         steps.add(this::showIceAndArmour);
         steps.add(() -> shoot("15-ice-and-armour"));
+        planChapterShots();
         steps.add(() -> startMinigame("vasebreaker"));
         steps.add(() -> shoot("16-vasebreaker"));
         steps.add(() -> startMinigame("i-zombie"));
@@ -133,6 +136,38 @@ public final class ScreenSnapshots extends Application {
         steps.add(this::showCouchPlay);
         steps.add(() -> shoot("22-couch-play"));
         steps.add(Platform::exit);
+    }
+
+    /**
+     * One battle per chapter, so each chapter's own lawn — the sea, the ice,
+     * the graves — can be looked at rather than assumed.
+     */
+    private void planChapterShots() {
+        for (Chapter chapter : Chapter.values()) {
+            steps.add(() -> {
+                startLevelAt(chapter, 1, "sunflower", "lily-pad");
+                app.submit("cheat remove-cooldown");
+                padTheFirstSeaTile();
+                app.submit("advance time -t 40 ticks");
+                ui.refresh();
+            });
+            steps.add(() -> shoot("15-chapter-" + chapter.id()));
+        }
+    }
+
+    /**
+     * Puts a pad on the leftmost sea tile of row 3, so a chapter with water
+     * shows a covered tile next to the bare ones.
+     */
+    private void padTheFirstSeaTile() {
+        GameSession session = ((ir.sharif.pvz.controller.GameMenuController)
+                app.currentController()).getSession();
+        for (int col = 1; col <= GameSession.COLS; col++) {
+            if (session.terrainAt(col, 3) == ir.sharif.pvz.model.game.TileTerrain.WATER) {
+                app.submit("plant plant -t lily-pad -l (" + col + ", 3)");
+                return;
+            }
+        }
     }
 
     /**
@@ -305,7 +340,7 @@ public final class ScreenSnapshots extends Application {
      * Starts a Dark Ages night so the three kinds of headstone are on screen.
      */
     private void showDarkAgesGraves() {
-        startLevelAt(12, "sunflower");
+        startLevelAt(Chapter.DARK_AGES, 1, "sunflower");
         var session = ((ir.sharif.pvz.controller.GameMenuController) app.currentController())
                 .getSession();
         session.cheats().spawnZombie("tombraiser", 8, 3);
@@ -317,15 +352,22 @@ public final class ScreenSnapshots extends Application {
      * Drops the player straight into one adventure level, whatever they were
      * doing before.
      */
-    private void startLevelAt(int levelsPassed, String plant) {
+    private void startLevelAt(Chapter chapter, int day, String... plants) {
+        startLevelAt(Levels.indexOf(chapter, day), plants);
+    }
+
+    private void startLevelAt(int levelsPassed, String... plants) {
         finishCurrentLevel();
         returnToMainMenu();
         app.getContext().getCurrentUser().setLevelsPassed(levelsPassed);
         ui.refresh();
         app.submit("menu enter game");
-        app.submit("add plant -t " + plant);
+        for (String plant : plants) {
+            app.submit("add plant -t " + plant);
+        }
         app.submit("start game");
         app.submit("cheat add -n 2000 suns");
+        ui.refresh();
     }
 
     /**
@@ -334,7 +376,7 @@ public final class ScreenSnapshots extends Application {
      * its cone.
      */
     private void showIceAndArmour() {
-        startLevelAt(4, "sunflower");
+        startLevelAt(Chapter.FROSTBITE_CAVES, 1, "sunflower");
         for (int col = 2; col <= 4; col++) {
             app.submit("plant plant -t sunflower -l (" + col + ", " + col + ")");
         }
@@ -400,6 +442,7 @@ public final class ScreenSnapshots extends Application {
         // the refusal would show as an error toast in the first screenshot
         if (app.getContext().getCurrentUser() != null) {
             app.getContext().getCurrentUser().setLevelsPassed(0);
+            app.getContext().getCurrentUser().setDebugMode(true);
             ui.refresh();
             return;
         }
@@ -417,6 +460,9 @@ public final class ScreenSnapshots extends Application {
         // the account is reused between runs, so wind its progress back to make
         // every snapshot show the same level it did last time
         app.getContext().getCurrentUser().setLevelsPassed(0);
+        // the scenes below are staged with cheat commands, and the debug
+        // setting decides whether those are answered at all
+        app.getContext().getCurrentUser().setDebugMode(true);
         ui.refresh();
     }
 

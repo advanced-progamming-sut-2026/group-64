@@ -52,6 +52,7 @@ public class LawnView extends Canvas {
     private final String chapterId;
     private boolean showGrid;
     private final LawnEffects effects = new LawnEffects(this);
+    private final LawnTerrain terrain = new LawnTerrain(this);
     private int hoverCol = -1;
     private int hoverRow = -1;
     private boolean hoverActive;
@@ -93,7 +94,7 @@ public class LawnView extends Canvas {
         if (showGrid) {
             drawGrid(gc);
         }
-        drawTerrain(gc, session);
+        terrain.draw(gc, session, seconds);
         drawTideLine(gc, session);
         drawSpecialMarkers(gc, session);
         drawHoveredTile(gc);
@@ -244,7 +245,7 @@ public class LawnView extends Canvas {
      * A headstone, in the kind that matches what it is hiding: the three Dark
      * Ages graves are a plain one, one holding sun and one holding plant food.
      */
-    private void drawGrave(GraphicsContext gc, GameSession session, int x, int y) {
+    void drawGrave(GraphicsContext gc, GameSession session, int x, int y) {
         String holds = session.graveContentAt(x, y);
         String kind = switch (holds) {
             case "sun" -> "sun";
@@ -382,42 +383,6 @@ public class LawnView extends Canvas {
             double y = tileY(row + 1) - tileHeight() / 2;
             gc.strokeLine(tileX(1) - tileWidth() / 2, y, tileX(GameSession.COLS) + tileWidth() / 2, y);
         }
-    }
-
-    /**
-     * Water, ice, graves and the other tile kinds phase 1 defines.
-     */
-    private void drawTerrain(GraphicsContext gc, GameSession session) {
-        for (int y = 1; y <= GameSession.ROWS; y++) {
-            for (int x = 1; x <= GameSession.COLS; x++) {
-                TileTerrain terrain = session.terrainAt(x, y);
-                if (terrain == TileTerrain.NORMAL) {
-                    continue;
-                }
-                paintTile(gc, x, y, terrain, session);
-            }
-        }
-    }
-
-    private void paintTile(GraphicsContext gc, int x, int y, TileTerrain terrain, GameSession session) {
-        double left = tileX(x) - tileWidth() / 2;
-        double top = tileY(y) - tileHeight() / 2;
-        gc.setFill(tileColour(terrain));
-        gc.fillRect(left, top, tileWidth(), tileHeight());
-        if (terrain == TileTerrain.GRAVE) {
-            drawGrave(gc, session, x, y);
-        }
-    }
-
-    private Color tileColour(TileTerrain terrain) {
-        return switch (terrain) {
-            case WATER -> Color.color(0.16, 0.42, 0.72, 0.55);
-            case LILY -> Color.color(0.24, 0.62, 0.34, 0.45);
-            case SLIPPERY_UP, SLIPPERY_DOWN -> Color.color(0.72, 0.90, 0.98, 0.45);
-            case GRAVE -> Color.color(0.16, 0.13, 0.18, 0.70);
-            case SPAWNER -> Color.color(0.55, 0.20, 0.55, 0.40);
-            default -> Color.TRANSPARENT;
-        };
     }
 
     private void drawMowers(GraphicsContext gc, GameSession session) {
