@@ -13,6 +13,15 @@ public abstract class MenuController {
 
     private static final Pattern ENTER_PATTERN = Pattern.compile("^menu\\s+enter\\s+(\\S+)$");
 
+    /**
+     * The document lists adding coins and diamonds among the things every menu
+     * shares, and the wallet is shown in every menu's top bar. It used to be
+     * accepted only while a level was running, which is the one place the
+     * player cannot spend them.
+     */
+    private static final Pattern WALLET_PATTERN =
+            Pattern.compile("^cheat\\s+add\\s+-n\\s+(\\d+)\\s+(coins|diamonds)$");
+
     protected final AppContext context;
     protected final GameView view;
 
@@ -51,12 +60,30 @@ public abstract class MenuController {
             onExit();
             return;
         }
+        Matcher wallet = WALLET_PATTERN.matcher(input);
+        if (wallet.matches() && context.getCurrentUser() != null) {
+            view.info(addToWallet(Integer.parseInt(wallet.group(1)), wallet.group(2)));
+            return;
+        }
         Matcher enterMatcher = ENTER_PATTERN.matcher(input);
         if (enterMatcher.matches()) {
             enterMenu(enterMatcher.group(1));
             return;
         }
         handleCommand(input);
+    }
+
+    /**
+     * Tops up one of the two currencies and says what the player now has.
+     */
+    private String addToWallet(int amount, String currency) {
+        ir.sharif.pvz.model.User user = context.getCurrentUser();
+        if ("coins".equals(currency)) {
+            user.addCoins(amount);
+            return "Added " + amount + " coins; you now have " + user.getCoins() + ".";
+        }
+        user.addDiamonds(amount);
+        return "Added " + amount + " diamonds; you now have " + user.getDiamonds() + ".";
     }
 
     private void enterMenu(String menuName) {

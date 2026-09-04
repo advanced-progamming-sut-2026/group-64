@@ -45,7 +45,7 @@ public final class Chrome {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        HBox bar = new HBox(16, back, heading, spacer, wallet(ui.user()));
+        HBox bar = new HBox(16, back, heading, spacer, wallet(ui, ui.user()));
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.setPadding(new Insets(14, 22, 14, 22));
         bar.getStyleClass().add("chrome-bar");
@@ -56,6 +56,18 @@ public final class Chrome {
      * The coin and diamond readout.
      */
     public static HBox wallet(User user) {
+        return wallet(null, user);
+    }
+
+    /**
+     * The same readout, but each side can be clicked to top itself up. The
+     * document lists adding coins and diamonds among the things every menu
+     * shares, and the wallet is the one part of the chrome that is in all of
+     * them.
+     *
+     * @param ui the game, or null for a readout that cannot be clicked
+     */
+    public static HBox wallet(GameUi ui, User user) {
         HBox wallet = new HBox(18);
         wallet.setAlignment(Pos.CENTER_RIGHT);
         wallet.getStyleClass().add("wallet");
@@ -63,17 +75,20 @@ public final class Chrome {
             return wallet;
         }
         wallet.getChildren().addAll(
-                currency("coin", user.getCoins()),
-                currency("gem", user.getDiamonds()));
+                currency(ui, "coin", user.getCoins(), "cheat add -n 500 coins"),
+                currency(ui, "gem", user.getDiamonds(), "cheat add -n 10 diamonds"));
         return wallet;
     }
 
-    private static HBox currency(String icon, int amount) {
+    private static HBox currency(GameUi ui, String icon, int amount, String topUp) {
         Label value = new Label(String.valueOf(amount));
         value.getStyleClass().add("wallet-value");
         HBox box = new HBox(6, Assets.view(Assets.ui(icon), CURRENCY_ICON), value);
         box.setAlignment(Pos.CENTER);
         box.getStyleClass().add("wallet-item");
+        if (ui != null) {
+            box.setOnMouseClicked(event -> ui.submit(topUp));
+        }
         return box;
     }
 }

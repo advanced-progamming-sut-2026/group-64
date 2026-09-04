@@ -220,7 +220,6 @@ public final class BattleScreen extends Screen {
         shovel.setOnAction(event -> {
             shovelArmed = !shovelArmed;
             armedPlant = null;
-            armedPlant = null;
             plantFoodArmed = false;
         });
 

@@ -41,8 +41,6 @@ public class GameMenuController extends MenuController {
             Pattern.compile("^collect\\s+plant\\s+food\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern TILE_STATUS = Pattern.compile("^show\\s+tile\\s+status\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern CHEAT_SUNS = Pattern.compile("^cheat\\s+add\\s+-n\\s+(\\d+)\\s+suns$");
-    private static final Pattern CHEAT_WALLET =
-            Pattern.compile("^cheat\\s+add\\s+-n\\s+(\\d+)\\s+(coins|diamonds)$");
     private static final Pattern CHEAT_ZOMBIE =
             Pattern.compile("^cheat\\s+spawn-zombie\\s+-t\\s+(\\S+)\\s+-l\\s+" + LOCATION + "$");
     private static final Pattern BREAK_VASE = Pattern.compile("^break\\s+vase\\s+-l\\s+" + LOCATION + "$");
@@ -463,9 +461,7 @@ public class GameMenuController extends MenuController {
      */
     private boolean handleCheat(String input) {
         Matcher matcher;
-        if ((matcher = CHEAT_WALLET.matcher(input)).matches()) {
-            view.info(cheatWallet(Integer.parseInt(matcher.group(1)), matcher.group(2)));
-        } else if ((matcher = CHEAT_SUNS.matcher(input)).matches()) {
+        if ((matcher = CHEAT_SUNS.matcher(input)).matches()) {
             view.info(session.cheats().addSuns(Integer.parseInt(matcher.group(1))));
         } else if (input.equals("cheat remove-cooldown")) {
             view.info(session.cheats().removeCooldown());
@@ -500,16 +496,6 @@ public class GameMenuController extends MenuController {
     /**
      * The debug-mode shortcut for topping up the player's wallet.
      */
-    private String cheatWallet(int amount, String currency) {
-        User user = context.getCurrentUser();
-        if ("coins".equals(currency)) {
-            user.addCoins(amount);
-            return "Added " + amount + " coins; you now have " + user.getCoins() + ".";
-        }
-        user.addDiamonds(amount);
-        return "Added " + amount + " diamonds; you now have " + user.getDiamonds() + ".";
-    }
-
     private static int group(Matcher matcher, int index) {
         return Integer.parseInt(matcher.group(index));
     }
