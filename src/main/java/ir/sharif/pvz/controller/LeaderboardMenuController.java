@@ -14,7 +14,8 @@ import java.util.regex.Pattern;
 public class LeaderboardMenuController extends MenuController {
 
     private static final Pattern SHOW = Pattern.compile(
-            "^show\\s+leaderboard(?:\\s+-s\\s+(level|minigames|quests|mowpoints))?(?:\\s+-o\\s+(asc|desc))?$");
+            "^show\\s+leaderboard(?:\\s+-s\\s+(level|minigames|quests|mowpoints|mypoint))?"
+                    + "(?:\\s+-o\\s+(asc|desc))?$");
 
     private final LeaderboardService leaderboardService;
 

@@ -44,6 +44,19 @@ tasks.named<JavaExec>("run") {
     standardInput = System.`in`
 }
 
+/**
+ * The phase-1 build: the same game driven by typed commands rather than the
+ * JavaFX window. "run" opens the window; this one stays in the terminal.
+ */
+tasks.register<JavaExec>("runCli") {
+    group = "application"
+    description = "Plays the game in the terminal, the way phase 1 is graded."
+    mainClass = "ir.sharif.pvz.Main"
+    classpath = sourceSets["main"].runtimeClasspath
+    args = listOf("--cli")
+    standardInput = System.`in`
+}
+
 tasks.test {
     useJUnitPlatform()
 }

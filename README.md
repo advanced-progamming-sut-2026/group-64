@@ -20,7 +20,9 @@
 ./gradlew build      # کامپایل + تست + Checkstyle + PMD (طبق قوانین لینتر سند پروژه)
 ./gradlew test       # فقط اجرای تست‌ها
 ./gradlew check      # فقط تست + لینترها
-./gradlew run        # اجرای بازی (ورودی/خروجی ترمینال)
+./gradlew run        # اجرای بازی با رابط گرافیکی (فاز ۲ به بعد)
+./gradlew runCli     # اجرای بازی در ترمینال با دستورهای متنی (فاز ۱)
+./gradlew run --args="--server"   # بالا آوردن سرور برای بازی چندنفره (فاز ۳)
 ./gradlew installDist   # ساخت توزیع اجرایی در build/install/plants-vs-zombies/
 ```
 
