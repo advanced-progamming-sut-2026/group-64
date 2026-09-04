@@ -74,6 +74,9 @@ class ZombieAbilities {
     }
 
     private void act(Zombie zombie) {
+        // the flash is drawn wherever the trick was used, so a player can see
+        // which zombie just did something rather than only read about it
+        tell(zombie);
         switch (zombie.getSpec().getName()) {
             case "ra" -> stealSun(zombie);
             case "explorer" -> burnAhead(zombie);
@@ -178,6 +181,13 @@ class ZombieAbilities {
             session.plantHit(plant, plant.getHp());
             session.slayZombie(zombie);
         }
+    }
+
+    /**
+     * Leaves a flash on the zombie that just used its trick.
+     */
+    private void tell(Zombie zombie) {
+        session.recordBurst(Burst.Kind.ABILITY, zombie.getX(), zombie.getRow() + 1.0);
     }
 
     private void stealSun(Zombie ra) {

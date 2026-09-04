@@ -21,7 +21,9 @@ public final class Burst {
         /** A mower ran down a lane. */
         MOWER,
         /** A plant food was spent on a plant. */
-        PLANT_FOOD
+        PLANT_FOOD,
+        /** A zombie used the trick that makes it that zombie. */
+        ABILITY
     }
 
     private static final double LIFETIME_SECONDS = 0.7;

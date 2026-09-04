@@ -4,6 +4,7 @@ import ir.sharif.pvz.model.game.Burst;
 import ir.sharif.pvz.model.game.Debris;
 import ir.sharif.pvz.model.game.GameSession;
 import ir.sharif.pvz.model.game.Plant;
+import ir.sharif.pvz.model.game.PlantCategory;
 import ir.sharif.pvz.model.game.PlantFoodShow;
 import ir.sharif.pvz.model.game.MinigameProp;
 import ir.sharif.pvz.model.game.MinigameSlide;
@@ -42,6 +43,9 @@ public class LawnView extends Canvas {
     private static final double GRID_BOTTOM = 0.9010;
 
     private static final double PLANT_SCALE = 0.78;
+    /** How many steps a zombie takes crossing one tile, for the walk cycle. */
+    private static final double STEPS_PER_TILE = 11;
+
     private static final double ZOMBIE_SCALE = 1.05;
     private static final double SUN_SCALE = 0.46;
 
@@ -161,9 +165,24 @@ public class LawnView extends Canvas {
                 case PLANT_FOOD -> drawPlantFoodGlow(gc, x, y, burst.progress());
                 case MOWER -> drawParticles(gc, x, y, burst.progress(), 6,
                         Color.web("#d8d8d8"), tileHeight() * 0.35);
+                case ABILITY -> drawAbilityTell(gc, x, y, burst.progress());
                 default -> { }
             }
         }
+    }
+
+    /**
+     * The flash of a zombie using its trick: a ring that opens out of it, in
+     * the sickly purple the game uses for zombie doings.
+     */
+    private void drawAbilityTell(GraphicsContext gc, double x, double y, double t) {
+        gc.save();
+        gc.setGlobalAlpha((1 - t) * 0.85);
+        gc.setStroke(Color.web("#b07ad6"));
+        gc.setLineWidth(tileHeight() * 0.05);
+        double size = tileHeight() * (0.3 + t * 0.9);
+        gc.strokeOval(x - size / 2, y - size / 2, size, size);
+        gc.restore();
     }
 
     /**
@@ -600,14 +619,68 @@ public class LawnView extends Canvas {
         };
     }
 
+    /**
+     * How fast a family fidgets: the melee plants are twitchy, the walls barely
+     * move at all, everything else is somewhere between.
+     */
+    private static double idleSpeed(Plant plant) {
+        return switch (plant.getSpec().getCategory()) {
+            case MELEE -> 6.5;
+            case WALL -> 1.1;
+            case SUN_PRODUCER -> 2.0;
+            case MINT, MODIFIER -> 1.6;
+            default -> 2.4;
+        };
+    }
+
+    /**
+     * How far it moves while it fidgets, as a fraction of its own height.
+     */
+    private static double idleSway(Plant plant) {
+        return switch (plant.getSpec().getCategory()) {
+            case MELEE -> 0.05;
+            case WALL -> 0.012;
+            default -> 0.03;
+        };
+    }
+
+    /**
+     * A plant winding up: the charge plants swell as their long period runs
+     * down, and a sun producer swells as its sun comes due, so both are seen
+     * to be doing something between one action and the next.
+     */
+    private static double idleScale(Plant plant, double seconds, int col, int row) {
+        double ready = plant.sinceItActed();
+        if (plant.getSpec().hasTag("charge")) {
+            return 0.9 + 0.2 * ready;
+        }
+        if (plant.getSpec().getCategory() == PlantCategory.SUN_PRODUCER) {
+            return 1 + 0.08 * Math.pow(ready, 6);
+        }
+        return 1;
+    }
+
+    /**
+     * The kick of having just acted, which fades over the first fifth of the
+     * plant's period. A shooter rocks back off its shot; a wall never acts, so
+     * it never kicks.
+     */
+    private static double recoil(Plant plant) {
+        if (plant.getSpec().getAttackPeriodSeconds() <= 0 || plant.getDamage() == 0) {
+            return 0;
+        }
+        double since = plant.sinceItActed();
+        return since > 0.2 ? 0 : (0.2 - since) * 0.6;
+    }
+
     private void drawPlant(GraphicsContext gc, GameSession session, Plant plant,
                            int col, int row, double seconds) {
         Image art = Assets.plant(plant.getSpec().getName());
-        double height = tileHeight() * PLANT_SCALE;
-        // a gentle idle sway, so every plant reads as alive without needing
-        // the original per-plant animation data
-        double bob = Math.sin(seconds * 2.4 + col * 0.7 + row) * height * 0.03;
-        double centreX = tileX(col);
+        double height = tileHeight() * PLANT_SCALE * idleScale(plant, seconds, col, row);
+        // every plant is alive on its tile, but each family in its own way
+        double phase = seconds * idleSpeed(plant) + col * 0.7 + row;
+        double bob = Math.sin(phase) * tileHeight() * PLANT_SCALE * idleSway(plant);
+        double centreX = tileX(col) - recoil(plant) * tileWidth();
         double centreY = tileY(row) + bob;
 
         if (plant.isBoosted()) {
@@ -624,6 +697,16 @@ public class LawnView extends Canvas {
             gc.setGlobalAlpha(Math.min(1, ice / 3.0));
             drawSprite(gc, Assets.image("ice/plant-front"), centreX, centreY, height * 1.25, null);
             gc.setGlobalAlpha(1);
+        }
+
+        Plant shell = session.shieldOn(plant);
+        if (shell != null) {
+            // the pumpkin sits over whatever it is protecting
+            gc.save();
+            gc.setGlobalAlpha(0.85);
+            drawSprite(gc, Assets.plant(shell.getSpec().getName()), centreX, centreY,
+                    height * 1.2, Color.web("#e08a2e"));
+            gc.restore();
         }
 
         double healthy = plant.getHp() / (double) plant.maxHp();
@@ -662,21 +745,33 @@ public class LawnView extends Canvas {
     private void drawZombie(GraphicsContext gc, Zombie zombie, double seconds) {
         Image art = zombieArt(zombie);
         double height = tileHeight() * ZOMBIE_SCALE;
-        // a biting zombie rocks forward sharply; a walking one just sways
-        double lurch = zombie.isEating()
-                ? Math.abs(Math.sin(seconds * 9)) * height * 0.05
-                : Math.sin(seconds * 5 + zombie.getX()) * height * 0.02;
         double centreX = tileX((int) Math.floor(zombie.getX()))
                 + (zombie.getX() - Math.floor(zombie.getX())) * tileWidth();
-        double centreY = tileY(zombie.getRow() + 1) - height * 0.12 + lurch;
+        double centreY = tileY(zombie.getRow() + 1) - height * 0.12;
+        // the step is driven by how far it has walked rather than by the clock,
+        // so a chilled one plods and a fast one hurries, and a frozen one stops
+        double stride = zombie.getX() * STEPS_PER_TILE;
+        double lean = 0;
         if (zombie.isEating()) {
-            centreX -= Math.abs(Math.sin(seconds * 9)) * tileWidth() * 0.08;
+            // a bite is a sharp rock forward and back on the spot
+            double chomp = Math.abs(Math.sin(seconds * 9));
+            centreY += chomp * height * 0.05;
+            centreX -= chomp * tileWidth() * 0.08;
+            lean = chomp * 9;
+        } else if (!zombie.isFrozen()) {
+            centreY += Math.abs(Math.sin(stride)) * height * 0.05;
+            lean = Math.sin(stride) * 4;
         }
 
         if (zombie.isFrozen()) {
             drawSprite(gc, Assets.image("ice/zombie-behind"), centreX, centreY, height * 1.2, null);
         }
         gc.save();
+        if (lean != 0) {
+            gc.translate(centreX, centreY);
+            gc.rotate(lean);
+            gc.translate(-centreX, -centreY);
+        }
         applyZombieTint(gc, zombie);
         drawSprite(gc, art, centreX, centreY, height, Color.web("#8d9b6a"));
         gc.restore();

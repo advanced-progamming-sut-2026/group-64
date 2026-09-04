@@ -101,6 +101,20 @@ public class Plant {
         return attackCooldownSeconds <= 0;
     }
 
+    /**
+     * How long since this plant last acted, as a fraction of its own period: 0
+     * the instant it fires and 1 once it is ready again. The view animates the
+     * recoil off this, so a fast shooter kicks often and a chomper's long
+     * chew reads as one slow swallow.
+     */
+    public double sinceItActed() {
+        double period = spec.getAttackPeriodSeconds();
+        if (period <= 0) {
+            return 1;
+        }
+        return Math.max(0, Math.min(1, 1 - attackCooldownSeconds / period));
+    }
+
     public void resetAttackCooldown() {
         attackCooldownSeconds = spec.getAttackPeriodSeconds();
     }
