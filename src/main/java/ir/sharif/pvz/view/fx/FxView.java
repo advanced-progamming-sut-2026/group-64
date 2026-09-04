@@ -119,7 +119,7 @@ public final class FxView implements GameView {
     }
 
     @Override
-    public void showMap(GameSession session) {
+    public void showMap(GameSession session, boolean grid) {
         // the battle screen redraws the lawn every frame
     }
 

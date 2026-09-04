@@ -405,7 +405,7 @@ public class GameMenuController extends MenuController {
     private void handleInGameCommand(String input) {
         Matcher matcher;
         if ((matcher = ADVANCE_TIME.matcher(input)).matches()) {
-            session.advance(Integer.parseInt(matcher.group(1)));
+            advanceTime(Integer.parseInt(matcher.group(1)));
         } else if ((matcher = PLANT.matcher(input)).matches()) {
             view.info(session.plant(matcher.group(1), group(matcher, 2), group(matcher, 3)));
         } else if ((matcher = SWAP.matcher(input)).matches()) {
@@ -433,7 +433,7 @@ public class GameMenuController extends MenuController {
         if (input.equals("show sun amount")) {
             view.info("Sun: " + session.getSunAmount());
         } else if (input.equals("show map")) {
-            view.showMap(session);
+            view.showMap(session, context.getCurrentUser().isShowGrid());
         } else if (input.equals("show plants status")) {
             view.showPlantsStatus(session);
         } else if ((matcher = TILE_STATUS.matcher(input)).matches()) {
@@ -456,11 +456,31 @@ public class GameMenuController extends MenuController {
     }
 
     /**
+     * The speed setting is how fast the game moves for this player, so a tick
+     * of typed time is worth that many ticks of the game. The terminal has no
+     * clock of its own, which makes this the one place it can show.
+     */
+    private void advanceTime(int ticks) {
+        int speed = context.getCurrentUser().getGameSpeed();
+        session.advance(ticks * speed);
+        if (speed > 1) {
+            view.info("Advanced " + (ticks * speed) + " ticks at speed " + speed + "x.");
+        }
+    }
+
+    /**
      * The debug commands the document lists, kept apart from the ordinary
-     * in-game ones.
+     * in-game ones. They are the terminal's debug tools, so the debug setting
+     * decides whether they are offered at all — the same rule the graphical
+     * view follows when it shows or hides its debug panel.
      */
     private boolean handleCheat(String input) {
         Matcher matcher;
+        if (isCheat(input) && !context.getCurrentUser().isDebugMode()) {
+            view.error("Debug mode is off, so the debug commands are not available. "
+                    + "Turn it on with 'menu settings toggle-debug'.");
+            return true;
+        }
         if ((matcher = CHEAT_SUNS.matcher(input)).matches()) {
             view.info(session.cheats().addSuns(Integer.parseInt(matcher.group(1))));
         } else if (input.equals("cheat remove-cooldown")) {
@@ -475,6 +495,10 @@ public class GameMenuController extends MenuController {
             return handleMinigameCommand(input);
         }
         return true;
+    }
+
+    private static boolean isCheat(String input) {
+        return input.startsWith("cheat ") || input.equals("release the nuke");
     }
 
     private boolean handleMinigameCommand(String input) {

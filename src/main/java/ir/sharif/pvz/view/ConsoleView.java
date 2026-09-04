@@ -74,18 +74,49 @@ public class ConsoleView implements GameView {
 
     /**
      * Terminal rendering of the whole board: header stats then one line per row.
+     *
+     * <p>With the lawn grid turned off the tiles are only spaced apart, which
+     * is the terminal's version of a lawn drawn without its lines. Turning it
+     * on rules the rows and numbers both axes, so a tile can be read off the
+     * map and typed straight into a command.
      */
     @Override
-    public void showMap(GameSession session) {
+    public void showMap(GameSession session, boolean grid) {
         out.println("Wave: " + session.getCurrentWave() + " | Sun: " + session.getSunAmount()
                 + " | Plant food: " + session.getPlantFood());
+        if (grid) {
+            showRuledMap(session);
+            return;
+        }
         for (int y = 1; y <= GameSession.ROWS; y++) {
-            StringBuilder line = new StringBuilder(session.isMowerAvailable(y - 1) ? "M |" : "  |");
+            StringBuilder line = new StringBuilder(session.isMowerAvailable(y - 1) ? "M  " : "   ");
             for (int x = 1; x <= GameSession.COLS; x++) {
-                line.append(renderTile(session, x, y)).append('|');
+                line.append(renderTile(session, x, y)).append(' ');
             }
             out.println(line);
         }
+    }
+
+    private void showRuledMap(GameSession session) {
+        StringBuilder heading = new StringBuilder("   ");
+        for (int x = 1; x <= GameSession.COLS; x++) {
+            heading.append(String.format(" %-8s", x));
+        }
+        out.println(heading);
+        out.println(rule());
+        for (int y = 1; y <= GameSession.ROWS; y++) {
+            StringBuilder line = new StringBuilder(session.isMowerAvailable(y - 1) ? "M" : " ");
+            line.append(y).append(' ');
+            for (int x = 1; x <= GameSession.COLS; x++) {
+                line.append('|').append(renderTile(session, x, y));
+            }
+            out.println(line.append('|'));
+            out.println(rule());
+        }
+    }
+
+    private static String rule() {
+        return "   " + "+--------".repeat(GameSession.COLS) + "+";
     }
 
     private String renderTile(GameSession session, int x, int y) {
@@ -95,7 +126,8 @@ public class ConsoleView implements GameView {
         long zombieCount = session.getZombies().stream()
                 .filter(z -> z.getRow() == y - 1 && Math.round(z.getX()) == x).count();
         boolean sun = session.groundSuns().stream().anyMatch(s -> s.getRow() == y - 1 && s.getCol() == x - 1);
-        return String.format("%s %s%s", name, zombieCount == 0 ? " " : "Z" + zombieCount, sun ? "*" : " ");
+        return String.format("%-4s %-2s%s", name,
+                zombieCount == 0 ? "" : "Z" + zombieCount, sun ? "*" : " ");
     }
 
     private String terrainMark(ir.sharif.pvz.model.game.TileTerrain terrain) {

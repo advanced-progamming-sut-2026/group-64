@@ -46,6 +46,9 @@ class BoostAndPlantFoodTest {
                 new AuthService(users), new ProfileService(users),
                 new ir.sharif.pvz.model.SavedGameStore(folder.resolve("saves.json")));
         user = new User("booster", "hash", "Boost", "b@example.com", Gender.FEMALE);
+        // these tests reach for the in-game debug commands, which the debug
+        // setting is what offers
+        user.setDebugMode(true);
         users.add(user);
         context.setCurrentUser(user);
         context.setCurrentMenu(MenuType.MAIN);

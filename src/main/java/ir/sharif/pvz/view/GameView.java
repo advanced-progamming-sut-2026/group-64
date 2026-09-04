@@ -27,7 +27,12 @@ public interface GameView {
 
     void showNews(List<NewsItem> items, String emptyMessage);
 
-    void showMap(GameSession session);
+    /**
+     * Draws the board. The grid flag is the player's lawn-grid setting: with
+     * it off the tiles are simply spaced apart, with it on they are ruled and
+     * numbered.
+     */
+    void showMap(GameSession session, boolean grid);
 
     void showPlantsStatus(GameSession session);
 
