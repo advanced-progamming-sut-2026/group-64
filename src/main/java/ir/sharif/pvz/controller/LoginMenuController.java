@@ -27,6 +27,32 @@ public class LoginMenuController extends MenuController {
     private State state = State.IDLE;
     private User recoveringUser;
 
+    /**
+     * Which step of the recovery the player is on, so a graphical view can
+     * draw the right one. The console follows the same three steps by reading
+     * what the menu prints.
+     */
+    public boolean isRecovering() {
+        return state != State.IDLE;
+    }
+
+    /**
+     * True once the security answer was accepted and only the new password is
+     * still missing.
+     */
+    public boolean isAwaitingNewPassword() {
+        return state == State.AWAITING_NEW_PASSWORD;
+    }
+
+    /**
+     * The question the account was asked at sign-up, or null before one has
+     * been looked up.
+     */
+    public String recoveryQuestion() {
+        return recoveringUser == null ? null
+                : SecurityQuestion.byNumber(recoveringUser.getSecurityQuestionNumber());
+    }
+
     public LoginMenuController(AppContext context, GameView view) {
         super(context, view);
     }
@@ -50,6 +76,13 @@ public class LoginMenuController extends MenuController {
 
     @Override
     protected void handleCommand(String input) {
+        // backing out has to be checked before the new password, or it would
+        // be taken for one
+        if (input.equals("cancel recovery")) {
+            resetState();
+            view.info("Recovery cancelled.");
+            return;
+        }
         if (state == State.AWAITING_NEW_PASSWORD) {
             handleNewPassword(input);
             return;

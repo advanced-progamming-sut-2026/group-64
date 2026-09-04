@@ -1,5 +1,6 @@
 package ir.sharif.pvz.view.fx.screen;
 
+import ir.sharif.pvz.controller.LoginMenuController;
 import ir.sharif.pvz.controller.MenuType;
 import ir.sharif.pvz.view.fx.GameUi;
 import javafx.geometry.Insets;
@@ -22,8 +23,12 @@ public final class LoginScreen extends Screen {
 
     private static final double FORM_WIDTH = 420;
 
+    /**
+     * Whether the player asked to recover rather than sign in. Which step of
+     * the recovery they are on comes from the menu itself, because submitting
+     * a command rebuilds this screen and anything kept here would be lost.
+     */
     private boolean recovering;
-    private boolean answering;
 
     public LoginScreen(GameUi ui) {
         super(ui);
@@ -36,7 +41,8 @@ public final class LoginScreen extends Screen {
         Label subtitle = new Label("Welcome back");
         subtitle.getStyleClass().add("brand-subtitle");
 
-        VBox form = recovering ? recoveryPanel() : loginPanel();
+        LoginMenuController menu = (LoginMenuController) ui.app().currentController();
+        VBox form = recovering || menu.isRecovering() ? recoveryPanel(menu) : loginPanel();
         form.setMaxWidth(FORM_WIDTH);
 
         VBox column = new VBox(18, title, subtitle, form);
@@ -79,40 +85,92 @@ public final class LoginScreen extends Screen {
                 new HBox(12, login, forgot, register));
     }
 
-    private VBox recoveryPanel() {
+    /**
+     * The three steps of recovery, one at a time: find the account, answer its
+     * question, then set a new password. Which one shows is the menu's own
+     * state rather than this screen's, because submitting a command builds a
+     * fresh screen and anything remembered here would be gone.
+     */
+    private VBox recoveryPanel(LoginMenuController menu) {
+        if (menu.isAwaitingNewPassword()) {
+            return newPasswordStep();
+        }
+        return menu.isRecovering() ? answerStep(menu) : findAccountStep();
+    }
+
+    /**
+     * Step one: name the account being recovered.
+     */
+    private VBox findAccountStep() {
         TextField username = new TextField();
         TextField email = new TextField();
-        TextField answer = new TextField();
 
         Button ask = new Button("Show my question");
         ask.getStyleClass().add("primary-button");
-        ask.setOnAction(event -> {
-            ui.submit("forget password -u " + SignupScreen.blankToDash(username.getText())
-                    + " -e " + SignupScreen.blankToDash(email.getText()));
-            answering = true;
-        });
+        ask.setDefaultButton(true);
+        ask.setOnAction(event -> ui.submit("forget password -u "
+                + SignupScreen.blankToDash(username.getText())
+                + " -e " + SignupScreen.blankToDash(email.getText())));
 
+        return Forms.panel(14,
+                Forms.heading("Recover your password"),
+                Forms.hint("We will show the question you picked when you signed up."),
+                Forms.field("Username", username),
+                Forms.field("Email", email),
+                new HBox(12, ask, backButton()));
+    }
+
+    /**
+     * Step two: the question, and a box to answer it in.
+     */
+    private VBox answerStep(LoginMenuController menu) {
+        TextField answer = new TextField();
         Button send = new Button("Submit answer");
         send.getStyleClass().add("primary-button");
-        send.setDisable(!answering);
+        send.setDefaultButton(true);
         send.setOnAction(event ->
                 ui.submit("answer -a " + SignupScreen.blankToDash(answer.getText())));
 
+        Label question = new Label(menu.recoveryQuestion());
+        question.getStyleClass().add("field-label");
+        question.setWrapText(true);
+
+        return Forms.panel(14,
+                Forms.heading("Recover your password"),
+                question,
+                Forms.field("Answer", answer),
+                new HBox(12, send, backButton()));
+    }
+
+    /**
+     * Step three, which had no screen at all: the menu asked for a new
+     * password and there was nowhere to type one.
+     */
+    private VBox newPasswordStep() {
+        PasswordField fresh = new PasswordField();
+        Button save = new Button("Set my new password");
+        save.getStyleClass().add("primary-button");
+        save.setDefaultButton(true);
+        save.setOnAction(event -> {
+            ui.submit(SignupScreen.blankToDash(fresh.getText()));
+            recovering = false;
+        });
+
+        return Forms.panel(14,
+                Forms.heading("Choose a new password"),
+                Forms.hint("At least eight characters, with a capital, a digit and a symbol."),
+                Forms.field("New password", fresh),
+                new HBox(12, save, backButton()));
+    }
+
+    private Button backButton() {
         Button back = new Button("Back to sign in");
         back.getStyleClass().add("link-button");
         back.setOnAction(event -> {
             recovering = false;
-            answering = false;
-            ui.show(this);
+            ui.submit("cancel recovery");
         });
-
-        return Forms.panel(14,
-                Forms.heading("Recover your password"),
-                Forms.hint("Your security question appears as a notification once we find your account."),
-                Forms.field("Username", username),
-                Forms.field("Email", email),
-                new HBox(12, ask),
-                Forms.field("Answer", answer),
-                new HBox(12, send, back));
+        return back;
     }
+
 }
