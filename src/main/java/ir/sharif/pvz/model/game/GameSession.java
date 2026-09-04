@@ -52,6 +52,8 @@ public class GameSession {
     final List<Mower> rolling = new ArrayList<>();
     /** Plant food lying on the lawn, as {column, row} zero-based tiles. */
     final List<int[]> droppedFood = new ArrayList<>();
+    /** Plants part-way through their plant food moment, for the view. */
+    private final List<PlantFoodShow> plantFoodShows = new ArrayList<>();
     final List<Zombie> zombies = new ArrayList<>();
     final Map<String, Double> plantCooldowns = new HashMap<>();
     /** Collection-menu upgrade levels per plant type; missing means level 1. */
@@ -167,6 +169,8 @@ public class GameSession {
         }
         bursts.removeIf(Burst::isDone);
         dismemberment.tick(dt);
+        plantFoodShows.forEach(show -> show.passSeconds(dt));
+        plantFoodShows.removeIf(PlantFoodShow::isDone);
     }
 
     private void produceSuns() {
@@ -479,6 +483,13 @@ public class GameSession {
         return rolling;
     }
 
+    /**
+     * The plants currently showing off what their plant food did.
+     */
+    public List<PlantFoodShow> getPlantFoodShows() {
+        return plantFoodShows;
+    }
+
     public List<Debris> getDebris() {
         return dismemberment.pieces();
     }
@@ -594,6 +605,8 @@ public class GameSession {
 
     void applyPlantFoodEffect(Plant plant) {
         recordBurst(Burst.Kind.PLANT_FOOD, plant.getCol() + 1.0, plant.getRow() + 1.0);
+        plantFoodShows.add(new PlantFoodShow(plant.getSpec().getName(),
+                plant.getSpec().getCategory(), plant.getCol() + 1, plant.getRow() + 1));
         combat.applyPlantFood(plant);
     }
 

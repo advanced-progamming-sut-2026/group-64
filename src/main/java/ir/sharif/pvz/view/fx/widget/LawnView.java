@@ -4,6 +4,7 @@ import ir.sharif.pvz.model.game.Burst;
 import ir.sharif.pvz.model.game.Debris;
 import ir.sharif.pvz.model.game.GameSession;
 import ir.sharif.pvz.model.game.Plant;
+import ir.sharif.pvz.model.game.PlantFoodShow;
 import ir.sharif.pvz.model.game.MinigameProp;
 import ir.sharif.pvz.model.game.MinigameSlide;
 import ir.sharif.pvz.model.game.Sandstorm;
@@ -35,9 +36,6 @@ import javafx.scene.text.TextAlignment;
  */
 public class LawnView extends Canvas {
 
-    /** A zombie this far across is close enough to the house to be flagged. */
-    private static final double DANGER_COLUMN = 2.2;
-
     private static final double GRID_LEFT = 0.2461;
     private static final double GRID_TOP = 0.2500;
     private static final double GRID_RIGHT = 0.9883;
@@ -49,6 +47,7 @@ public class LawnView extends Canvas {
 
     private final String chapterId;
     private boolean showGrid;
+    private final LawnEffects effects = new LawnEffects(this);
     private int hoverCol = -1;
     private int hoverRow = -1;
     private boolean hoverActive;
@@ -95,101 +94,16 @@ public class LawnView extends Canvas {
         drawSpecialMarkers(gc, session);
         drawHoveredTile(gc);
         drawMowers(gc, session);
-        drawSandstorm(gc, session, "back");
+        effects.drawSandstorm(gc, session, "back");
         drawSuns(gc, session);
-        drawDroppedPlantFood(gc, session, seconds);
+        effects.drawDroppedPlantFood(gc, session, seconds);
         drawRows(gc, session, seconds);
-        drawSandstorm(gc, session, "front");
+        effects.drawSandstorm(gc, session, "front");
         drawZomboss(gc, session, seconds);
-        drawDebris(gc, session);
-        drawDangerRings(gc, session, seconds);
+        effects.drawPlantFoodShows(gc, session);
+        effects.drawDebris(gc, session);
+        effects.drawDangerRings(gc, session, seconds);
         drawBursts(gc, session);
-        gc.restore();
-    }
-
-    /**
-     * Plant food a glowing zombie left behind, bobbing until it is picked up.
-     */
-    private void drawDroppedPlantFood(GraphicsContext gc, GameSession session, double seconds) {
-        Image art = Assets.ui("plant-food");
-        for (int[] tile : session.getDroppedPlantFood()) {
-            double bob = Math.sin(seconds * 4 + tile[0]) * tileHeight() * 0.06;
-            drawSprite(gc, art, tileX(tile[0]), tileY(tile[1]) + bob,
-                    tileHeight() * 0.55, Color.web("#8bc34a"));
-        }
-    }
-
-    /**
-     * A pulsing ring under any zombie that is nearly at the house, so the
-     * player can see which lane is about to go.
-     */
-    private void drawDangerRings(GraphicsContext gc, GameSession session, double seconds) {
-        Image art = Assets.ui("alert-ring");
-        for (Zombie zombie : session.getZombies()) {
-            if (zombie.getX() > DANGER_COLUMN) {
-                continue;
-            }
-            double pulse = 0.75 + 0.25 * Math.sin(seconds * 6);
-            double height = tileHeight() * 0.5 * pulse;
-            gc.save();
-            gc.setGlobalAlpha(0.85);
-            drawSprite(gc, art, tileX(1) + (zombie.getX() - 1) * tileWidth(),
-                    tileY(zombie.getRow() + 1) + tileHeight() * 0.32, height,
-                    Color.web("#e74c3c"));
-            gc.restore();
-        }
-    }
-
-    /**
-     * The heads, arms and armour tumbling off the zombies. They are drawn over
-     * the lawn because they leave the zombie and land in front of it.
-     */
-    private void drawDebris(GraphicsContext gc, GameSession session) {
-        for (Debris piece : session.getDebris()) {
-            Image art = Assets.image("parts/" + piece.getArt());
-            if (art == null) {
-                continue;
-            }
-            double height = tileHeight() * (piece.getKind() == Debris.Kind.ARM ? 0.28 : 0.42);
-            double width = height * art.getWidth() / art.getHeight();
-            double x = tileX(1) + (piece.getCol() - 1) * tileWidth();
-            double y = tileY(piece.getRow() + 1) - piece.getLift() * tileHeight();
-            gc.save();
-            gc.setGlobalAlpha(piece.getOpacity());
-            gc.translate(x, y);
-            gc.rotate(Math.toDegrees(piece.getSpin()));
-            gc.drawImage(art, -width / 2, -height / 2, width, height);
-            gc.restore();
-        }
-    }
-
-    /**
-     * The Ancient Egypt sandstorm, in the two layers the artwork comes in: one
-     * behind the lawn and one over the top of it, so the plants sit inside the
-     * storm rather than behind a sheet of sand.
-     */
-    private void drawSandstorm(GraphicsContext gc, GameSession session, String layer) {
-        Sandstorm storm = session.getSandstorm();
-        double now = session.getElapsedSeconds();
-        double strength = storm.intensityAt(now);
-        if (strength <= 0) {
-            return;
-        }
-        Image art = Assets.image("props/sandstorm-" + layer);
-        if (art == null) {
-            return;
-        }
-        double centreX = tileX(1) + (storm.columnAt(now) - 1) * tileWidth();
-        double height = getHeight() * 1.1;
-        // a front a few tiles wide, so the sand is seen crossing the lawn
-        // rather than washing the whole picture in one colour
-        double width = tileWidth() * 2.6;
-        gc.save();
-        gc.setGlobalAlpha("front".equals(layer) ? strength * 0.5 : strength * 0.75);
-        for (int i = -1; i <= 1; i++) {
-            gc.drawImage(art, centreX - width / 2 + i * width * 0.62,
-                    getHeight() / 2 - height / 2, width, height);
-        }
         gc.restore();
     }
 
@@ -255,7 +169,7 @@ public class LawnView extends Canvas {
     /**
      * A blast: a white flash that swells into an orange fireball and fades.
      */
-    private void drawExplosion(GraphicsContext gc, double x, double y, double t) {
+    void drawExplosion(GraphicsContext gc, double x, double y, double t) {
         double radius = tileWidth() * (0.35 + t * 1.15);
         gc.setGlobalAlpha(1 - t);
         gc.setFill(Color.web("#ff9020"));

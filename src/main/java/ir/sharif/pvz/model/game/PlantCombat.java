@@ -7,6 +7,9 @@ package ir.sharif.pvz.model.game;
  */
 class PlantCombat {
 
+    /** How many shots a plant food barrage puts in the air to be seen. */
+    private static final int BARRAGE_SHOTS = 6;
+
     private final GameSession session;
 
     PlantCombat(GameSession session) {
@@ -31,8 +34,20 @@ class PlantCombat {
                 }
             }
             case MODIFIER, MINT -> explodeAround(plant, 150);
-            default -> session.damageRowFrom(plant.getRow(), plant.getCol() + 1.0, 300);
+            default -> barrage(plant, plant.getRow(), 300);
         }
+    }
+
+    /**
+     * A shooter's plant food rakes a lane. The shots are recorded as well as
+     * applied so the view has a volley to draw rather than damage appearing
+     * from nowhere.
+     */
+    void barrage(Plant plant, int row, int damage) {
+        for (int i = 0; i < BARRAGE_SHOTS; i++) {
+            session.recordShot(plant, GameSession.COLS + 1.0, Shot.Flight.STRAIGHT);
+        }
+        session.damageRowFrom(row, plant.getCol() + 1.0, damage);
     }
 
     private void explodeAround(Plant plant, int damage) {

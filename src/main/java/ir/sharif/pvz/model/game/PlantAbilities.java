@@ -497,7 +497,7 @@ class PlantAbilities {
         PlantSpec spec = plant.getSpec();
         if (fansOutOverLanes(spec)) {
             for (int row = 0; row < GameSession.ROWS; row++) {
-                session.damageRowFrom(row, plant.getCol() + 1.0, plant.getDamage() * 5);
+                session.combat.barrage(plant, row, plant.getDamage() * 5);
             }
             session.eventLog().add(spec.getName() + " sprayed every lane.");
             return true;
@@ -508,7 +508,7 @@ class PlantAbilities {
                     zombie.freeze(8);
                 }
             }
-            session.damageRowFrom(plant.getRow(), plant.getCol() + 1.0, plant.getDamage() * 5);
+            session.combat.barrage(plant, plant.getRow(), plant.getDamage() * 5);
             return true;
         }
         if (spec.hasTag("poison")) {

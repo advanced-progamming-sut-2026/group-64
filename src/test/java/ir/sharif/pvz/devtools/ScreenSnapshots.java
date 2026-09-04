@@ -74,6 +74,14 @@ public final class ScreenSnapshots extends Application {
         });
     }
 
+    /**
+     * Sets a scene up and photographs it.
+     */
+    private void planShot(Runnable setUp, String name) {
+        steps.add(setUp);
+        steps.add(() -> shoot(name));
+    }
+
     private void planSteps() {
         steps.add(() -> shoot("00-signup"));
         steps.add(this::signIn);
@@ -110,8 +118,8 @@ public final class ScreenSnapshots extends Application {
         steps.add(() -> shoot("17-i-zombie"));
         steps.add(() -> startMinigame("beghouled"));
         steps.add(() -> shoot("17-beghouled"));
-        steps.add(this::showExplosion);
-        steps.add(() -> shoot("18-explosion"));
+        planShot(this::showExplosion, "18-explosion");
+        planShot(this::showPlantFood, "18-plant-food");
         steps.add(this::showFlyingParts);
         steps.add(() -> shoot("18-zombie-parts"));
         steps.add(this::showPauseMenu);
@@ -235,6 +243,40 @@ public final class ScreenSnapshots extends Application {
     /**
      * Opens the pause menu over a running level.
      */
+    /**
+     * Feeds a sunflower and a peashooter and catches them mid-show.
+     */
+    private void showPlantFood() {
+        int[] fedTiles = new int[2];
+        startLevelAt(0, "sunflower");
+        var session = ((ir.sharif.pvz.controller.GameMenuController) app.currentController())
+                .getSession();
+        app.submit("cheat add -n 900 suns");
+        // graves are laid at random, so take tiles that are actually free
+        int fed = 0;
+        for (int row = 1; row <= 5 && fed < 2; row++) {
+            if (session.plantAtTile(3, row) == null
+                    && !app.currentController().toString().isEmpty()) {
+                app.submit("plant plant -t sunflower -l (3, " + row + ")");
+                if (session.plantAtTile(3, row) != null) {
+                    fedTiles[fed++] = row;
+                }
+            }
+        }
+        session.cheats().spawnZombie("normal", 8, 3);
+        for (int i = 0; i < 3; i++) {
+            app.submit("cheat add-plant-food");
+        }
+        for (int row : fedTiles) {
+            if (row > 0) {
+                app.submit("feed plant -l (3, " + row + ")");
+            }
+        }
+        // far enough in for the sun to have carried clear of the plant
+        app.submit("advance time -t 7 ticks");
+        ui.refresh();
+    }
+
     /**
      * Knocks a few armoured zombies down and catches the heads, arms and
      * armour while they are still in the air.
