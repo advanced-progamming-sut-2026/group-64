@@ -23,6 +23,10 @@
 ./gradlew run        # اجرای بازی با رابط گرافیکی (فاز ۲ به بعد)
 ./gradlew runCli     # اجرای بازی در ترمینال با دستورهای متنی (فاز ۱)
 ./gradlew run --args="--server"   # بالا آوردن سرور برای بازی چندنفره (فاز ۳)
+
+tools/present.sh     # سرور به همراه دو پنجره‌ی بازی، برای ارائه
+tools/present.sh 3   # همان، با سه پنجره
+tools/present.sh stop  # بستن همه
 ./gradlew installDist   # ساخت توزیع اجرایی در build/install/plants-vs-zombies/
 ```
 

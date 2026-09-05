@@ -367,6 +367,10 @@ public final class ScreenSnapshots extends Application {
         steps.add(() -> shoot("20-zomboss-beaten"));
         steps.add(this::showScorchedGround);
         steps.add(() -> shoot("20-zomboss-scorched"));
+        steps.add(() -> showSpecial(Chapter.ANCIENT_EGYPT, 3));
+        steps.add(() -> shoot("13-special-timed-war"));
+        steps.add(() -> showSpecial(Chapter.FROSTBITE_CAVES, 2));
+        steps.add(() -> shoot("13-special-love-your-plants"));
     }
 
     /**
@@ -399,6 +403,20 @@ public final class ScreenSnapshots extends Application {
             app.submit("advance time -t 1 ticks");
         }
         app.submit("advance time -t 14 ticks");
+        freeze();
+    }
+
+    /**
+     * One special level with its objective line showing: the timed war counts
+     * kills against a clock, and love-your-plants counts the ones lost.
+     */
+    private void showSpecial(Chapter chapter, int day) {
+        startLevelAt(chapter, day, "sunflower", "peashooter", "wall-nut");
+        app.submit("cheat add -n 900 suns");
+        app.submit("cheat remove-cooldown");
+        app.submit("plant plant -t peashooter -l (2, 2)");
+        app.submit("plant plant -t wall-nut -l (4, 2)");
+        app.submit("advance time -t 120 ticks");
         freeze();
     }
 
