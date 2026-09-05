@@ -47,6 +47,12 @@ public final class Cheats {
         for (Zombie zombie : new ArrayList<>(session.zombies)) {
             session.killZombie(zombie);
         }
+        // the boss is standing on that map too; leaving it untouched made the
+        // nuke useless on the one level where it is most wanted
+        if (session.zomboss != null && !session.zomboss.boss().isDefeated()) {
+            session.zomboss.hit(session.zomboss.boss().getMaxHp());
+            return "The nuke wiped the whole map, Zomboss included.";
+        }
         return "The nuke wiped the whole map.";
     }
 }

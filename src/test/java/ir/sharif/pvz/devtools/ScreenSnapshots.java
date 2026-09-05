@@ -127,8 +127,7 @@ public final class ScreenSnapshots extends Application {
         steps.add(() -> shoot("18-zombie-parts"));
         steps.add(this::showPauseMenu);
         steps.add(() -> shoot("19-pause-menu"));
-        steps.add(this::showZomboss);
-        steps.add(() -> shoot("20-zomboss"));
+        planBossShots();
         steps.add(this::showVersusLobby);
         steps.add(() -> shoot("20-versus-lobby"));
         steps.add(this::showVersusBattle);
@@ -194,7 +193,9 @@ public final class ScreenSnapshots extends Application {
         app.submit("cheat add -n 500 suns");
         app.submit("plant plant -t peashooter -l (5, 2)");
         app.submit("cheat spawn-zombie -t normal -l (7, 3)");
-        app.submit("advance time -t 20 ticks");
+        // part-way through the flight: the board ticks ten times a second, so
+        // this is the shot roughly half of the way across
+        app.submit("advance time -t 7 ticks");
         ui.refresh();
     }
 
@@ -203,7 +204,7 @@ public final class ScreenSnapshots extends Application {
      * bar are on screen, with one section already knocked out.
      */
     private void showZomboss() {
-        startLevelAt(19, "peashooter");
+        startLevelAt(Chapter.DARK_AGES, 5, "peashooter");
         var session = ((ir.sharif.pvz.controller.GameMenuController) app.currentController())
                 .getSession();
         // put the belt's first offering down in the rows the dragon covers, then
@@ -214,7 +215,15 @@ public final class ScreenSnapshots extends Application {
                 app.submit("plant plant -t " + plant + " -l (2, " + row + ")");
             }
         }
-        app.submit("advance time -t 40 ticks");
+        // run on until the boss throws, then stop the clock part-way through
+        // the flight so the shot is caught in the air rather than landed
+        for (int i = 0; i < GameSession.TICKS_PER_SECOND * 120
+                && session.getBossShots().isEmpty(); i++) {
+            app.submit("advance time -t 1 ticks");
+        }
+        // part-way through the flight: the board ticks ten times a second, so
+        // this is the shot roughly half of the way across
+        app.submit("advance time -t 7 ticks");
         ui.refresh();
         if (ui.current() instanceof ir.sharif.pvz.view.fx.screen.BattleScreen battle) {
             battle.freezeForSnapshot();
@@ -346,6 +355,52 @@ public final class ScreenSnapshots extends Application {
         session.cheats().spawnZombie("tombraiser", 8, 3);
         app.submit("advance time -t 200 ticks");
         ui.refresh();
+    }
+
+    /** The boss at full strength, mid-attack, and on its way down. */
+    private void planBossShots() {
+        steps.add(this::showZomboss);
+        steps.add(() -> shoot("20-zomboss"));
+        steps.add(this::showBossSweep);
+        steps.add(() -> shoot("20-zomboss-sweep"));
+        steps.add(this::showBossFalling);
+        steps.add(() -> shoot("20-zomboss-beaten"));
+    }
+
+    /**
+     * The boss's wide move part-way across the lawn. It is picked at random
+     * among its three, so this runs on until that is the one it chose.
+     */
+    private void showBossSweep() {
+        GameSession session = bossLevel();
+        for (int i = 0; i < GameSession.TICKS_PER_SECOND * 300
+                && session.getBossSweep() == null; i++) {
+            app.submit("advance time -t 1 ticks");
+        }
+        app.submit("advance time -t 8 ticks");
+        freeze();
+    }
+
+    /** The boss on its way down, once the last part of its armour is off. */
+    private void showBossFalling() {
+        GameSession session = bossLevel();
+        session.cheats().releaseTheNuke();
+        app.submit("advance time -t 8 ticks");
+        freeze();
+    }
+
+    /** Starts a boss level and hands back its session. */
+    private GameSession bossLevel() {
+        startLevelAt(Chapter.DARK_AGES, 5, "peashooter");
+        return ((ir.sharif.pvz.controller.GameMenuController) app.currentController())
+                .getSession();
+    }
+
+    private void freeze() {
+        ui.refresh();
+        if (ui.current() instanceof ir.sharif.pvz.view.fx.screen.BattleScreen battle) {
+            battle.freezeForSnapshot();
+        }
     }
 
     /**

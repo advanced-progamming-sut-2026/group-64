@@ -14,6 +14,12 @@ public final class Zomboss {
     /** How long the boss is dazed after losing one part of its health. */
     private static final double STUN_SECONDS = 6;
     private static final int PARTS = 3;
+    /** How long it holds the pose it throws from. */
+    private static final double LUNGE_SECONDS = 0.5;
+    /** How long a hit shows on it. */
+    private static final double FLINCH_SECONDS = 0.18;
+    /** How long it takes to topple once the last part is off. */
+    private static final double FALL_SECONDS = 1.6;
 
     private final Chapter chapter;
     private final int partHealth;
@@ -23,6 +29,9 @@ public final class Zomboss {
     private int hp;
     private int row;
     private double stunnedSeconds;
+    private double lungeSeconds;
+    private double flinchSeconds;
+    private double fallenSeconds;
 
     Zomboss(Chapter chapter, int partHealth, int rows, int column) {
         this.chapter = chapter;
@@ -101,6 +110,41 @@ public final class Zomboss {
         return stunnedSeconds > 0;
     }
 
+    /**
+     * How far through the throwing pose it is, 0 to 1, or 0 when it is not
+     * throwing. The view leans the sprite back and then forward on this.
+     */
+    public double lunge() {
+        return lungeSeconds <= 0 ? 0 : 1 - (lungeSeconds / LUNGE_SECONDS);
+    }
+
+    /**
+     * How hard it is flinching right now, 1 at the moment of the hit and 0
+     * once it has shrugged it off.
+     */
+    public double flinch() {
+        return flinchSeconds <= 0 ? 0 : flinchSeconds / FLINCH_SECONDS;
+    }
+
+    /**
+     * How far it has toppled, 0 to 1. It only starts once the last part of its
+     * health is off, which is what keeps the defeat on screen rather than
+     * making the boss vanish the instant it dies.
+     */
+    public double fall() {
+        return !isDefeated() ? 0 : Math.min(1, fallenSeconds / FALL_SECONDS);
+    }
+
+    /** True once it has finished falling and the level can be called won. */
+    public boolean hasFinishedFalling() {
+        return isDefeated() && fallenSeconds >= FALL_SECONDS;
+    }
+
+    /** Called when it throws, so the view can show the wind-up. */
+    void lunged() {
+        lungeSeconds = LUNGE_SECONDS;
+    }
+
     public boolean isDefeated() {
         return hp <= 0;
     }
@@ -112,6 +156,7 @@ public final class Zomboss {
     boolean damage(int amount) {
         int partsBefore = partsLeft();
         hp = Math.max(0, hp - amount);
+        flinchSeconds = FLINCH_SECONDS;
         if (partsLeft() < partsBefore && hp > 0) {
             stunnedSeconds = STUN_SECONDS;
             return true;
@@ -121,5 +166,10 @@ public final class Zomboss {
 
     void passSeconds(double seconds) {
         stunnedSeconds = Math.max(0, stunnedSeconds - seconds);
+        lungeSeconds = Math.max(0, lungeSeconds - seconds);
+        flinchSeconds = Math.max(0, flinchSeconds - seconds);
+        if (isDefeated()) {
+            fallenSeconds += seconds;
+        }
     }
 }

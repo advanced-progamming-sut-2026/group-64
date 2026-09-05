@@ -68,10 +68,126 @@ class ZombossTest {
     void takingTheLastPartOffWinsTheLevel() {
         GameSession session = bossLevel(Chapter.BIG_WAVE_BEACH);
         session.zomboss.hit(session.getZomboss().getMaxHp());
-        session.advance(1);
+        session.advance(GameSession.TICKS_PER_SECOND * 2);
 
         assertTrue(session.getZomboss().isDefeated());
         assertTrue(session.isWon(), "beating the boss should win the chapter");
+    }
+
+    /**
+     * The boss used to blink out the instant its last part came off, because
+     * the level was won on the same tick. It topples first now, and the win
+     * waits for it.
+     */
+    @Test
+    void theBossToplesBeforeTheLevelIsCalledWon() {
+        GameSession session = bossLevel(Chapter.DARK_AGES);
+        Zomboss boss = session.getZomboss();
+        session.zomboss.hit(boss.getMaxHp());
+        session.advance(1);
+
+        assertTrue(boss.isDefeated(), "its health is gone");
+        assertFalse(session.isWon(), "but the level is not over while it is still falling");
+        assertFalse(boss.hasFinishedFalling());
+
+        double startedAt = boss.fall();
+        session.advance(GameSession.TICKS_PER_SECOND / 2);
+        assertTrue(boss.fall() > startedAt, "it is on its way down");
+
+        session.advance(GameSession.TICKS_PER_SECOND * 2);
+        assertTrue(boss.hasFinishedFalling(), "and eventually lands");
+        assertTrue(session.isWon());
+    }
+
+    /**
+     * Every chapter's signature attack is a different thing in the text, and
+     * used to be the same orange explosion on the lawn. Each throws its own
+     * shot now, from the boss to the tile it hits.
+     */
+    @Test
+    void eachChaptersSignatureAttackThrowsItsOwnShot() {
+        for (Chapter chapter : Chapter.values()) {
+            GameSession session = bossLevel(chapter);
+            BossShot.Kind expected = switch (chapter) {
+                case ANCIENT_EGYPT -> BossShot.Kind.ROCKET;
+                case DARK_AGES -> BossShot.Kind.FIREBALL;
+                case FROSTBITE_CAVES -> BossShot.Kind.ICE;
+                case BIG_WAVE_BEACH -> BossShot.Kind.SHARKS;
+            };
+            BossShot shot = firstShot(session);
+            assertNotNull(shot, chapter + " should throw something");
+            assertEquals(expected, shot.getKind(), chapter + " throws the wrong thing");
+        }
+    }
+
+    /** Runs a boss level until it takes its first single-tile shot. */
+    private BossShot firstShot(GameSession session) {
+        for (int i = 0; i < GameSession.TICKS_PER_SECOND * 120; i++) {
+            session.advance(1);
+            if (!session.getBossShots().isEmpty()) {
+                return session.getBossShots().get(0);
+            }
+        }
+        return null;
+    }
+
+    @Test
+    void aShotLeavesTheBossAndArrivesAtTheTileItHit() {
+        GameSession session = bossLevel(Chapter.ANCIENT_EGYPT);
+        BossShot shot = firstShot(session);
+        assertNotNull(shot);
+        double startedAt = shot.getCol();
+        assertTrue(startedAt > shot.getToCol(), "it starts at the boss, out on the right");
+        assertFalse(shot.hasLanded(), "and is still in the air");
+
+        // a third of the way over, where it should be up in the air and
+        // somewhere between the boss and the tile
+        session.advance(GameSession.TICKS_PER_SECOND / 4);
+        assertTrue(shot.getLift() > 0, "arcing rather than travelling flat");
+        assertTrue(shot.getCol() < startedAt, "and closer to the tile than it was");
+
+        session.advance(GameSession.TICKS_PER_SECOND * 2);
+        assertTrue(shot.hasLanded(), "it lands");
+        assertEquals(shot.getToCol(), shot.getCol(), 0.001, "on the tile it was aimed at");
+    }
+
+    /**
+     * The wide move was three separate explosions; it is one front crossing
+     * the rows the boss faces.
+     */
+    @Test
+    void theWideAttackSendsOneFrontAcrossTheRowsItFaces() {
+        GameSession session = bossLevel(Chapter.FROSTBITE_CAVES);
+        BossSweep sweep = null;
+        for (int i = 0; i < GameSession.TICKS_PER_SECOND * 120 && sweep == null; i++) {
+            session.advance(1);
+            sweep = session.getBossSweep();
+        }
+        assertNotNull(sweep, "the boss should use its wide move");
+        assertEquals(Chapter.FROSTBITE_CAVES, sweep.getChapter());
+        assertEquals(session.getZomboss().getRows(), sweep.getRows(),
+                "it covers the rows the boss covers");
+
+        double startedAt = sweep.progress();
+        session.advance(GameSession.TICKS_PER_SECOND / 2);
+        assertTrue(session.getBossSweep() == null || session.getBossSweep().progress() > startedAt,
+                "the front moves across the lawn");
+    }
+
+    @Test
+    void theBossFlinchesWhenItIsHitAndWindsUpWhenItThrows() {
+        GameSession session = bossLevel(Chapter.ANCIENT_EGYPT);
+        Zomboss boss = session.getZomboss();
+        assertEquals(0, boss.flinch(), 0.001, "nothing has hit it yet");
+
+        session.zomboss.hit(10);
+        assertTrue(boss.flinch() > 0, "a hit shows on it");
+        session.advance(GameSession.TICKS_PER_SECOND);
+        assertEquals(0, boss.flinch(), 0.001, "and it shrugs it off");
+
+        assertNotNull(firstShot(session), "it throws something eventually");
+        session.advance(GameSession.TICKS_PER_SECOND / 6);
+        assertTrue(boss.lunge() > 0, "and is part-way through its wind-up just after");
     }
 
     @Test

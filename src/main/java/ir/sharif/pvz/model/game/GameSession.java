@@ -62,6 +62,8 @@ public class GameSession {
     final List<String> events = new ArrayList<>();
     private final List<Shot> shots = new ArrayList<>();
     private final List<Burst> bursts = new ArrayList<>();
+    private final List<BossShot> bossShots = new ArrayList<>();
+    private BossSweep bossSweep;
     final Set<String> seenZombieTypes = new java.util.LinkedHashSet<>();
 
     long tickCount;
@@ -168,6 +170,16 @@ public class GameSession {
             burst.passSeconds(dt);
         }
         bursts.removeIf(Burst::isDone);
+        for (BossShot shot : bossShots) {
+            shot.passSeconds(dt);
+        }
+        bossShots.removeIf(BossShot::isDone);
+        if (bossSweep != null) {
+            bossSweep.passSeconds(dt);
+            if (bossSweep.isDone()) {
+                bossSweep = null;
+            }
+        }
         dismemberment.tick(dt);
         plantFoodShows.forEach(show -> show.passSeconds(dt));
         plantFoodShows.removeIf(PlantFoodShow::isDone);
@@ -319,7 +331,9 @@ public class GameSession {
 
     private void checkVictory() {
         if (zomboss != null) {
-            if (!lost && zomboss.boss().isDefeated()) {
+            // the win waits for the boss to finish toppling, so the fall is
+            // watched rather than cut off by the victory screen
+            if (!lost && zomboss.boss().hasFinishedFalling()) {
                 won = true;
                 events.add("Zomboss is beaten! The chapter is yours.");
             }
@@ -507,6 +521,30 @@ public class GameSession {
 
     public List<Shot> getShots() {
         return shots;
+    }
+
+    /** What Zomboss has in the air right now. */
+    public List<BossShot> getBossShots() {
+        return bossShots;
+    }
+
+    /** The wide attack washing across the lawn, or null when there is none. */
+    public BossSweep getBossSweep() {
+        return bossSweep;
+    }
+
+    /**
+     * Sends one of the boss's signature attacks on its way. The damage is
+     * dealt by the caller before this; the shot is only what is seen.
+     */
+    void throwBossShot(BossShot.Kind kind, double fromCol, double fromRow,
+                       double toCol, double toRow) {
+        bossShots.add(new BossShot(kind, fromCol, fromRow, toCol, toRow));
+    }
+
+    /** Starts the front of the boss's wide attack across the rows it faces. */
+    void startBossSweep(Chapter chapter, int topRow, int rows) {
+        bossSweep = new BossSweep(chapter, topRow, rows);
     }
 
     /**

@@ -53,6 +53,7 @@ public class LawnView extends Canvas {
     private boolean showGrid;
     private final LawnEffects effects = new LawnEffects(this);
     private final LawnTerrain terrain = new LawnTerrain(this);
+    private final BossView boss = new BossView(this);
     private int hoverCol = -1;
     private int hoverRow = -1;
     private boolean hoverActive;
@@ -104,7 +105,9 @@ public class LawnView extends Canvas {
         effects.drawDroppedPlantFood(gc, session, seconds);
         drawRows(gc, session, seconds);
         effects.drawSandstorm(gc, session, "front");
-        drawZomboss(gc, session, seconds);
+        boss.drawSweep(gc, session);
+        boss.drawBoss(gc, session, chapterId, seconds);
+        boss.drawShots(gc, session, seconds);
         effects.drawPlantFoodShows(gc, session);
         effects.drawDebris(gc, session);
         effects.drawDangerRings(gc, session, seconds);
@@ -116,27 +119,6 @@ public class LawnView extends Canvas {
      * The boss itself, sitting on the right across the rows it covers. It sways
      * gently, and slumps still and pale while it is stunned.
      */
-    private void drawZomboss(GraphicsContext gc, GameSession session, double seconds) {
-        Zomboss boss = session.getZomboss();
-        if (boss == null || boss.isDefeated()) {
-            return;
-        }
-        double height = tileHeight() * boss.getRows() * 0.95;
-        // sat just inside the last column so the whole sprite stays on screen
-        double centreX = tileX(boss.getColumn()) - tileWidth() * 0.1;
-        double centreY = tileY(boss.getRow() + 1) + tileHeight() * (boss.getRows() - 1) / 2.0;
-        if (!boss.isStunned()) {
-            centreY += Math.sin(seconds * 1.8) * tileHeight() * 0.04;
-        }
-        gc.save();
-        if (boss.isStunned()) {
-            gc.setGlobalAlpha(0.65);
-        }
-        drawSprite(gc, Assets.image("bosses/" + chapterId), centreX, centreY, height,
-                Color.web("#6c7a52"));
-        gc.restore();
-    }
-
     /**
      * How far the camera is thrown about right now, which is the strongest
      * shake any live explosion is asking for.
@@ -769,7 +751,7 @@ public class LawnView extends Canvas {
         return zombie.getSpec().getArmor().values().stream().mapToInt(Integer::intValue).sum();
     }
 
-    protected void drawSprite(GraphicsContext gc, Image art, double centreX, double centreY,
+    void drawSprite(GraphicsContext gc, Image art, double centreX, double centreY,
                             double height, Color fallback) {
         if (art == null) {
             gc.setFill(fallback);

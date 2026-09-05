@@ -104,7 +104,10 @@ final class ZombossEngine {
         if (victim != null) {
             wreck(victim);
         }
-        session.recordBurst(Burst.Kind.EXPLOSION, col, row);
+        // the shot is what the player sees; the damage is already done
+        boss.lunged();
+        session.throwBossShot(BossShot.kindFor(boss.getChapter()),
+                boss.getColumn(), boss.getRow() + boss.getRows() / 2.0 + 0.5, col, row);
         session.eventLog().add(strikeName() + " hit (" + col + ", " + row + ")!");
         afterStrike(col, row);
     }
@@ -138,6 +141,7 @@ final class ZombossEngine {
      */
     private void sweepingMove() {
         session.eventLog().add(sweepName() + "!");
+        boss.lunged();
         for (int row = boss.getRow(); row < boss.getRow() + boss.getRows(); row++) {
             for (int col = 1; col <= GameSession.COLS; col++) {
                 Plant victim = session.plantAtTile(col, row + 1);
@@ -145,8 +149,9 @@ final class ZombossEngine {
                     wreck(victim);
                 }
             }
-            session.recordBurst(Burst.Kind.EXPLOSION, GameSession.COLS / 2.0, row + 1.0);
         }
+        // one front crossing the rows, rather than a burst dropped in each
+        session.startBossSweep(boss.getChapter(), boss.getRow(), boss.getRows());
     }
 
     private void summon() {
