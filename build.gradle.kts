@@ -72,6 +72,13 @@ tasks.register<JavaExec>("snapshots") {
     classpath = sourceSets["test"].runtimeClasspath
 }
 
+tasks.register<JavaExec>("versusCheck") {
+    group = "verification"
+    description = "Drives the versus lobby's own buttons with two players on a real server."
+    mainClass = "ir.sharif.pvz.devtools.VersusLobbyLauncher"
+    classpath = sourceSets["test"].runtimeClasspath
+}
+
 checkstyle {
     toolVersion = "10.17.0"
     configFile = file("checkstyle.xml")

@@ -8,6 +8,9 @@ import ir.sharif.pvz.net.client.ServerConnection;
 import ir.sharif.pvz.net.client.ServerException;
 import ir.sharif.pvz.view.fx.GameUi;
 import java.util.List;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -18,6 +21,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
 /**
  * Where a versus match is arranged: challenge somebody by name, or wait in the
@@ -30,8 +34,12 @@ public final class VersusLobbyScreen extends Screen {
     /** How wide the panels are, so the wrapped text knows where to break. */
     private static final double PANEL_WIDTH = 500;
 
+    /** How often the list of signed-in players is asked for again. */
+    private static final Duration POLL = Duration.seconds(2);
+
     private final Label status = new Label("Pick an opponent to get started.");
 
+    private Timeline poll;
     private boolean queued;
 
     public VersusLobbyScreen(GameUi ui) {
@@ -166,15 +174,14 @@ public final class VersusLobbyScreen extends Screen {
                 ? "Nobody else is signed in right now."
                 : "Playing offline, so this stays empty."));
         list.setDisable(!online);
-        safely(() -> {
-            Message reply = link().ask(link().request(Protocol.ONLINE_USERS));
-            List<String> names = GSON.fromJson(reply.getData().get("users"),
-                    new TypeToken<List<String>>() { }.getType());
-            list.getItems().setAll(names == null ? List.of() : names);
-            if (list.getItems().isEmpty()) {
-                status.setText("Nobody else is signed in yet.");
-            }
-        });
+        refreshOnline(list);
+        if (online) {
+            // whoever signs in next has to appear without the player having to
+            // leave the lobby and come back
+            poll = new Timeline(new KeyFrame(POLL, event -> refreshOnline(list)));
+            poll.setCycleCount(Animation.INDEFINITE);
+            poll.play();
+        }
         list.setOnMouseClicked(event -> {
             String chosen = list.getSelectionModel().getSelectedItem();
             if (chosen != null) {
@@ -186,6 +193,39 @@ public final class VersusLobbyScreen extends Screen {
         });
 
         return Forms.panel(10, Forms.heading("Signed in right now"), list);
+    }
+
+    /**
+     * Asks the server who is signed in and puts them in the list, keeping the
+     * player's current selection so a refresh cannot pull the name out from
+     * under a click.
+     */
+    private void refreshOnline(ListView<String> list) {
+        safely(() -> {
+            Message reply = link().ask(link().request(Protocol.ONLINE_USERS));
+            List<String> names = GSON.fromJson(reply.getData().get("users"),
+                    new TypeToken<List<String>>() { }.getType());
+            List<String> now = names == null ? List.of() : names;
+            if (now.equals(list.getItems())) {
+                return;
+            }
+            String chosen = list.getSelectionModel().getSelectedItem();
+            list.getItems().setAll(now);
+            if (chosen != null) {
+                list.getSelectionModel().select(chosen);
+            }
+            if (now.isEmpty()) {
+                status.setText("Nobody else is signed in yet.");
+            }
+        });
+    }
+
+    @Override
+    public void dispose() {
+        if (poll != null) {
+            poll.stop();
+            poll = null;
+        }
     }
 
     /**
