@@ -10,10 +10,10 @@ import java.util.Random;
 import org.junit.jupiter.api.Test;
 
 /**
- * The Ancient Egypt sandstorm: which chapters get one, when it blows, and
+ * The Ancient Egypt weather: which chapters get one, when it blows, and
  * where it has reached. It is weather, so it never touches the board.
  */
-class SandstormTest {
+class WeatherTest {
 
     private static GameSession levelIn(Chapter chapter) {
         LevelSpec level = Levels.adventure().stream()
@@ -23,29 +23,40 @@ class SandstormTest {
     }
 
     @Test
-    void onlyAncientEgyptGetsSandstorms() {
-        assertTrue(levelIn(Chapter.ANCIENT_EGYPT).getSandstorm().isEnabled());
-        for (Chapter chapter : List.of(Chapter.FROSTBITE_CAVES, Chapter.BIG_WAVE_BEACH,
-                Chapter.DARK_AGES)) {
-            assertFalse(levelIn(chapter).getSandstorm().isEnabled(),
-                    chapter + " should have weather of its own, not sand");
+    void eachChapterGetsTheWeatherThatBelongsToIt() {
+        assertEquals(Weather.Kind.SAND, levelIn(Chapter.ANCIENT_EGYPT).getWeather().kind());
+        assertEquals(Weather.Kind.ICE, levelIn(Chapter.FROSTBITE_CAVES).getWeather().kind(),
+                "the ice caves get a gale, not a sandstorm");
+        for (Chapter chapter : List.of(Chapter.BIG_WAVE_BEACH, Chapter.DARK_AGES)) {
+            assertFalse(levelIn(chapter).getWeather().isEnabled(),
+                    chapter + " has no weather of its own");
         }
+    }
+
+    /** The gale blows on the same schedule the sandstorm does. */
+    @Test
+    void theIcyGaleCrossesTheLawnTheWayTheSandstormDoes() {
+        Weather gale = levelIn(Chapter.FROSTBITE_CAVES).getWeather();
+        assertTrue(gale.isBlowing(0.5));
+        assertFalse(gale.isBlowing(Weather.CROSSING_SECONDS + 1));
+        assertTrue(gale.columnAt(0.1) > gale.columnAt(Weather.CROSSING_SECONDS - 0.1),
+                "it crosses from the right edge to the left");
     }
 
     @Test
     void aStormCrossesTheLawnAndComesRoundAgain() {
-        Sandstorm storm = levelIn(Chapter.ANCIENT_EGYPT).getSandstorm();
+        Weather storm = levelIn(Chapter.ANCIENT_EGYPT).getWeather();
         assertTrue(storm.isBlowing(0.5), "one rolls in at the start of a level");
-        assertFalse(storm.isBlowing(Sandstorm.CROSSING_SECONDS + 1), "then the lawn is clear");
-        assertTrue(storm.isBlowing(Sandstorm.PERIOD_SECONDS + 0.5), "and the next one arrives");
+        assertFalse(storm.isBlowing(Weather.CROSSING_SECONDS + 1), "then the lawn is clear");
+        assertTrue(storm.isBlowing(Weather.PERIOD_SECONDS + 0.5), "and the next one arrives");
     }
 
     @Test
     void itSweepsFromTheRightEdgeToTheLeftOne() {
-        Sandstorm storm = levelIn(Chapter.ANCIENT_EGYPT).getSandstorm();
+        Weather storm = levelIn(Chapter.ANCIENT_EGYPT).getWeather();
         double start = storm.columnAt(0);
-        double middle = storm.columnAt(Sandstorm.CROSSING_SECONDS / 2);
-        double end = storm.columnAt(Sandstorm.CROSSING_SECONDS - 0.01);
+        double middle = storm.columnAt(Weather.CROSSING_SECONDS / 2);
+        double end = storm.columnAt(Weather.CROSSING_SECONDS - 0.01);
         assertTrue(start > GameSession.COLS, "it starts off the right edge: " + start);
         assertTrue(end < 1, "and finishes off the left one: " + end);
         assertTrue(middle < start && middle > end, "moving steadily across: " + middle);
@@ -53,11 +64,11 @@ class SandstormTest {
 
     @Test
     void itBuildsAndThinsRatherThanPoppingInAndOut() {
-        Sandstorm storm = levelIn(Chapter.ANCIENT_EGYPT).getSandstorm();
-        assertEquals(0, storm.intensityAt(Sandstorm.CROSSING_SECONDS + 1), 0.001);
+        Weather storm = levelIn(Chapter.ANCIENT_EGYPT).getWeather();
+        assertEquals(0, storm.intensityAt(Weather.CROSSING_SECONDS + 1), 0.001);
         assertTrue(storm.intensityAt(0.05) < 0.2, "it arrives faintly");
-        assertTrue(storm.intensityAt(Sandstorm.CROSSING_SECONDS / 2) > 0.9, "and thickens");
-        assertTrue(storm.intensityAt(Sandstorm.CROSSING_SECONDS - 0.05) < 0.2, "then thins out");
+        assertTrue(storm.intensityAt(Weather.CROSSING_SECONDS / 2) > 0.9, "and thickens");
+        assertTrue(storm.intensityAt(Weather.CROSSING_SECONDS - 0.05) < 0.2, "then thins out");
     }
 
     @Test
@@ -70,7 +81,7 @@ class SandstormTest {
         int plantHp = session.plantAtTile(1, 1).getHp();
         int zombieHp = zombie.totalRemainingHealth();
 
-        session.advance((int) (Sandstorm.CROSSING_SECONDS * GameSession.TICKS_PER_SECOND) + 5);
+        session.advance((int) (Weather.CROSSING_SECONDS * GameSession.TICKS_PER_SECOND) + 5);
 
         assertEquals(plantHp, session.plantAtTile(1, 1).getHp(), "the storm is not a hazard");
         assertEquals(zombieHp, zombie.totalRemainingHealth(), "and it does not hurt zombies");

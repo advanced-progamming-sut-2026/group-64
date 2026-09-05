@@ -1,7 +1,8 @@
 package ir.sharif.pvz.model.game;
 
 /**
- * The sandstorm that sweeps across an Ancient Egypt lawn.
+ * The weather that sweeps across a lawn: sand in Ancient Egypt, an icy gale in
+ * the Frostbite Caves.
  *
  * <p>It is weather rather than a hazard: the document asks for it to be shown,
  * not for it to do anything to the plants, so nothing here touches the board.
@@ -9,7 +10,17 @@ package ir.sharif.pvz.model.game;
  * watching the same level see the same storm without anything being sent
  * between them, and a test can ask where it will be without running a level.
  */
-public final class Sandstorm {
+public final class Weather {
+
+    /** What blows across this chapter, if anything. */
+    public enum Kind {
+        /** Nothing: the lawn is clear. */
+        NONE,
+        /** Ancient Egypt's weather. */
+        SAND,
+        /** The Frostbite Caves' icy gale. */
+        ICE
+    }
 
     /** How long between one storm rolling in and the next. */
     public static final double PERIOD_SECONDS = 22;
@@ -20,24 +31,33 @@ public final class Sandstorm {
     /** How far off each edge it starts and finishes, in columns. */
     private static final double MARGIN_COLUMNS = 3;
 
-    private final boolean enabled;
+    private final Kind kind;
 
-    Sandstorm(Chapter chapter) {
-        this.enabled = chapter == Chapter.ANCIENT_EGYPT;
+    Weather(Chapter chapter) {
+        this.kind = switch (chapter) {
+            case ANCIENT_EGYPT -> Kind.SAND;
+            case FROSTBITE_CAVES -> Kind.ICE;
+            default -> Kind.NONE;
+        };
+    }
+
+    /** What blows across this lawn. */
+    public Kind kind() {
+        return kind;
     }
 
     /**
-     * Whether this chapter gets sandstorms at all.
+     * Whether this chapter gets weather at all.
      */
     public boolean isEnabled() {
-        return enabled;
+        return kind != Kind.NONE;
     }
 
     /**
      * Whether a storm is crossing the lawn at this moment.
      */
     public boolean isBlowing(double seconds) {
-        return enabled && phase(seconds) < CROSSING_SECONDS;
+        return isEnabled() && phase(seconds) < CROSSING_SECONDS;
     }
 
     /**

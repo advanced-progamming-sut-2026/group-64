@@ -39,7 +39,8 @@ public class GameSession {
     private final Dismemberment dismemberment;
     private final ZombieMovement zombieMovement = new ZombieMovement(this);
     final LevelLog log = new LevelLog();
-    private final Sandstorm sandstorm;
+    private final Weather weather;
+    private final Tide tide;
     private final Planting planting = new Planting(this);
 
     private final Plant[][] grid = new Plant[ROWS][COLS];
@@ -96,7 +97,8 @@ public class GameSession {
         this.combat = new PlantCombat(this);
         java.util.Arrays.fill(mowers, true);
         this.board = new Board(level, difficultyUp, random, events);
-        this.sandstorm = new Sandstorm(level.getChapter());
+        this.weather = new Weather(level.getChapter());
+        this.tide = Tide.forLevel(level);
         this.dismemberment = new Dismemberment(random);
         this.sunSystem = new SunSystem(level, difficultyUp, random, events);
         this.waves = new WaveSystem(this, level, difficultyDown, random);
@@ -135,6 +137,7 @@ public class GameSession {
             plantAbilities.tick(1.0 / TICKS_PER_SECOND);
             produceSuns();
             sunSystem.tick(1.0 / TICKS_PER_SECOND, getElapsedSeconds());
+            tide.floodAndDrain(this);
             waves.tick(getElapsedSeconds());
             special.tick(getElapsedSeconds());
             if (zomboss != null) {
@@ -361,8 +364,12 @@ public class GameSession {
     /**
      * The chapter's weather, which the view draws and nothing else reads.
      */
-    public Sandstorm getSandstorm() {
-        return sandstorm;
+    public Tide getTide() {
+        return tide;
+    }
+
+    public Weather getWeather() {
+        return weather;
     }
 
     public LevelSpec getLevel() {

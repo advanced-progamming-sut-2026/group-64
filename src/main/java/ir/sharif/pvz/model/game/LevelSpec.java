@@ -72,6 +72,16 @@ public class LevelSpec {
         return row * GameSession.COLS + col;
     }
 
+    /** The 0-based row a {@link #tileKey} stands for. */
+    public static int rowOf(int key) {
+        return key / GameSession.COLS;
+    }
+
+    /** The 0-based column a {@link #tileKey} stands for. */
+    public static int colOf(int key) {
+        return key % GameSession.COLS;
+    }
+
     public Chapter getChapter() {
         return chapter;
     }

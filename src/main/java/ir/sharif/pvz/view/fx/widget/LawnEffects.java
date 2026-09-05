@@ -3,7 +3,7 @@ package ir.sharif.pvz.view.fx.widget;
 import ir.sharif.pvz.model.game.Debris;
 import ir.sharif.pvz.model.game.GameSession;
 import ir.sharif.pvz.model.game.PlantFoodShow;
-import ir.sharif.pvz.model.game.Sandstorm;
+import ir.sharif.pvz.model.game.Weather;
 import ir.sharif.pvz.model.game.Zombie;
 import ir.sharif.pvz.view.fx.Assets;
 import javafx.scene.canvas.GraphicsContext;
@@ -12,7 +12,7 @@ import javafx.scene.paint.Color;
 
 /**
  * The things on the lawn that flash and fade: a plant showing off its plant
- * food, the bits coming off a zombie, the sandstorm crossing the board, the
+ * food, the bits coming off a zombie, the weather crossing the board, the
  * ring under a zombie that is nearly at the house, and the plant food waiting
  * to be picked up.
  *
@@ -233,22 +233,27 @@ final class LawnEffects {
     }
 
     /**
-     * The Ancient Egypt sandstorm, in the two layers the artwork comes in: one
-     * behind the lawn and one over the top of it, so the plants sit inside the
-     * storm rather than behind a sheet of sand.
+     * The chapter's weather, in two layers: one behind the lawn and one over
+     * the top of it, so the plants sit inside the storm rather than behind a
+     * sheet of it. Egypt's sand has artwork; the ice caves' gale is drawn.
      */
-    void drawSandstorm(GraphicsContext gc, GameSession session, String layer) {
-        Sandstorm storm = session.getSandstorm();
+    void drawWeather(GraphicsContext gc, GameSession session, String layer) {
+        Weather storm = session.getWeather();
         double now = session.getElapsedSeconds();
         double strength = storm.intensityAt(now);
         if (strength <= 0) {
+            return;
+        }
+        double centre = lawn.tileX(1) + (storm.columnAt(now) - 1) * lawn.tileWidth();
+        if (storm.kind() == Weather.Kind.ICE) {
+            drawIcyGale(gc, layer, centre, strength, now);
             return;
         }
         Image art = Assets.image("props/sandstorm-" + layer);
         if (art == null) {
             return;
         }
-        double centreX = lawn.tileX(1) + (storm.columnAt(now) - 1) * lawn.tileWidth();
+        double centreX = centre;
         double height = lawn.getHeight() * 1.1;
         // a front a few tiles wide, so the sand is seen crossing the lawn
         // rather than washing the whole picture in one colour
@@ -262,6 +267,34 @@ final class LawnEffects {
         gc.restore();
     }
 
+    /**
+     * The Frostbite Caves' gale. There is no artwork for it, so it is drawn:
+     * a pale wash with snow streaking across it, leaning the way it blows.
+     */
+    private void drawIcyGale(GraphicsContext gc, String layer, double centreX,
+                             double strength, double seconds) {
+        double width = lawn.tileWidth() * 3.2;
+        double top = 0;
+        double height = lawn.getHeight();
+        gc.save();
+        gc.setGlobalAlpha(strength * ("front".equals(layer) ? 0.28 : 0.45));
+        gc.setFill(Color.web("#dff2ff"));
+        gc.fillRect(centreX - width / 2, top, width, height);
+
+        gc.setGlobalAlpha(strength * ("front".equals(layer) ? 0.75 : 0.5));
+        gc.setStroke(Color.web("#ffffff"));
+        gc.setLineWidth(Math.max(1.2, lawn.tileHeight() * 0.03));
+        // streaks of snow, each on its own drift so the gale does not pulse
+        for (int flake = 0; flake < 26; flake++) {
+            double lane = (flake * 37 % 100) / 100.0;
+            double drift = ((seconds * 1.5) + lane * 3) % 1.0;
+            double x = centreX + width / 2 - drift * width * 1.6;
+            double y = top + lane * height;
+            double dash = lawn.tileWidth() * 0.22;
+            gc.strokeLine(x, y, x + dash, y + dash * 0.35);
+        }
+        gc.restore();
+    }
 
     /**
      * A pulsing ring under any zombie that is nearly at the house, so the
