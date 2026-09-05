@@ -1,5 +1,7 @@
 package ir.sharif.pvz.controller;
 
+import ir.sharif.pvz.model.User;
+import ir.sharif.pvz.model.game.GameCatalog;
 import ir.sharif.pvz.view.GameView;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -22,12 +24,38 @@ public abstract class MenuController {
     private static final Pattern WALLET_PATTERN =
             Pattern.compile("^cheat\\s+add\\s+-n\\s+(\\d+)\\s+(coins|diamonds)$");
 
+    /**
+     * Opens the whole roster on this account. The collection and the almanac
+     * only show what has been bought and what has been met in a level, which
+     * is right for playing but means most of both pages is shut when the game
+     * is being shown to somebody.
+     */
+    private static final String UNLOCK_ALL = "cheat unlock-all";
+
     protected final AppContext context;
     protected final GameView view;
 
     protected MenuController(AppContext context, GameView view) {
         this.context = context;
         this.view = view;
+    }
+
+    /**
+     * Gives this account every plant in the catalogue and marks every zombie
+     * as met, so the collection and the almanac are both full.
+     */
+    private String unlockEverything() {
+        User user = context.getCurrentUser();
+        int plantsBefore = user.getUnlockedPlants().size();
+        int zombiesBefore = user.getObservedZombies().size();
+        GameCatalog catalog = GameCatalog.get();
+        catalog.allPlants().forEach(plant -> user.getUnlockedPlants().add(plant.getName()));
+        catalog.allZombies().forEach(zombie -> user.getObservedZombies().add(zombie.getName()));
+        context.getUserRepository().save();
+        return "Unlocked " + (user.getUnlockedPlants().size() - plantsBefore) + " plants and "
+                + (user.getObservedZombies().size() - zombiesBefore) + " zombies; you now have "
+                + user.getUnlockedPlants().size() + " plants and "
+                + user.getObservedZombies().size() + " zombies in the collection.";
     }
 
     public abstract MenuType type();
@@ -63,6 +91,10 @@ public abstract class MenuController {
         Matcher wallet = WALLET_PATTERN.matcher(input);
         if (wallet.matches() && context.getCurrentUser() != null) {
             view.info(addToWallet(Integer.parseInt(wallet.group(1)), wallet.group(2)));
+            return;
+        }
+        if (input.equals(UNLOCK_ALL) && context.getCurrentUser() != null) {
+            view.info(unlockEverything());
             return;
         }
         Matcher enterMatcher = ENTER_PATTERN.matcher(input);

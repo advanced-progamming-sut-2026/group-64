@@ -60,6 +60,9 @@ public final class CollectionScreen extends Screen {
         HBox.setHgrow(grid, Priority.ALWAYS);
 
         VBox left = new VBox(12, tabs(), zombiesTab ? new HBox() : filters(), grid);
+        if (ui.user().isDebugMode()) {
+            left.getChildren().add(unlockEverything());
+        }
         VBox.setVgrow(grid, Priority.ALWAYS);
         HBox.setHgrow(left, Priority.ALWAYS);
 
@@ -70,6 +73,24 @@ public final class CollectionScreen extends Screen {
         layout.setTop(Chrome.bar(ui, "Collection"));
         layout.getStyleClass().addAll("screen", "collection-screen");
         return layout;
+    }
+
+    /**
+     * Opens the whole roster, for showing the game to somebody rather than
+     * playing it: both pages only show what has been bought and what has been
+     * met in a level, so most of each is shut on a fresh account. Offered only
+     * while debug mode is on, like the other debug tools.
+     */
+    private HBox unlockEverything() {
+        Button unlock = new Button("Unlock every plant and zombie");
+        unlock.getStyleClass().add("ghost-button");
+        unlock.setOnAction(event -> {
+            ui.submit("cheat unlock-all");
+            ui.refresh();
+        });
+        HBox row = new HBox(unlock);
+        row.setAlignment(Pos.CENTER);
+        return row;
     }
 
     private HBox tabs() {
