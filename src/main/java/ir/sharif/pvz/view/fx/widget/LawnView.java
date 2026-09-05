@@ -46,7 +46,7 @@ public class LawnView extends Canvas {
     /** How many steps a zombie takes crossing one tile, for the walk cycle. */
     private static final double STEPS_PER_TILE = 11;
 
-    private static final double ZOMBIE_SCALE = 1.05;
+    static final double ZOMBIE_SCALE = 1.05;
     private static final double SUN_SCALE = 0.46;
 
     private final String chapterId;
@@ -54,6 +54,7 @@ public class LawnView extends Canvas {
     private final LawnEffects effects = new LawnEffects(this);
     private final LawnTerrain terrain = new LawnTerrain(this);
     private final BossView boss = new BossView(this);
+    private final ZombieTells tells = new ZombieTells(this);
     private int hoverCol = -1;
     private int hoverRow = -1;
     private boolean hoverActive;
@@ -149,6 +150,8 @@ public class LawnView extends Canvas {
                 case MOWER -> drawParticles(gc, x, y, burst.progress(), 6,
                         Color.web("#d8d8d8"), tileHeight() * 0.35);
                 case ABILITY -> drawAbilityTell(gc, x, y, burst.progress());
+                case SUN_STOLEN, BONES, ICE_THROW, OCTOPUS_THROW, KICK, SMASH, DIVE ->
+                        tells.draw(gc, burst.getKind(), x, y, burst.progress());
                 default -> { }
             }
         }
@@ -440,7 +443,7 @@ public class LawnView extends Canvas {
             }
             for (Zombie zombie : session.getZombies()) {
                 if (zombie.getRow() == row - 1) {
-                    drawZombie(gc, zombie, seconds);
+                    drawZombie(gc, session, zombie, seconds);
                 }
             }
             for (Shot shot : session.getShots()) {
@@ -689,12 +692,14 @@ public class LawnView extends Canvas {
         return Assets.zombie(name);
     }
 
-    private void drawZombie(GraphicsContext gc, Zombie zombie, double seconds) {
+    private void drawZombie(GraphicsContext gc, GameSession session, Zombie zombie,
+                            double seconds) {
         Image art = zombieArt(zombie);
         double height = tileHeight() * ZOMBIE_SCALE;
         double centreX = tileX((int) Math.floor(zombie.getX()))
                 + (zombie.getX() - Math.floor(zombie.getX())) * tileWidth();
-        double centreY = tileY(zombie.getRow() + 1) - height * 0.12;
+        double centreY = tileY(zombie.getRow() + 1) - height * 0.12
+                - zombie.getLift() * tileHeight();
         // the step is driven by how far it has walked rather than by the clock,
         // so a chilled one plods and a fast one hurries, and a frozen one stops
         double stride = zombie.getX() * STEPS_PER_TILE;
@@ -713,10 +718,19 @@ public class LawnView extends Canvas {
         if (zombie.isFrozen()) {
             drawSprite(gc, Assets.image("ice/zombie-behind"), centreX, centreY, height * 1.2, null);
         }
+        boolean under = session.isSubmerged(zombie);
         gc.save();
-        if (lean != 0) {
+        if (under) {
+            // it is under the water: shots pass over it, so it has to look
+            // like it is down there rather than standing on the surface
+            centreY += height * 0.30;
+            gc.setGlobalAlpha(0.45);
+        }
+        // a thrown zombie tumbles through the air instead of walking
+        double turn = zombie.isAirborne() ? zombie.getTumble() : lean;
+        if (turn != 0) {
             gc.translate(centreX, centreY);
-            gc.rotate(lean);
+            gc.rotate(turn);
             gc.translate(-centreX, -centreY);
         }
         applyZombieTint(gc, zombie);
@@ -726,6 +740,9 @@ public class LawnView extends Canvas {
             drawSprite(gc, Assets.image("ice/zombie-front"), centreX, centreY, height * 1.2, null);
         }
 
+        if (under) {
+            tells.drawSnorkelWake(gc, centreX, centreY - height * 0.30, seconds);
+        }
         double healthy = zombie.totalRemainingHealth()
                 / (double) Math.max(1, zombie.getSpec().getHp() + armourTotal(zombie));
         drawHealthBar(gc, centreX, centreY - height * 0.58, height * 0.55, healthy,

@@ -15,6 +15,9 @@ import java.util.Set;
  */
 class ZombieAbilities {
 
+    /** How long the gargantuar's imp is in the air. */
+    private static final double IMP_FLIGHT_SECONDS = 1.1;
+
     private static final Map<String, Double> PERIODS = Map.ofEntries(
             Map.entry("ra", 2.0),
             Map.entry("explorer", 1.0),
@@ -75,8 +78,10 @@ class ZombieAbilities {
 
     private void act(Zombie zombie) {
         // the flash is drawn wherever the trick was used, so a player can see
-        // which zombie just did something rather than only read about it
-        tell(zombie);
+        // which zombie just did something rather than only read about it. Each
+        // trick that looks like something gets its own; the rest share the
+        // plain one.
+        tell(zombie, tellFor(zombie.getSpec().getName()));
         switch (zombie.getSpec().getName()) {
             case "ra" -> stealSun(zombie);
             case "explorer" -> burnAhead(zombie);
@@ -141,8 +146,11 @@ class ZombieAbilities {
     private void throwImp(Zombie gargantuar) {
         thrownImps.add(gargantuar);
         double landing = Math.max(1.5, gargantuar.getX() - 3.5);
-        session.spawnZombie(GameCatalog.get().zombie("imp"), gargantuar.getRow(), landing);
-        session.recordBurst(Burst.Kind.EXPLOSION, landing, gargantuar.getRow() + 1.0);
+        // it starts at the gargantuar and flies, rather than being put down at
+        // the far end with nothing in between
+        Zombie imp = session.spawnZombie(GameCatalog.get().zombie("imp"),
+                gargantuar.getRow(), gargantuar.getX());
+        imp.throwTo(landing, IMP_FLIGHT_SECONDS);
         session.eventLog().add("The gargantuar hurled its imp over your plants, into lane "
                 + (gargantuar.getRow() + 1) + "!");
     }
@@ -184,10 +192,26 @@ class ZombieAbilities {
     }
 
     /**
+     * The mark a zombie's trick leaves. They all used to be the same purple
+     * ring, which told the player something had happened but never what.
+     */
+    private static Burst.Kind tellFor(String zombie) {
+        return switch (zombie) {
+            case "ra" -> Burst.Kind.SUN_STOLEN;
+            case "tombraiser" -> Burst.Kind.BONES;
+            case "hunter" -> Burst.Kind.ICE_THROW;
+            case "octopus" -> Burst.Kind.OCTOPUS_THROW;
+            case "all-star" -> Burst.Kind.KICK;
+            case "gargantuar" -> Burst.Kind.SMASH;
+            default -> Burst.Kind.ABILITY;
+        };
+    }
+
+    /**
      * Leaves a flash on the zombie that just used its trick.
      */
-    private void tell(Zombie zombie) {
-        session.recordBurst(Burst.Kind.ABILITY, zombie.getX(), zombie.getRow() + 1.0);
+    private void tell(Zombie zombie, Burst.Kind kind) {
+        session.recordBurst(kind, zombie.getX(), zombie.getRow() + 1.0);
     }
 
     private void stealSun(Zombie ra) {

@@ -59,6 +59,10 @@ final class Dismemberment {
      * A zombie going down leaves its head and one arm behind.
      */
     void onDeath(Zombie zombie) {
+        // the body keels over where it stood: no throw, no spin, and it holds
+        // its place while the head and arm are flung off it
+        add(new Debris(Debris.Kind.BODY, zombie.getSpec().getName(), zombie.getRow(),
+                zombie.getX(), 0, 0, 0));
         add(new Debris(Debris.Kind.HEAD, "head", zombie.getRow(), zombie.getX(),
                 backwards(0.9), upwards(3.0), spin()));
         add(new Debris(Debris.Kind.ARM, "arm", zombie.getRow(), zombie.getX(),

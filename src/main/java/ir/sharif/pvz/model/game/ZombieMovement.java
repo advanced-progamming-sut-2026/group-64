@@ -27,6 +27,10 @@ final class ZombieMovement {
             if (!session.zombies.contains(zombie)) {
                 continue;
             }
+            if (zombie.isAirborne()) {
+                // in the air: it neither walks nor eats until it comes down
+                continue;
+            }
             if (zombie.isHypnotized()) {
                 session.plantAbilities.walkBackAndFight(zombie, dt);
                 continue;

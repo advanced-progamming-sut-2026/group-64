@@ -164,6 +164,10 @@ final class LawnEffects {
      */
     void drawDebris(GraphicsContext gc, GameSession session) {
         for (Debris piece : session.getDebris()) {
+            if (piece.getKind() == Debris.Kind.BODY) {
+                drawBody(gc, piece);
+                continue;
+            }
             Image art = Assets.image("parts/" + piece.getArt());
             if (art == null) {
                 continue;
@@ -181,6 +185,52 @@ final class LawnEffects {
         }
     }
 
+
+    /**
+     * A zombie going down. It keels over onto its back, sinking as it goes,
+     * and then goes to dust: the sprite fades while flecks of it drift up off
+     * the lawn. Before this the body simply stopped being drawn on the frame
+     * its health ran out, which made a kill read as a disappearance.
+     */
+    private void drawBody(GraphicsContext gc, Debris piece) {
+        Image art = Assets.zombie(piece.getArt());
+        double topple = piece.getTopple();
+        double crumble = piece.getCrumble();
+        double height = lawn.tileHeight() * LawnView.ZOMBIE_SCALE;
+        double x = lawn.tileX(1) + (piece.getCol() - 1) * lawn.tileWidth();
+        double y = lawn.tileY(piece.getRow() + 1) - height * 0.12;
+
+        if (crumble < 1) {
+            gc.save();
+            gc.setGlobalAlpha((1 - crumble) * (1 - crumble));
+            // it pivots about its feet rather than its middle, so it falls
+            // over instead of sliding down the screen
+            gc.translate(x, y + height * 0.42);
+            gc.rotate(topple * 84);
+            gc.translate(0, -height * 0.42);
+            lawn.drawSprite(gc, art, 0, 0, height, Color.web("#8d9b6a"));
+            gc.restore();
+        }
+        if (crumble > 0) {
+            drawDust(gc, x, y, height, crumble);
+        }
+    }
+
+    /** The flecks a crumbling body gives off, drifting up and thinning out. */
+    private void drawDust(GraphicsContext gc, double x, double y, double height, double t) {
+        gc.save();
+        gc.setFill(Color.web("#9bbf6a"));
+        for (int fleck = 0; fleck < 10; fleck++) {
+            double angle = fleck * 2.4;
+            double spread = height * 0.30 * t;
+            double fx = x + Math.cos(angle) * spread;
+            double fy = y + Math.sin(angle) * spread * 0.5 - t * height * 0.45;
+            double size = height * 0.07 * (1 - t);
+            gc.setGlobalAlpha(0.75 * (1 - t));
+            gc.fillOval(fx - size / 2, fy - size / 2, size, size);
+        }
+        gc.restore();
+    }
 
     /**
      * The Ancient Egypt sandstorm, in the two layers the artwork comes in: one

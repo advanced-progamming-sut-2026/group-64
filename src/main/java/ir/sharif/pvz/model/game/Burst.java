@@ -22,8 +22,22 @@ public final class Burst {
         MOWER,
         /** A plant food was spent on a plant. */
         PLANT_FOOD,
-        /** A zombie used the trick that makes it that zombie. */
-        ABILITY
+        /** A zombie used a trick we draw nothing special for. */
+        ABILITY,
+        /** The sun-stealer took a sun off the lawn. */
+        SUN_STOLEN,
+        /** The grave-raiser threw its bones. */
+        BONES,
+        /** The hunter threw its ice. */
+        ICE_THROW,
+        /** The octopus-thrower let one go. */
+        OCTOPUS_THROW,
+        /** The all-star kicked the plant in front of it. */
+        KICK,
+        /** The gargantuar brought its hammer down. */
+        SMASH,
+        /** A snorkel went under, or came back up. */
+        DIVE
     }
 
     private static final double LIFETIME_SECONDS = 0.7;

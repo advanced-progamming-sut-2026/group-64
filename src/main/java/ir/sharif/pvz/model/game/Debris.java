@@ -11,13 +11,30 @@ package ir.sharif.pvz.model.game;
 public class Debris {
 
     /** What came off, which is all the view needs to pick a sprite. */
-    public enum Kind { HEAD, ARM, ARMOUR }
+    public enum Kind {
+        /** The head, which leaves when the zombie does. */
+        HEAD,
+        /** One arm, likewise. */
+        ARM,
+        /** Armour a shot knocked loose, or that it was still wearing. */
+        ARMOUR,
+        /**
+         * The zombie itself. It used to be taken off the board the instant its
+         * health ran out, so the only thing marking a kill was a puff of
+         * particles and the head. The body stays a moment now: it keels over
+         * where it stood and crumbles.
+         */
+        BODY
+    }
 
     /** How hard the ground pulls, in lane-heights per second squared. */
     private static final double GRAVITY = 9;
 
     /** How long a piece lies on the ground before it fades away. */
     private static final double REST_SECONDS = 2.5;
+
+    /** How long a body takes to keel over. */
+    private static final double TOPPLE_SECONDS = 0.55;
 
     private final Kind kind;
     private final String art;
@@ -29,6 +46,7 @@ public class Debris {
     private double spin;
     private final double spinRate;
     private double restingFor = -1;
+    private double age;
 
     Debris(Kind kind, String art, int row, double col, double speedAcross, double speedUp,
            double spinRate) {
@@ -92,9 +110,30 @@ public class Debris {
     }
 
     /**
+     * How far a body has keeled over, 0 upright and 1 flat. Only a BODY uses
+     * it; everything else tumbles on {@link #getSpin()} instead.
+     */
+    public double getTopple() {
+        return kind != Kind.BODY ? 0 : Math.min(1, age / TOPPLE_SECONDS);
+    }
+
+    /**
+     * How far along the crumbling it is, 0 to 1. A body holds its shape while
+     * it falls and then goes to dust.
+     */
+    public double getCrumble() {
+        if (kind != Kind.BODY) {
+            return 0;
+        }
+        // it holds its shape while it is going down, and only then goes to dust
+        return Math.min(1, Math.max(0, age - TOPPLE_SECONDS) / (REST_SECONDS - TOPPLE_SECONDS));
+    }
+
+    /**
      * Moves it along; it tumbles until it hits the ground, then lies there.
      */
     public void passSeconds(double seconds) {
+        age += seconds;
         if (restingFor >= 0) {
             restingFor += seconds;
             return;

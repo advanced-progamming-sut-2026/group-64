@@ -26,6 +26,52 @@ class DismembermentTest {
         return session.getDebris().stream().filter(piece -> piece.getKind() == kind).toList();
     }
 
+    /**
+     * The body used to stop being drawn on the frame its health ran out, so a
+     * kill read as the zombie blinking out. It stays and goes down.
+     */
+    @Test
+    void aZombieGoingDownLeavesItsBodyToFallAndCrumble() {
+        GameSession session = quietSession();
+        Zombie zombie = session.spawnZombie(GameCatalog.get().zombie("normal"), 2, 6);
+        session.cheats().releaseTheNuke();
+
+        List<Debris> bodies = of(session, Debris.Kind.BODY);
+        assertEquals(1, bodies.size(), "the body stays behind");
+        Debris body = bodies.get(0);
+        assertEquals(zombie.getSpec().getName(), body.getArt(),
+                "drawn with the sprite of the zombie it was");
+        assertEquals(zombie.getX(), body.getCol(), 0.001, "and where it stood");
+        assertEquals(0, body.getTopple(), 0.001, "upright at first");
+        assertEquals(0, body.getCrumble(), 0.001, "and whole");
+
+        session.advance(3);
+        assertTrue(body.getTopple() > 0, "it starts going over");
+        assertEquals(0, body.getCrumble(), 0.001, "holding its shape while it falls");
+
+        session.advance(6 * GameSession.TICKS_PER_SECOND);
+        assertEquals(1, body.getTopple(), 0.001, "it comes to rest flat");
+        assertTrue(body.getCrumble() > 0, "and then goes to dust");
+    }
+
+    /** Only a body keels over; the flung pieces tumble instead. */
+    @Test
+    void onlyTheBodyTopplesWhileThePiecesTumble() {
+        GameSession session = quietSession();
+        session.spawnZombie(GameCatalog.get().zombie("normal"), 2, 6);
+        session.cheats().releaseTheNuke();
+        session.advance(4);
+
+        for (Debris piece : session.getDebris()) {
+            if (piece.getKind() == Debris.Kind.BODY) {
+                assertEquals(0, piece.getLift(), 0.001, "the body is not thrown into the air");
+            } else {
+                assertEquals(0, piece.getTopple(), 0.001,
+                        piece.getKind() + " tumbles rather than keeling over");
+            }
+        }
+    }
+
     @Test
     void aZombieGoingDownLeavesItsHeadAndAnArmBehind() {
         GameSession session = quietSession();

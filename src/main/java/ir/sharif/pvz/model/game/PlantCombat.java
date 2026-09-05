@@ -187,7 +187,11 @@ class PlantCombat {
             if (zombie.getRow() != plant.getRow() || zombie.getX() < plant.getCol() + 1.0) {
                 continue;
             }
-            if (!lobbed && isSubmerged(zombie) || lobbed && zombie.getSpec().getName().equals("parasol")) {
+            // a thrown zombie is over the plants, not among them
+            if (zombie.isAirborne()) {
+                continue;
+            }
+            if (!lobbed && session.isSubmerged(zombie) || lobbed && zombie.getSpec().getName().equals("parasol")) {
                 continue;
             }
             if (front == null || zombie.getX() < front.getX()) {
@@ -195,15 +199,6 @@ class PlantCombat {
             }
         }
         return front;
-    }
-
-    private boolean isSubmerged(Zombie zombie) {
-        int col = (int) Math.round(zombie.getX()) - 1;
-        if (!zombie.getSpec().getName().equals("snorkel") || col < 0 || col >= GameSession.COLS) {
-            return false;
-        }
-        TileTerrain kind = session.terrainAt(col + 1, zombie.getRow() + 1);
-        return kind == TileTerrain.WATER || kind == TileTerrain.LILY;
     }
 
     private int torchwoodBonus(Plant shooter, Zombie target) {

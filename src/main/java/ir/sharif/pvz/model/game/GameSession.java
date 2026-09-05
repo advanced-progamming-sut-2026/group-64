@@ -508,6 +508,20 @@ public class GameSession {
         return dismemberment.pieces();
     }
 
+    /**
+     * Whether this zombie is under the water right now. Only the snorkel goes
+     * under, and while it is there shots pass over it — so the view has to
+     * draw it differently or the player cannot tell why it is not being hit.
+     */
+    public boolean isSubmerged(Zombie zombie) {
+        int col = (int) Math.round(zombie.getX()) - 1;
+        if (!zombie.getSpec().getName().equals("snorkel") || col < 0 || col >= COLS) {
+            return false;
+        }
+        TileTerrain kind = terrainAt(col + 1, zombie.getRow() + 1);
+        return kind == TileTerrain.WATER || kind == TileTerrain.LILY;
+    }
+
     public List<Burst> getBursts() {
         return bursts;
     }

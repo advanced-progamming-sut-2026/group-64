@@ -23,6 +23,11 @@ public class Zombie {
     private double poisonedSeconds;
     private int poisonPerSecond;
     private boolean hypnotized;
+    /** Seconds left of being in the air, for a zombie that was thrown. */
+    private double airborneSeconds;
+    private double airborneTotal;
+    private double thrownFrom;
+    private double thrownTo;
 
     public Zombie(ZombieSpec spec, int row, double x, int hp, Map<String, Integer> armor, boolean glowing) {
         this.spec = spec;
@@ -201,6 +206,43 @@ public class Zombie {
         eatingSeconds = 0.4;
     }
 
+    /**
+     * Throws this zombie to a tile further up the lawn. It travels in an arc
+     * and does nothing on the way: it cannot walk, eat, or be shot until it
+     * lands. The gargantuar's imp used to be put down at its landing spot with
+     * no flight at all, which made the throw invisible.
+     */
+    void throwTo(double landing, double seconds) {
+        this.thrownFrom = x;
+        this.thrownTo = landing;
+        this.airborneSeconds = seconds;
+        this.airborneTotal = seconds;
+    }
+
+    /** True while it is still in the air and out of the game. */
+    public boolean isAirborne() {
+        return airborneSeconds > 0;
+    }
+
+    /**
+     * How high above its lane it is, in lane heights; zero on the ground.
+     */
+    public double getLift() {
+        if (!isAirborne()) {
+            return 0;
+        }
+        return Math.sin(flightProgress() * Math.PI) * 1.1;
+    }
+
+    /** How far it has turned while tumbling through the air, in degrees. */
+    public double getTumble() {
+        return isAirborne() ? flightProgress() * 300 : 0;
+    }
+
+    private double flightProgress() {
+        return airborneTotal <= 0 ? 1 : 1 - (airborneSeconds / airborneTotal);
+    }
+
     public boolean isFrozen() {
         return frozenSeconds > 0;
     }
@@ -219,6 +261,14 @@ public class Zombie {
         poisonedSeconds = Math.max(0, poisonedSeconds - seconds);
         if (poisonedSeconds <= 0) {
             poisonPerSecond = 0;
+        }
+        if (airborneSeconds > 0) {
+            airborneSeconds = Math.max(0, airborneSeconds - seconds);
+            // it is carried along its arc by the clock, and put down exactly
+            // on its landing tile
+            x = airborneSeconds > 0
+                    ? thrownFrom + (thrownTo - thrownFrom) * flightProgress()
+                    : thrownTo;
         }
     }
 
