@@ -45,7 +45,9 @@ final class BossView {
             return;
         }
         double height = lawn.tileHeight() * boss.getRows() * 0.95;
-        double centreX = lawn.tileX(boss.getColumn()) - lawn.tileWidth() * 0.1;
+        // it can be part-way between columns while it is charging
+        double centreX = lawn.tileX(1) + (boss.getColumn() - 1) * lawn.tileWidth()
+                - lawn.tileWidth() * 0.1;
         double centreY = lawn.tileY(boss.getRow() + 1)
                 + lawn.tileHeight() * (boss.getRows() - 1) / 2.0;
 
@@ -285,6 +287,37 @@ final class BossView {
         gc.setFill(Color.WHITE);
         gc.fillRect(front, top, lawn.tileWidth() * 0.12, height);
         gc.restore();
+    }
+
+    /**
+     * The rows the Dark Ages fire went through, still alight. Without this the
+     * player has no way to know why a plant they just put down burned up.
+     */
+    void drawScorch(GraphicsContext gc, GameSession session, double seconds) {
+        for (int row = 0; row < GameSession.ROWS; row++) {
+            double left = session.scorchLeft(row);
+            if (left <= 0) {
+                continue;
+            }
+            double x = lawn.tileX(1) - lawn.tileWidth() / 2;
+            double y = lawn.tileY(row + 1) - lawn.tileHeight() / 2;
+            double width = lawn.tileWidth() * GameSession.COLS;
+            gc.save();
+            // it dies down as it burns out, and flickers while it lasts
+            double heat = Math.min(1, left / 3) * (0.75 + 0.25 * Math.sin(seconds * 12 + row));
+            gc.setGlobalAlpha(0.42 * heat);
+            gc.setFill(Color.web("#ff6a1f"));
+            gc.fillRect(x, y, width, lawn.tileHeight());
+            gc.setGlobalAlpha(0.8 * heat);
+            gc.setFill(Color.web("#ffd05a"));
+            for (int flame = 0; flame < 14; flame++) {
+                double fx = x + (flame + 0.5) * width / 14
+                        + Math.sin(seconds * 7 + flame) * lawn.tileWidth() * 0.1;
+                double h = lawn.tileHeight() * (0.18 + 0.12 * Math.abs(Math.sin(seconds * 9 + flame)));
+                gc.fillOval(fx - h * 0.3, y + lawn.tileHeight() - h, h * 0.6, h);
+            }
+            gc.restore();
+        }
     }
 
     private Color sweepColour(Chapter chapter) {

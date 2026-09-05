@@ -41,6 +41,7 @@ public class GameSession {
     final LevelLog log = new LevelLog();
     private final Weather weather;
     private final Tide tide;
+    private final Scorch scorch = new Scorch();
     private final Planting planting = new Planting(this);
 
     private final Plant[][] grid = new Plant[ROWS][COLS];
@@ -138,6 +139,7 @@ public class GameSession {
             produceSuns();
             sunSystem.tick(1.0 / TICKS_PER_SECOND, getElapsedSeconds());
             tide.floodAndDrain(this);
+            scorch.burn(this);
             waves.tick(getElapsedSeconds());
             special.tick(getElapsedSeconds());
             if (zomboss != null) {
@@ -364,6 +366,15 @@ public class GameSession {
     /**
      * The chapter's weather, which the view draws and nothing else reads.
      */
+    /** How much longer this 0-based row is on fire; zero when it is not. */
+    public double scorchLeft(int row) {
+        return scorch.leftOn(row, getElapsedSeconds());
+    }
+
+    void scorchRow(int row, double seconds) {
+        scorch.light(row, getElapsedSeconds() + seconds);
+    }
+
     public Tide getTide() {
         return tide;
     }

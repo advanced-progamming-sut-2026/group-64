@@ -365,6 +365,8 @@ public final class ScreenSnapshots extends Application {
         steps.add(() -> shoot("20-zomboss-sweep"));
         steps.add(this::showBossFalling);
         steps.add(() -> shoot("20-zomboss-beaten"));
+        steps.add(this::showScorchedGround);
+        steps.add(() -> shoot("20-zomboss-scorched"));
     }
 
     /**
@@ -386,6 +388,17 @@ public final class ScreenSnapshots extends Application {
         GameSession session = bossLevel();
         session.cheats().releaseTheNuke();
         app.submit("advance time -t 8 ticks");
+        freeze();
+    }
+
+    /** The Dark Ages fire still burning after the boss's wide move. */
+    private void showScorchedGround() {
+        GameSession session = bossLevel();
+        for (int i = 0; i < GameSession.TICKS_PER_SECOND * 300
+                && session.scorchLeft(session.getZomboss().getRow()) <= 0; i++) {
+            app.submit("advance time -t 1 ticks");
+        }
+        app.submit("advance time -t 14 ticks");
         freeze();
     }
 

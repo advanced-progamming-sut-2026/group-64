@@ -20,11 +20,15 @@ public final class Zomboss {
     private static final double FLINCH_SECONDS = 0.18;
     /** How long it takes to topple once the last part is off. */
     private static final double FALL_SECONDS = 1.6;
+    /** How long a charge out across the lawn and back takes. */
+    private static final double CHARGE_SECONDS = 1.6;
+    /** How many columns it covers on the way out. */
+    private static final double CHARGE_COLUMNS = 4.5;
 
     private final Chapter chapter;
     private final int partHealth;
     private final int rows;
-    private final int column;
+    private final int homeColumn;
 
     private int hp;
     private int row;
@@ -32,12 +36,13 @@ public final class Zomboss {
     private double lungeSeconds;
     private double flinchSeconds;
     private double fallenSeconds;
+    private double chargeSeconds;
 
     Zomboss(Chapter chapter, int partHealth, int rows, int column) {
         this.chapter = chapter;
         this.partHealth = partHealth;
         this.rows = rows;
-        this.column = column;
+        this.homeColumn = column;
         this.hp = partHealth * PARTS;
         this.row = rows >= GameSession.ROWS ? 0 : (GameSession.ROWS - rows) / 2;
     }
@@ -67,8 +72,34 @@ public final class Zomboss {
     /**
      * The column the boss is centred on, in the 1-based board coordinates.
      */
-    public int getColumn() {
-        return column;
+    /**
+     * Where it is across the lawn now. It normally stands at its own column on
+     * the right; the Egypt boss leaves it to charge and comes back.
+     */
+    public double getColumn() {
+        return homeColumn - chargeOffset();
+    }
+
+    /**
+     * How far out from its column the charge has taken it. It runs out and
+     * back over one move, so this rises to its peak and falls to nothing.
+     */
+    private double chargeOffset() {
+        if (chargeSeconds <= 0) {
+            return 0;
+        }
+        double t = 1 - (chargeSeconds / CHARGE_SECONDS);
+        return Math.sin(t * Math.PI) * CHARGE_COLUMNS;
+    }
+
+    /** True while it is out on the lawn rather than back at its column. */
+    public boolean isCharging() {
+        return chargeSeconds > 0;
+    }
+
+    /** Sends it charging out across the lawn and back. */
+    void charge() {
+        chargeSeconds = CHARGE_SECONDS;
     }
 
     public boolean covers(int zeroBasedRow) {
@@ -167,6 +198,7 @@ public final class Zomboss {
     void passSeconds(double seconds) {
         stunnedSeconds = Math.max(0, stunnedSeconds - seconds);
         lungeSeconds = Math.max(0, lungeSeconds - seconds);
+        chargeSeconds = Math.max(0, chargeSeconds - seconds);
         flinchSeconds = Math.max(0, flinchSeconds - seconds);
         if (isDefeated()) {
             fallenSeconds += seconds;

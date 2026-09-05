@@ -174,6 +174,74 @@ class ZombossTest {
                 "the front moves across the lawn");
     }
 
+    /** Runs a boss level until its wide move goes off. */
+    private GameSession afterTheWideMove(Chapter chapter) {
+        GameSession session = bossLevel(chapter);
+        for (int i = 0; i < GameSession.TICKS_PER_SECOND * 200; i++) {
+            session.advance(1);
+            if (session.getBossSweep() != null) {
+                return session;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Every chapter called its wide move something different and all four did
+     * exactly the same thing. Each leaves its own mark now.
+     */
+    @Test
+    void theEgyptBossActuallyChargesOutAcrossTheLawnAndBack() {
+        GameSession session = afterTheWideMove(Chapter.ANCIENT_EGYPT);
+        assertNotNull(session, "the boss should use its wide move");
+        Zomboss boss = session.getZomboss();
+        double home = GameSession.COLS;
+        assertTrue(boss.isCharging(), "it leaves its column");
+
+        session.advance(GameSession.TICKS_PER_SECOND);
+        assertTrue(boss.getColumn() < home, "and is out on the lawn");
+
+        session.advance(GameSession.TICKS_PER_SECOND * 2);
+        assertFalse(boss.isCharging(), "then it comes back");
+        assertEquals(home, boss.getColumn(), 0.001, "to where it stands");
+    }
+
+    @Test
+    void theDarkAgesBossLeavesTheGroundBurning() {
+        GameSession session = afterTheWideMove(Chapter.DARK_AGES);
+        assertNotNull(session);
+        Zomboss boss = session.getZomboss();
+        assertTrue(session.scorchLeft(boss.getRow()) > 0, "the row it burned is still alight");
+
+        // anything put down on it goes up with it
+        session.cheats().addSuns(2000);
+        session.cheats().removeCooldown();
+        session.plant("sunflower", 2, boss.getRow() + 1);
+        session.advance(2);
+        assertNull(session.plantAtTile(2, boss.getRow() + 1),
+                "a plant on burning ground burns too");
+
+        session.advance(GameSession.TICKS_PER_SECOND * 8);
+        assertEquals(0, session.scorchLeft(boss.getRow()), 0.001, "the fire goes out");
+    }
+
+    @Test
+    void theBeachBossTorpedoDragsItsLanesTowardTheHouse() {
+        GameSession session = bossLevel(Chapter.BIG_WAVE_BEACH);
+        Zomboss boss = session.getZomboss();
+        Zombie caught = session.spawnZombie(GameCatalog.get().zombie("normal"),
+                boss.getRow(), 8);
+        double before = caught.getX();
+
+        for (int i = 0; i < GameSession.TICKS_PER_SECOND * 200
+                && session.getBossSweep() == null; i++) {
+            session.advance(1);
+        }
+        assertNotNull(session.getBossSweep(), "the boss should use its torpedo");
+        assertTrue(caught.getX() < before - 1,
+                "the zombie was dragged toward the house: " + before + " -> " + caught.getX());
+    }
+
     @Test
     void theBossFlinchesWhenItIsHitAndWindsUpWhenItThrows() {
         GameSession session = bossLevel(Chapter.ANCIENT_EGYPT);

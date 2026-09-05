@@ -106,6 +106,7 @@ public class LawnView extends Canvas {
         effects.drawDroppedPlantFood(gc, session, seconds);
         drawRows(gc, session, seconds);
         effects.drawWeather(gc, session, "front");
+        boss.drawScorch(gc, session, seconds);
         boss.drawSweep(gc, session);
         boss.drawBoss(gc, session, chapterId, seconds);
         boss.drawShots(gc, session, seconds);

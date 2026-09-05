@@ -13,6 +13,10 @@ final class ZombossEngine {
     private static final double MOVE_PERIOD_SECONDS = 7;
     private static final int PART_HEALTH = 2500;
     private static final int STRIKE_ROWS = 2;
+    /** How long the Dark Ages boss leaves the ground alight. */
+    private static final double SCORCH_SECONDS = 6;
+    /** How many tiles the beach boss's torpedo drags a zombie. */
+    private static final double TORPEDO_PULL_TILES = 1.4;
 
     private static final List<String> SUMMONS =
             List.of("normal", "conehead", "buckethead", "imp", "newspaper");
@@ -152,6 +156,52 @@ final class ZombossEngine {
         }
         // one front crossing the rows, rather than a burst dropped in each
         session.startBossSweep(boss.getChapter(), boss.getRow(), boss.getRows());
+        afterSweep();
+    }
+
+    /**
+     * What each chapter's wide move leaves behind it. The names said the moves
+     * were different things and the board never showed any of it.
+     */
+    private void afterSweep() {
+        switch (boss.getChapter()) {
+            // Egypt's is a charge: it actually leaves its column and comes back
+            case ANCIENT_EGYPT -> boss.charge();
+            // the Dark Ages one sets the ground alight where it burned
+            case DARK_AGES -> scorchRows();
+            // the beach one drags the lane in with it
+            case BIG_WAVE_BEACH -> pullZombiesForward();
+            default -> { }
+        }
+    }
+
+    /**
+     * The rows the fire went through are left burning: anything planted there
+     * while they are still alight goes up with them.
+     */
+    private void scorchRows() {
+        for (int row = boss.getRow(); row < boss.getRow() + boss.getRows(); row++) {
+            session.scorchRow(row, SCORCH_SECONDS);
+        }
+        session.eventLog().add("The ground is still burning where it went!");
+    }
+
+    /**
+     * The torpedo sucks the rows in toward the house, which is what makes it
+     * worse than the fire it replaces: the zombies arrive sooner.
+     */
+    private void pullZombiesForward() {
+        int moved = 0;
+        for (Zombie zombie : session.getZombies()) {
+            if (boss.covers(zombie.getRow())) {
+                zombie.dragForward(TORPEDO_PULL_TILES);
+                moved++;
+            }
+        }
+        if (moved > 0) {
+            session.eventLog().add("The torpedo dragged " + moved
+                    + " zombies toward your house!");
+        }
     }
 
     private void summon() {

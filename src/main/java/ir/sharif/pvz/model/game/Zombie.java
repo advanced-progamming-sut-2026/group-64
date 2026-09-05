@@ -219,6 +219,14 @@ public class Zombie {
         this.airborneTotal = seconds;
     }
 
+    /**
+     * Drags this zombie toward the house, which is what the beach boss's
+     * torpedo does to the lane it faces. It never pulls one past the house.
+     */
+    void dragForward(double tiles) {
+        x = Math.max(0.5, x - tiles);
+    }
+
     /** True while it is still in the air and out of the game. */
     public boolean isAirborne() {
         return airborneSeconds > 0;
